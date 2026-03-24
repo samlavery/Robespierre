@@ -1,6 +1,6 @@
 # The Robespierre Hypothesis
 
-A formal proof in Lean 4 with Mathlib that all non-trivial Robespierre Zeros of the its zeta function have real part at arcsin(1/2). This is the Robespierre Hypothesis. This research and proof were designed to give insight into the actual Riemann Hypothesis.
+A formal proof in Lean 4 with Mathlib that all non-trivial Robespierre Zeros of its zeta function have real part at arcsin(1/2). This is the Robespierre Hypothesis. This research and proof were designed to give insight into the actual Riemann Hypothesis.
 
 ## The Robespierre Coordinate System
 
