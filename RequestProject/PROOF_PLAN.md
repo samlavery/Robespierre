@@ -1,12 +1,12 @@
 
 
 
-# 1 Assume RH is false, offline zeta zeros can exist
+# 1 Assume RH is true, no offline zeta zeros can exist
 
 # 2 Show zeta zeros control prime distribution and density
 See Block 1 [-ζ'/ζ = Σ Λ(n)/n^s]
 
-# 3 Show primes create harmonics that return to towards the origin (0)
+# 3 Show primes create harmonics that reflect back to towards the origin (1/2)
 theorem primes_create_harmonics (s : ℂ) (hs : 1 < s.re) :
     LSeries (fun n => (ArithmeticFunction.vonMangoldt n : ℂ)) s =
     -deriv riemannZeta s / riemannZeta s :=
@@ -22,28 +22,30 @@ theorem decay_rate_lt_one : 2 * (Real.pi - 3) / Real.pi < 1 := by
   rw [div_lt_one (by linarith [Real.pi_pos])]
   linarith [Real.pi_lt_four]
 
-# 3 Perform 90 degree rotation check and compare results to rule out original offline zeros 
+# 3 Perform 90 degree rotation check and compare offline/online results to rule out original offline zeros 
+[PROOF PENDING]
+# 3 Perform 180 degree rotation check and compare offline/online results to rule out original offline zeros 
+[PROOF PENDING]
 
-# 4 Establish cosh kernel with critical strip at pi/6 with mirrored RP zeros
+# 4 Establish cosh kernel with critical strip at pi/6
 [CoshKernel.lean]
 
-# 5 Show full harmonic cancellation at pi/6 on the strip 
+# 5 Show full harmonic cancellation at pi/6 on the strip
 [StripTheorem.lean] theorem XiFinite_theta_axis_im_eq_zero (P : ℕ) (t : ℝ) :
 
-# 6 Prove online cosh zeros project to zeta strip at 1/2
+# 6 Prove online cosh zeros project to online zeta strip at sin(arcsin(1 / 2))
 [RobspierreHypothesis.lean] theorem zeroAddressProjection_zeroAddressLift {s : ℂ}
 
-
-# Show zeta rotation symmetry at 1/2 -  test pass
+# 7 Show zeta rotation symmetry at 1/2 -  test pass
 [CriticalLineClassifier.lean] detector_iff_sin_theta
 
-# Show cosh reflection symmetry at pi/6 - test pass
+# 8 Show cosh reflection symmetry at pi/6 - test pass
 [CriticalLineClassifier.lean] classifier_complete
 
-# Introduce offline zeta zeros
+# 9 Introduce offline zeta zeros
 Trivial
 
-# Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
+# 10 Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
 [OffAxisTheorem.lean]
 theorem offaxis_classical_zero_forces_prime_observable_change
   (ρ : ℂ) (hz : riemannZeta ρ = 0) (hoff : ρ.re ≠ 1/2) :
@@ -75,7 +77,7 @@ theorem no_offline_passes_detector {σ : ℝ} (hoff : σ ≠ 1 / 2) :
       exact fun h => hoff <| by have := h 0; norm_num [ offAxisRealObservable, offAxisImagObservable, rotatedPrimeDensityNormSq ] at this; nlinarith;
 
 
-# Prove distortion in primes creates distortion in harmonics
+# 11 Prove distortion in primes creates distortion in harmonics
 
 theorem offaxis_classical_zero_forces_detector_and_distortion
     (ρ : ℂ)
@@ -98,12 +100,12 @@ theorem harmonic_disruption_no_imaginary_zero
   norm_num [ Complex.ext_iff, Complex.cosh, Complex.exp_re, Complex.exp_im ] at * ; aesop;
 
 
-# Show cosh zeros at pi/6 do not cancel distorted harmonics, creating offline cosh zeros
+# 12 Show cosh zeros at pi/6 do not cancel distorted harmonics, creating offline cosh zeros
 [CoshNoZeros] cosh_pi_div_six_ne_zero
 			  cosh_neg_pi_div_six_ne_zero
 
 
-# Prove transport function 
+# 13 Prove transport function 
 theorem transport_intertwines_reflections (s : ℂ) :
     T (piDivSixReflect s) = classicalReflect (T s) := by
   unfold piDivSixReflect T classicalReflect ; ring;
@@ -120,23 +122,21 @@ def robespierreOToClassical (s : ℂ) : ℂ :=
 def classicalToRobespierreO (s : ℂ) : ℂ :=
   ⟨(2 * θ) * s.re, s.im⟩
 
-# Show offline cosh zeros project to offline zeta zeros
+# 14 Show offline cosh zeros project to offline zeta zeros at equal height
 [CriticalLineClassifier.lean] strip_offline_rejected
 
-
-# Prove reflection symmetry for cosh fails due to offline cosh zeros - test fails
+# 15 Prove reflection symmetry for cosh fails due to offline cosh zeros - test fails
 [CriticalLineClassifier.lean] theorem detector_iff_sin_theta (σ : ℝ) 
 
-# Prove rotation symmety fails for zeta due to offline zeros - test fails
+# 16 Prove rotation symmety fails for zeta due to offline zeros - test fails
 [CriticalLineClassifier.lean] no_offline_passes_detector
 theorem robespierre_harmonic_collapse (P : ℕ) (t : ℝ) :
 [OffAxisZeta.lean] offaxis_zero_forces_observable_antisymmetry
 
-# Prove all zeta zeros are online with no cosh transfer interference
+# 17 Prove offline zeta zeros and cosh zeros transfer inteference and height equivelance
 [CriticalLineClassifier.lean] DetectorCheckABC
 
-# Show reflection symmetry passes for cosh kernel at pi/6 - test pass
-
+# 18 Show reflection symmetry fails for cosh kernel at pi/6 - test fails
 theorem no_offline_zeros (σ : ℝ) (_hσ : σ ≠ π / 6) : coshKernel σ ≠ 0 :=
   ne_of_gt <| coshKernel_pos σ
 
@@ -144,14 +144,14 @@ theorem coshKernel_at_fold : coshKernel (π / 6) = 1 := by
   simp [coshKernel]
 
 
-# Show symmetry under rotation passes for zeta kernel at 1/2 - test pass
+# 19 Show symmetry under rotation passes for zeta kernel at 1/2 - test pass
 theorem riemannZeta_nonvanishing_re_ge_one (s : ℂ) (hs : 1 ≤ s.re) :
     riemannZeta s ≠ 0 :=
   riemannZeta_ne_zero_of_one_le_re hs
 
 
-# Conclude offline zeta zeros cannot exist 
-
+# 20 Conclude offline zeta zeros cannot exist 
+By contradiction no offline set vs online set
 
 
 

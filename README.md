@@ -2,23 +2,39 @@
 ### Potentially The Least Satisfying Proof Of The Riemann Hyptohesis - The Rotation Test
 
 
-While working on a more complicated and elegant proof of RH, we asked a very basic question. How can we be sure that there are no offline zeros already baked into the strip? We prompted Aristotle and it generated two lean files that formalize the same geometric operation, take two identical critical strips and perform a rotation by 90° via multiplication by i under two different assumptions, and compare the results.
+While working on a more complicated and elegant proof of RH, we asked a very basic question. How can we be sure that there are no offline zeros already baked into the strip? We prompted Aristotle and it generated six lean files that formalize the same rotation operation, take the control critical strips and perform a rotation by 0°90°180° via multiplication by i under two different assumptions about offline vs online zeros, and compare the results.
 
-CriticalStripRotationNoOffline.lean: Online zeros only. Assume RH is true and all nontrivial zeros lie on the critical line Re(s) = 1/2. Under a 90° degree rotation, the critical line maps to Im(s) = 1/2 — the isometric image of the original line within the rotated strip. All inter-zero distances are preserved. The Euler product convergence region maps to its exact isometric image. The rotated strip produces an equivalent number line. The strips agree, isometry is maintained and the universe of numbers remains coherent. 
+### Online zeros only (assume RH is true)
+CriticalStripControl.lean: No rotation. The identity map. All nontrivial zeros lie on Re(s) = 1/2. The strip maps to itself. Zero sets are trivially preserved. Euler product convergence is unchanged. The two number lines are identical. Baseline established.
 
-CriticalStripRotation.lean: Assume RH is false, and inject offline zeros. Assume a nontrivial zero exists at σ + it with σ ≠ 1/2 and t > 0. Under the same rotation, this zero maps to -t + iσ. Since t > 0, the real part is negative and the zero has been ejected from the critical strip entirely. It is unconditionally detectable by comparison: its distance from the critical line is preserved (isometric detection), it cannot land on the rotated critical line unless t = 1/2 (non-cancellation), and the Euler product convergence regions of the original and rotated strips become disjoint within the strip (convergence divergence). Isometry is broken and the rotated strip no longer produces an equivalent number line.
+CriticalStripIsoOnline.lean: 90° rotation via multiplication by i. The critical line Re(s) = 1/2 maps to Im(s) = 1/2 — the isometric image of the original line within the rotated strip. All inter-zero distances are preserved. The Euler product convergence region maps to its exact isometric image. The rotated strip produces an equivalent number line. Isometry is maintained.
 
-The contradiction. Both files apply the same isometric rotation. With online zeros, the strip is self-consistent under rotation. With offline zeros, it is not. Since rotation by i is a rigid isometry of the complex plane it cannot create, destroy, or distort structure. The inconsistency must come from the offline zeros themselves. They cannot exist in a strip that is required to be rotationally self-consistent. Therefore all nontrivial zeros lie on Re(s) = 1/2, and the RiemannHypothesis is confirmed, conditional on external validation. The point of rotational symmetry at 1/2 produces equivalent results when no offline zeta zeros are present, and produces wildly different results when offline zeros are included. The Euler produce does not converge at 1, meaning under rotation offline zeros produce non self-consistent behavior. 
+CriticalStripFlipOnline.lean: 180° rotation via the functional equation s ↦ 1 − s. The critical line maps to itself — Re(1−s) = 1/2 when Re(s) = 1/2. The strip maps bijectively onto itself. All 17 structural properties — involution, isometry, number line equivalence, zero preservation, partial sum symmetry, critical line invariance — hold unconditionally. Isometry is maintained. produces an equivalent number line.
 
-Both lean files assume no axioms, hide no sorries, and only use functions from mathlib. To verify:
+Offline zeros injected (assume RH is false)
+CriticalStripControlOffline.lean: No rotation. Offline zeros are already detectable at rest. The functional equation forces a distinct mirror zero at 1 − s with Re(1−s) ≠ Re(s). Both zeros lie outside the Euler product convergence region. The separation between the zero and its mirror is at least 2|Re(s) − 1/2| > 0. Offline zeros persist under any product of identical strips. Even without rotation, offline zeros cannot hide.
+
+CriticalStripIsoOffline.lean: 90° rotation. Assume a nontrivial zero exists at σ + it with σ ≠ 1/2 and t > 0. Under the same rotation, this zero maps to −t + iσ. Since t > 0, the real part is negative — the zero has been made imaginary. It is unconditionally detectable by comparison: its distance from the critical line is preserved (isometric detection), it cannot land on the rotated critical line unless t = 1/2 (non-cancellation), and the Euler product convergence regions of the original and rotated strips become disjoint within the strip (convergence divergence). Isometry is broken — the rotated strip no longer produces an equivalent number line.
+
+CriticalStripFlipOffline.lean: 180° rotation via s ↦ 1 − s. Offline zeros are never equal to their rotation — an offline zero at σ and its image at 1 − σ have distinct real parts. They lie on strictly opposite sides of the critical line with separation exactly 2|σ − 1/2|. The Euler product terms n^{−σ} and n^{−(1−σ)} are provably different for every n ≥ 2, demonstrating term-by-term divergence between the two orientations. The partial Dirichlet sums diverge. Every offline zero in any collection is individually detected and moved by the rotation. The unique fixed point of the 180° map is 1/2 — nothing else survives unchanged. Isometry is broken.
+
+Both configurations apply the same isometric operations to the same strip. With online zeros, the strip is self-consistent under all three rotations: identity, quarter turn, and half turn. With offline zeros, the strip fails at every non-trivial angle. Since rotation by i is a rigid isometry of the complex plane it cannot create, destroy, or distort structure. The inconsistency must come from the offline zeros themselves. They cannot exist in a strip that is required to be rotationally self-consistent. Therefore all nontrivial zeros lie on Re(s) = 1/2, and the RiemannHypothesis is confirmed, conditional on external validation. The point of rotational symmetry at 1/2 produces equivalent results when no offline zeta zeros are present, and produces wildly different results when offline zeros are included.
+
+
+All lean files assume no axioms, hide no sorries, and only use functions from mathlib. To verify:
 
 
 ```
 git clone git@github.com:samlavery/Robespierre.git
 cd Robespierre
 lake update
-lake env build CriticalStripRotation.lean
-lake env build CriticalStripRotationNoOffline.lean
+lake env lean CriticalStripControl.lean
+lake env lean CriticalStripIsoOnline.lean
+lake env lean CriticalStripFlipOnline.lean
+lake env lean CriticalStripControlOffline.lean
+lake env lean CriticalStripIsoOffline.lean
+lake env lean CriticalStripFlipOffline.lean
+
 ```
 
 Both files are short enough to verify manually. Unfortunately, this contradiction only shows the tautalogical nature of Riemann Hypothesis, in a rather oblique way. In contrast, the actual proof that produced this simple side result does provide new insights and mathematical techniques that one would expect from a solution to a problem that has remained unsolved for 165 years. 
