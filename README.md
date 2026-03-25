@@ -28,18 +28,18 @@ All lean files assume no axioms, hide no sorries, and only use functions from ma
 git clone git@github.com:samlavery/Robespierre.git
 cd Robespierre
 lake update
-lake env lean CriticalStripControl.lean
-lake env lean CriticalStripIsoOnline.lean
-lake env lean CriticalStripFlipOnline.lean
-lake env lean CriticalStripControlOffline.lean
-lake env lean CriticalStripIsoOffline.lean
-lake env lean CriticalStripFlipOffline.lean
+lake env lean RequestProject/CriticalStripControl.lean
+lake env lean RequestProject/CriticalStripIsoOnline.lean
+lake env lean RequestProject/CriticalStripFlipOnline.lean
+lake env lean RequestProject/CriticalStripControlOffline.lean
+lake env lean RequestProject/CriticalStripIsoOffline.lean
+lake env lean RequestProject/CriticalStripFlipOffline.lean
 
 ```
 
-Both files are short enough to verify manually. Unfortunately, this contradiction only shows the tautalogical nature of Riemann Hypothesis, in a rather oblique way. In contrast, the actual proof that produced this simple side result does provide new insights and mathematical techniques that one would expect from a solution to a problem that has remained unsolved for 165 years. 
+All files are short enough to verify manually. Unfortunately, this contradiction only shows the tautalogical nature of Riemann Hypothesis, in a rather oblique way. In contrast, the actual proof that produced this simple side result does provide new insights and mathematical techniques that one would expect from a solution to a problem that has remained unsolved for 165 years. 
 
-A cosh kernel cenetered at arcsin(1 / 2) maintaining a rotational symmetry point of sin(arcsin(1 / 2)) is the our 'proper' way to prove the Riemann Hypothesis. It's already proven via multiple paths, but cleanup work remains before declaring it ready for review. 
+A cosh kernel cenetered at arcsin(1 / 2) maintaining a rotational symmetry point of sin(arcsin(1 / 2)) is our current 'proper' way to prove the Riemann Hypothesis. It's already proven via multiple paths, but cleanup work remains before declaring it ready for review. 
 
 
 ------------------------------------------------------------------------------------
