@@ -1,5 +1,6 @@
 import Mathlib
 import RequestProject.Defs
+import RequestProject.StripTheorem
 
 /-!
 # Critical Line Classifier via Robespierre Coordinate System
@@ -66,7 +67,7 @@ def phiPrime (p : ℕ) : ℝ := CircleNative.φ p
     The logarithmic frequency associated to prime p in the Robespierre system. -/
 def primeLogFreq (p : ℕ) : ℝ := CircleNative.u p
 
-/-- θ-native coefficient: a_p = π/6 · ((2π - 3)/π)^p.
+/-- θ-native coefficient: a_p = π/6 · (2(π - 3)/π)^p.
     The weight assigned to each prime in the θ-native kernel. -/
 def thetaCoeff (p : ℕ) : ℝ := CircleNative.a p
 
@@ -87,10 +88,10 @@ theorem thetaCoeff_eq_circle_a (p : ℕ) : thetaCoeff p = CircleNative.a p := by
   rfl
 
 /-- The coefficient simplifies to the geometric decay law
-    a_p = π/6 · ((2π - 3)/π)^p. -/
+    a_p = π/6 · (2(π - 3)/π)^p. -/
 theorem thetaCoeff_simplified (p : ℕ) :
     thetaCoeff p =
-      Real.pi / 6 * (((2 * Real.pi - 3) / Real.pi) ^ p) := by
+      Real.pi / 6 * ((2 * (Real.pi - 3) / Real.pi) ^ p) := by
   simp [thetaCoeff_eq_circle_a, CircleNative.a]
 
 /-- Finite θ-native kernel over a finite prime set, aligned with the
@@ -923,10 +924,10 @@ theorem strip_offline_rejected {σ : ℝ} (hσ : σ ≠ Real.sin theta)
     (_h0 : 0 < σ) (_h1 : σ < 1) : ¬ DetectorPasses σ :=
   no_offline_passes_detector hσ
 
-/-- **Bridge theorem**: The Robespierre critical value sin(θ) equals
-    the classical value 1/2. This confirms the coordinate systems agree
-    on which line is critical. -/
-theorem robespierre_classical_bridge :
-    Real.sin theta = 1 / 2 := sin_theta
+/-- On the Robespierre kernel axis `s = θ + it`, the finite kernel is
+    harmonically collapsed: its imaginary part vanishes. -/
+theorem robespierre_harmonic_collapse (P : ℕ) (t : ℝ) :
+    (CircleNative.ΞFinite P (↑theta + ↑t * Complex.I)).im = 0 := by
+  simpa [theta_eq_circle_theta] using CircleNative.XiFinite_theta_axis_im_eq_zero P t
 
 end

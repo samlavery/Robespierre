@@ -14,11 +14,12 @@ In the θ-native coordinate system the critical strip is
 -/
 open Complex CircleNative
 
-/-- The Robespierre zeta function: the Euler product over
-    θ-scaled primes φ(p) = 2θ·p where θ = arcsin(1/2). -/
+/-- The alternative Robespierre zeta function used for the classical bridge:
+    it is classical `riemannZeta` transported from the classical strip
+    `(0, 1)` to the θ-native strip `(0, 2θ)` by the linear rescaling
+    `σ ↦ σ / (2θ)` on real parts, keeping the height fixed. -/
 noncomputable def RobespierreZetaO (s : ℂ) : ℂ :=
-  ∏' p : {n : ℕ // n.Prime},
-    (1 - (2 * Real.arcsin (1 / 2) * (p : ℝ)) ^ (-s))⁻¹
+  riemannZeta ⟨s.re / (2 * θ), s.im⟩
 
 noncomputable def RobespierreZeta (s : ℂ) : ℂ :=
   CircleNative.ΞInfinite s

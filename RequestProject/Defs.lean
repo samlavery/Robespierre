@@ -28,8 +28,8 @@ theorem θ_eq : θ = Real.pi / 6 := by
 /-- The base φ(p) = 2θp for the kernel's exponential terms. -/
 def φ (p : ℕ) : ℝ := 2 * θ * p
 
-/-- The coefficient a(p) = π/6 · ((2π - 3)/π)^p. -/
-def a (p : ℕ) : ℝ := Real.pi / 6 * (((2 * Real.pi - 3) / Real.pi) ^ p)
+/-- The coefficient a(p) = π/6 · (2(π - 3)/π)^p. -/
+def a (p : ℕ) : ℝ := Real.pi / 6 * ((2 * (Real.pi - 3) / Real.pi) ^ p)
 
 /-- The frequency u(p) = log(φ(p)) = log(2θp). -/
 def u (p : ℕ) : ℝ := Real.log (φ p)
@@ -100,8 +100,8 @@ theorem u_strictMono_on_primes {p q : ℕ} (hp : Nat.Prime p) (_hq : Nat.Prime q
 /-- The kernel coefficient `a(p)` is always nonnegative. -/
 theorem a_nonneg (p : ℕ) : 0 ≤ a p := by
   unfold a
-  have hbase_nonneg : 0 ≤ (2 * Real.pi - 3) / Real.pi := by
-    have hnum : 0 ≤ 2 * Real.pi - 3 := by
+  have hbase_nonneg : 0 ≤ 2 * (Real.pi - 3) / Real.pi := by
+    have hnum : 0 ≤ 2 * (Real.pi - 3) := by
       linarith [Real.pi_gt_three]
     exact div_nonneg hnum Real.pi_pos.le
   exact mul_nonneg (by positivity) (pow_nonneg hbase_nonneg _)
@@ -109,11 +109,28 @@ theorem a_nonneg (p : ℕ) : 0 ≤ a p := by
 /-- The kernel coefficient is strictly positive for every input `p ≥ 2`. -/
 theorem a_pos_of_two_le {p : ℕ} (_hp : 2 ≤ p) : 0 < a p := by
   unfold a
-  have hbase : 0 < (2 * Real.pi - 3) / Real.pi := by
-    have hnum : 0 < 2 * Real.pi - 3 := by
+  have hbase : 0 < 2 * (Real.pi - 3) / Real.pi := by
+    have hnum : 0 < 2 * (Real.pi - 3) := by
       linarith [Real.pi_gt_three]
     exact div_pos hnum Real.pi_pos
   exact mul_pos (by positivity) (pow_pos hbase _)
+
+/-- The coefficient decay base lies strictly below `1`. -/
+theorem a_base_lt_one : 2 * (Real.pi - 3) / Real.pi < 1 := by
+  have hnum : 2 * (Real.pi - 3) < Real.pi := by
+    linarith [Real.pi_lt_four]
+  exact (div_lt_one Real.pi_pos).2 hnum
+
+/-- The coefficient sequence is summable by geometric decay. -/
+theorem a_summable : Summable a := by
+  unfold a
+  simpa [mul_comm, mul_left_comm, mul_assoc] using
+    (summable_geometric_of_lt_one
+      (show 0 ≤ 2 * (Real.pi - 3) / Real.pi by
+        have hnum : 0 ≤ 2 * (Real.pi - 3) := by
+          linarith [Real.pi_gt_three]
+        exact div_nonneg hnum Real.pi_pos.le)
+      a_base_lt_one).mul_left (Real.pi / 6)
 
 /-! ## Finite and infinite kernels -/
 
@@ -174,6 +191,30 @@ theorem isConnected_stripMinus {ε δ : ℝ} (hεδ : ε < δ) : IsConnected (St
 /-- The critical line sum C_P(t) = ∑_{p ≤ P} a_p · cos(t · u_p). -/
 def CriticalLineSum (P : ℕ) (t : ℝ) : ℝ :=
   ∑ p ∈ primesBelow P, a p * Real.cos (t * u p)
+
+/-- The infinite critical-line harmonic sum
+    `C_∞(t) = ∑_p a_p · cos(t · u_p)`. -/
+def CriticalLineSumInf (t : ℝ) : ℝ :=
+  ∑' p, if Nat.Prime p then a p * Real.cos (t * u p) else 0
+
+/-- The prime-filtered coefficient series is summable. -/
+theorem prime_weight_summable : Summable (fun p : ℕ => if Nat.Prime p then a p else 0) := by
+  refine Summable.of_nonneg_of_le (fun p => by split_ifs <;> simp [a_nonneg]) (fun p => ?_) a_summable
+  split_ifs with hp <;> simp [a_nonneg]
+
+/-- The infinite critical-line harmonic sum is absolutely convergent. -/
+theorem criticalLineSumInf_summable (t : ℝ) :
+    Summable (fun p : ℕ => if Nat.Prime p then a p * Real.cos (t * u p) else 0) := by
+  apply Summable.of_norm_bounded
+  · exact prime_weight_summable
+  · intro p
+    by_cases hp : Nat.Prime p
+    · rw [if_pos hp, if_pos hp]
+      have hcos : |Real.cos (t * u p)| ≤ 1 := abs_cos_le_one (t * u p)
+      rw [Real.norm_eq_abs]
+      rw [abs_mul, abs_of_nonneg (a_nonneg p)]
+      simpa [mul_comm] using mul_le_mul_of_nonneg_left hcos (a_nonneg p)
+    · simp [hp]
 
 /-- The real off-axis observable coming from the finite kernel decomposition. -/
 def OffAxisRealObservable (P : ℕ) (x t : ℝ) : ℝ :=

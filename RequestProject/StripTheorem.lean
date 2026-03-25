@@ -590,12 +590,93 @@ theorem offline_decomposition_observables (P : ℕ) (x t : ℝ) :
   rw [offline_decomposition]
   simp [OffAxisRealObservable, OffAxisImagObservable]
 
+/-- On the kernel axis `s = θ + it`, the infinite Robespierre kernel is
+    exactly twice the infinite harmonic cosine sum. -/
+theorem ΞInfinite_theta_axis_eq_real (t : ℝ) :
+    ΞInfinite (↑θ + ↑t * Complex.I) = 2 * ↑(CriticalLineSumInf t) := by
+  unfold ΞInfinite CriticalLineSumInf
+  calc
+    (∑' p : ℕ,
+        if Nat.Prime p then
+          (↑(a p) : ℂ) * (cpowBase p ((↑θ + ↑t * Complex.I) - ↑θ) + cpowBase p (-(((↑θ + ↑t * Complex.I) - ↑θ))))
+        else 0)
+      =
+        ∑' p : ℕ, if Nat.Prime p then (2 : ℂ) * ↑(a p * Real.cos (t * u p)) else 0 := by
+          apply tsum_congr
+          intro p
+          by_cases hp : Nat.Prime p
+          · simp only [if_pos hp]
+            have hmul' : ↑t * Complex.I * ↑(Real.log (φ p)) = ↑(t * u p) * Complex.I := by
+              simp [u]
+              ring
+            have hmul_neg'' : (-(↑t * Complex.I)) * ↑(Real.log (φ p)) = ↑(-(t * u p)) * Complex.I := by
+              simp [u]
+              ring
+            rw [show ((↑θ + ↑t * Complex.I) - ↑θ : ℂ) = ↑t * Complex.I by ring]
+            unfold cpowBase
+            rw [hmul', hmul_neg'', Complex.exp_mul_I, Complex.exp_mul_I]
+            simp [Complex.ofReal_mul, Complex.ofReal_cos, Complex.ofReal_sin, Real.cos_neg, Real.sin_neg]
+            ring
+          · simp [hp]
+    _ = ∑' p : ℕ, (2 : ℂ) * (if Nat.Prime p then ↑(a p) * Complex.cos (↑t * ↑(u p)) else 0) := by
+          apply tsum_congr
+          intro p
+          by_cases hp : Nat.Prime p <;> simp [hp]
+    _ = (2 : ℂ) * ∑' p : ℕ, if Nat.Prime p then ↑(a p) * Complex.cos (↑t * ↑(u p)) else 0 := by
+          let g : ℕ → ℂ := fun p => if Nat.Prime p then ↑(a p) * Complex.cos (↑t * ↑(u p)) else 0
+          let gR : ℕ → ℝ := fun p => if Nat.Prime p then a p * Real.cos (t * u p) else 0
+          have hg : g = fun p => (gR p : ℂ) := by
+            funext p
+            by_cases hp : Nat.Prime p <;> simp [g, gR, hp, Complex.ofReal_cos, mul_assoc]
+          have hs : Summable g := by
+            rw [hg]
+            exact (Complex.summable_ofReal).2 (criticalLineSumInf_summable t)
+          simpa [g] using hs.tsum_mul_left (2 : ℂ)
+    _ = 2 * ↑(∑' p : ℕ, if Nat.Prime p then a p * Real.cos (t * u p) else 0) := by
+          let gR : ℕ → ℝ := fun p => if Nat.Prime p then a p * Real.cos (t * u p) else 0
+          let g : ℕ → ℂ := fun p => if Nat.Prime p then ↑(a p) * Complex.cos (↑t * ↑(u p)) else 0
+          have hg : g = fun p => (gR p : ℂ) := by
+            funext p
+            by_cases hp : Nat.Prime p <;> simp [g, gR, hp, Complex.ofReal_cos, mul_assoc]
+          change (2 : ℂ) * ∑' p : ℕ, g p = 2 * ↑(∑' p : ℕ, gR p)
+          rw [hg]
+          congr 1
+          simpa [gR] using (Complex.ofReal_tsum gR).symm
+
+/-- On the kernel axis, an infinite Robespierre kernel zero is exactly a zero
+    of the infinite harmonic cosine sum. -/
+theorem ΞInfinite_theta_axis_zero_iff (t : ℝ) :
+    ΞInfinite (↑θ + ↑t * Complex.I) = 0 ↔ CriticalLineSumInf t = 0 := by
+  constructor
+  · intro hz
+    rw [ΞInfinite_theta_axis_eq_real] at hz
+    have hre := congrArg Complex.re hz
+    simp at hre
+    linarith
+  · intro hsum
+    rw [ΞInfinite_theta_axis_eq_real, hsum]
+    simp
+
 /-- On the kernel axis `s = θ + it`, the finite Robespierre kernel is purely
     real and equals twice the critical-line sum. -/
 theorem XiFinite_theta_axis_eq_real (P : ℕ) (t : ℝ) :
     ΞFinite P (↑θ + ↑t * Complex.I) = 2 * ↑(CriticalLineSum P t) := by
   simpa [offAxisRealObservable_axis, offAxisImagObservable_axis] using
     (offline_decomposition_observables P 0 t)
+
+/-- On the kernel axis, a finite Robespierre kernel zero is exactly a zero of
+    the harmonic cosine sum. This is the finite harmonic-collapse criterion. -/
+theorem XiFinite_theta_axis_zero_iff (P : ℕ) (t : ℝ) :
+    ΞFinite P (↑θ + ↑t * Complex.I) = 0 ↔ CriticalLineSum P t = 0 := by
+  constructor
+  · intro hz
+    rw [XiFinite_theta_axis_eq_real] at hz
+    have hre := congrArg Complex.re hz
+    simp at hre
+    linarith
+  · intro hsum
+    rw [XiFinite_theta_axis_eq_real, hsum]
+    simp
 
 /-- On the kernel axis `s = θ + it`, the finite Robespierre kernel has zero
     imaginary part. This is the explicit harmonic cancellation identity. -/

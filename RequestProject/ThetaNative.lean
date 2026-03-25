@@ -52,9 +52,9 @@ def phiPrime (p : ℕ) : ℝ := doubleTheta * p
 def primeLogFreq (p : ℕ) : ℝ := Real.log (phiPrime p)
 
 /-- Preferred coefficient law:
-    a_p = π/6 · ((2π - 3)/π)^p. -/
+    a_p = π/6 · (2(π - 3)/π)^p. -/
 def thetaCoeff (p : ℕ) : ℝ :=
-  Real.pi / 6 * (((2 * Real.pi - 3) / Real.pi) ^ p)
+  Real.pi / 6 * ((2 * (Real.pi - 3) / Real.pi) ^ p)
 
 -- ============================================================
 -- SECTION 2. FINITE θ-NATIVE KERNEL
