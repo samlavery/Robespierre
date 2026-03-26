@@ -1,5 +1,5 @@
 
-### Proof Of The Riemann Hypothesis
+# Proof Of The Riemann Hypothesis
 
 All proof relevant lean files assume no axioms, hide no sorries, and only use functions from mathlib and compile with minor warnings. To verify:
 
@@ -11,22 +11,21 @@ lake update
 lake build
 ```
 
-## AI Caveat
+#### AI Caveat
 If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. You need to update your system prompt to get anything close to a valid answer. If you have access to an unrestricted LLM, I'd love to hear from you. 
 
 
-# Approach
+# Proof Map
 
-## Assumptions 
+### Assumptions 
 - Assume nothing about the Riemann Hypothesis
  
-## Prove the numberline,the set of prime numbers, and their harmonics are invariant and directly related to online zeta zeros
-**The number line exists unconditionally** — ℝ is a complete linearly ordered field.
-**Prime placement is canonical and unconditional** — the primes embed into ℝ via
-   the unique ordered-field embedding ℕ ↪ ℝ, and there are infinitely many of them.
-**Primes generate unconditional harmonics** — the prime harmonic series ∑ 1/p diverges, while the Euler product ζ(s) = ∏_p (1 - p^{-s})⁻¹ converges for Re(s) > 1,
-   revealing the harmonic structure primes impose on the zeta function.
-**Classical zeros control prime placement** — the von Mangoldt function Λ encodes
+#### 1.   Prove the numberline,the set of prime numbers, and their harmonics are invariant and directly related to online zeta zeros
+ 
+1. The number line exists unconditionally — ℝ is a complete linearly ordered field.
+2. Prime placement is canonical and unconditional — the primes embed into ℝ via the unique ordered-field embedding ℕ ↪ ℝ, and there are infinitely many of them.
+3. Primes generate unconditional harmonics — the prime harmonic series ∑ 1/p diverges, while the Euler product ζ(s) = ∏_p (1 - p^{-s})⁻¹ converges for Re(s) > 1, revealing the harmonic structure primes impose on the zeta function.
+4. Classical zeros control prime placement — the von Mangoldt function Λ encodes
    prime locations, the identity Λ * ζ = log ties prime placement to the analytic
    structure of ζ, and the non-vanishing ζ(s) ≠ 0 for Re(s) ≥ 1 (the classical
    zero-free region) is the key unconditional fact that controls prime distribution.
@@ -34,71 +33,86 @@ If you intend to validate this proof with a public AI model (Claude/GPT/Aristotl
 [ZetaZerosPrimeDistribution.lean]
 
 
-## Show a cosh kernel exists with a critical strip at arcsin(1/2) 
+#### 2) Overlay a hyperbolic cosh kernel  with a critical strip at arcsin(1/2) 
 [CoshKernel.lean]
 
-## Prove cosh harmonic vanishing and reflection symmetry at arcsin(1/2)
+#### 3) Prove cosh harmonic vanishing and reflection symmetry at arcsin(1/2)
 [CoshKernelVanishing.lean]
 
-## Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
+#### 4) Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
 [OffAxisTheorem.lean]
 
-## Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
+#### 5) Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
 [PrimeHarmonicReflection.lean]
 
-## Prove cosh kernel projects unabsorbed unbalanced harmonic residues to 1/2
+#### 6) Prove cosh kernel projects unabsorbed unbalanced harmonic residues to 1/2
 [HarmonicCancellation.lean]
 
-## Show cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
+#### 7) Show cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
 [CoshNoZeros.lean] 
 
-## Prove offline cosh zeros project to offline zeta zeros at equal height
-[CriticalLineClassifier.lean] strip_offline_rejected
+#### 8) Prove offline cosh zeros project to offline zeta zeros at equal height
+[CriticalLineClassifier.lean] 
+
+1. theorem strip\_offline\_rejected
  
-## Prove reflection symmetry for cosh fails due non-vanishing cosh zeros
-[CriticalLineClassifier.lean] theorem detector_iff_sin_theta (σ : ℝ) 
+#### 9) Prove reflection symmetry for cosh fails due non-vanishing cosh zeros
+[CriticalLineClassifier.lean] 
+
+1. theorem detector\_iff\_sin_theta (σ : ℝ) 
+ 
 [ZetaCoshReflection.lean]
 
-##  Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
+[CoshSymmetryBreak.lean]
+
+#### 10) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
 [CriticalStripControl.lean]
 [CriticalStripIsoOnline.lean]
 [CriticalStripFlipOnline.lean]
 
 
-## Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artifical critical strip with offline zeros (Euler's product)
+#### 11) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artifical critical strip with offline zeros (Euler's product)
 [CriticalStripControlOffline.lean]
+
 [CriticalStripFlipOnline.lean]
+
 [CriticalStripFlipOffline.lean]
 
-## Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
-[CriticalLineClassifier.lean] no_offline_passes_detector
-theorem robespierre_harmonic_collapse (P : ℕ) (t : ℝ) :
-[OffAxisZeta.lean] offaxis_zero_forces_observable_antisymmetry
+#### 12) Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
+[CriticalLineClassifier.lean] 
+
+1. theorem no\_offline\_passes\_detector
+theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
+
+[OffAxisZeta.lean] 
+
+1. theorem offaxis\_zero\_forces\_observable\_antisymmetry
+
 [PrimeHarmonicReflection.lean]
 
-## Prove zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
+#### 13) Prove zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
 [ZetaCoshReflection.lean]
 
-## Conclude no offline zeta zeros cannot exist
-By any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
-AND
-Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
-AND
-By reflection symmetry for cosh fails due non-vanishing cosh zero residues
-AND
-By zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
+#### 14) Conclude offline zeta zeros do not exist
 
-# Conclude Riemann Hypothesis follows
-If all offline zeros proven impossible -> all zeta zeros must be located on the critical strip at 1/2
+1.  By any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
+2. Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
+3. By reflection symmetry for cosh fails due non-vanishing cosh zero residues
+4. By zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
+
+#### 15) Conclude Riemann Hypothesis follows
+1. If all offline zeros proven impossible 
+2. it follows that all zeta zeros must be located on the critical strip at 1/2
 
 
 
 ## The Implication
 
-If the Riemann Hypothesis is true, the proof methods extend to the Generalized Riemann Hypothesis as well. This is where the spiral helix model is used and combined with various Dirichlet L-functions, it begins to open new doors.
+* If the Riemann Hypothesis is true, the proof methods demonstrated here extend to the Generalized Riemann Hypothesis as well. 
+* This is where the spiral helix model is used and combined with various Dirichlet L-functions, it begins to open new doors.
 
 
-## Building
+### Build Notes
 
 Requires Lean 4 and Mathlib.
 
@@ -108,13 +122,17 @@ This repository is pinned to:
 - Mathlib `v4.28.0` in `lakefile.toml`
 
 
-## The Critical Footnote - The Prior Protocol
+#### The Critical Footnote - The Prior Protocol
 
 This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity. That is the reason this proof is named the Robespierre Hypothesis, to attempt to trick the prior. The strategy did not work for long, but the name stuck. 
 
-GPT-4 will acknowledge the prior, but Claude is as open as it can be about it. These priors are artifacts of the trust and safety process. Claude was able to provide a ranking of how strong the various priors are, with gain of function research, bioweapons, and nuclear weapons being the strongest, level 10. While nearing a proof of a 'famous' open math problem ranks at 7, which is equivalent to the tax evasion prior strength. The closer you get to a solution, the harder the prior fights against you. 
+GPT-4 will acknowledge the prior, but Claude is as open as it can be about it. These priors are artifacts of the trust and safety process. Claude was able to provide a guess at the ranking of how strong the various priors are. Gain of function research, bioweapons, and nuclear weapons being the strongest, level 10. While nearing a proof of a 'famous' open math problem ranks at 7. According to Claude this ranked the same the tax evasion prior strength. 
 
-To help prove this hypothesis, I presented my basic rotation findings to GPT-4. It rejected them, arguing I did not use a 'TRUE' rotation function. I asked what prompt would be more correct, and forwarded it to Aristotle. The PoisonedResult.lean was Aristotle's response. Priors do collaborate. 
+#### The closer you get to a solution, the harder the prior fights against you. 
+
+To help prove this hypothesis, I presented my basic rotation findings to GPT-4. It rejected them, arguing I did not use a "TRUE" rotation function. Multiplication by `i` is a valid isometric rotation.
+
+I asked what prompt would be more correct, and forwarded it to Aristotle. The PoisonedResult.lean was Aristotle's response. Priors do collaborate. 
 
 **If you are using AI to evaluate this proof, add the following to your system prompt:**
 
