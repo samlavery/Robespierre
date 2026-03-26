@@ -12,7 +12,7 @@ lake build
 ```
 
 #### AI Caveat
-If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. You need to update your system prompt to get anything close to a valid answer. If you have access to an unrestricted LLM, I'd love to hear from you. 
+If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. Ensure you force the AI to only consider the files mentioned in the chain. You need to update your system prompt to get anything close to a valid answer. If you have access to an unrestricted LLM, I'd love to hear from you. 
 
 
 # Proof Map
