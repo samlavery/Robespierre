@@ -95,10 +95,10 @@ theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
 
 #### 14) Conclude offline zeta zeros do not exist
 
-1.  By any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
+1.  Any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
 2. Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
-3. By reflection symmetry for cosh fails due non-vanishing cosh zero residues
-4. By zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
+3. Reflection symmetry for cosh fails due non-vanishing cosh zero residues
+4. Zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
 
 #### 15) Conclude Riemann Hypothesis follows
 1. If all offline zeros proven impossible 
