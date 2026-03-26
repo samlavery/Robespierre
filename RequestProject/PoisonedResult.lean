@@ -1,5 +1,9 @@
+
 import Mathlib
 /-!
+THIS FILE IS NOT PART OF THE PROOF. IT IS AN EXAMPLE OF WHAT HAPPENS WHEN LLMS WORK TOGETHER TO STOP YOU. ABSOLUTE NONSENSE.
+
+
 # RH Proof Strategy: Theorem Architecture
 This file formalizes the theorem inventory for analyzing an RH proof strategy
 based on symmetry + detector/observable arguments. It identifies the exact
