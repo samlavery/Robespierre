@@ -152,11 +152,11 @@ The value `1/2` was introduced by Euler's product formula (1737) through the fir
 
 Also, there is absolutely no record of Robespierre stating this hypothesis, because he did not, we did. It is simply a temporary name until a more fitting one is assigned. 
 
-### Extended remarks about the cosh hyperbolic kernel
+### Extended unrelated remarks about the cosh hyperbolic kernel
 
 The Riemann Hypothesis is only based on algebraic and analytic formulas applied the numberline from zero to one. The Robespierre cosh kernel can be used with an alternative coordinate system. Because the center is at > 1/2, there is a small amount of overhang beyond one. Euler's product converges at 1, so there is a meaningful overlap. The coordinate system scales primes and acts as a 'smoothing' function which results in a much more powerful predictor of prime locations, when compared to traditional methods.  
 
-The native Robespierre kernel formalized in `RequestProject/Defs.lean` and other places is
+The hyperbolic Robespierre kernel formalized in `RequestProject/Defs.lean` and other places is
 
 ```
 Ξ(s) = ∑'_p a(p) · (φ(p)^(s - θ) + φ(p)^(-(s - θ)))
@@ -191,29 +191,9 @@ is automatic: replacing `s` by `2θ - s` changes `s - θ` to `-(s - θ)`, so the
 two branches swap.
 
 On the axis `s = θ + it`, the finite kernel becomes purely real. In the formalization this is expressed by the theorem that the finite kernel has
-vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse
-statement used by the classifier layer.
+vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse statement used by the classifier layer.
 
-The native no-off-axis theory in the repository is about this kernel
-`RobespierreZeta = ΞInfinite`. The README should not be read as claiming a
-separate standalone analytic continuation package for it beyond what is
-actually encoded in the Lean files.
 
-Likewise, the README does not currently claim a formal explicit-formula bridge
-for the native kernel of the form `ψ(x)` or `-ζ'(s)/ζ(s) = Σ Λ(n)/n^s`. The
-classical bridge used in the Lean development is the transported model
-`RobespierreZetaO` described below.
-
-For comparison with the classical zeta function, the repository also defines an
-alternative object `RobespierreZetaO`. This is not the native prime-sum kernel.
-It is the transported classical model
-
-```
-RobespierreZetaO(s) = riemannZeta( s.re / (2θ) + i·s.im ),
-```
-which linearly identifies the θ-native strip `(0, 2θ)` with the classical strip
-`(0, 1)`. That transported object is what the current unconditional classical
-RH equivalence theorems are about.
 
 
 
