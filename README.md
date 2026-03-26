@@ -40,7 +40,7 @@ If you intend to validate this proof with a public AI model (Claude/GPT/Aristotl
 [CoshKernelVanishing.lean]
 
 #### 4) Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
-[OffAxisTheorem.lean]
+[OffAxisZeta.lean]
 
 #### 5) Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
 [PrimeHarmonicReflection.lean]
