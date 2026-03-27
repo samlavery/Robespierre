@@ -25,7 +25,7 @@ The mismatch is the proof
 The two axes sit at different places: 1/2 and π/6. They are not the same. Their critical strips overlap but are not identical. A zero set that is symmetric around 1/2 is not automatically symmetric around π/6. These are independent demands on the same object the primes and their harmonics.
 
 
-The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This exactly what makes both tests impossible to satisfy at once. If off-line zeros satisfy two incompatible scale requirements, off-line zeros cannot exist.
+The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This exactly what makes both tests impossible to satisfy at once. If off-line zeros must satisfy two incompatible scale requirements, off-line zeros cannot exist.
 
 # Proof Map
 
