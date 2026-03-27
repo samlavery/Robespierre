@@ -350,4 +350,17 @@ theorem dual_invariance_forces_empty (S : Set ℂ)
   ⟨no_dual_symmetric_set S hstrip h1 h2,
    closure_dual_invariant_empty S hstrip h1 h2⟩
 
+
+
+theorem mathlib_RH_of_no_offaxis_zeros
+  (closure_dual_invariant_empty :
+    ∀ s : ℂ,
+      riemannZeta s = 0 →
+      (¬∃ n : ℕ, s = -2 * (↑n + 1)) →
+      s ≠ 1 →
+      s.re ≠ 1 / 2 →
+      False) :
+  RiemannHypothesis :=
+  fun s hs htriv hone => by_contra (closure_dual_invariant_empty s hs htriv hone)
+
 end
