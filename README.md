@@ -63,39 +63,25 @@ The conspiracy passes one test. The second test, operating at a different axis w
 
 #### 7) Show cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
 [CoshNoZeros.lean] 
-
-#### 8) Prove offline cosh zeros project to offline zeta zeros at equal height
-[CriticalLineClassifier.lean] 
-
-1. theorem strip\_offline\_rejected
  
-#### 9) Prove reflection symmetry for cosh fails due non-vanishing cosh zeros
-[CriticalLineClassifier.lean] 
-
-1. theorem detector\_iff\_sin_theta (σ : ℝ) 
- 
+#### 8) Prove reflection symmetry for cosh fails due non-vanishing cosh zeros
 [ZetaCoshReflection.lean]
-
 [CoshSymmetryBreak.lean]
 
-#### 10) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
+#### 9) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
 [CriticalStripControl.lean]
 [CriticalStripIsoOnline.lean]
 [CriticalStripFlipOnline.lean]
 
 
-#### 11) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artifical critical strip with offline zeros (Euler's product)
+#### 10) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artifical critical strip with offline zeros (Euler's product)
 [CriticalStripControlOffline.lean]
 
 [CriticalStripFlipOnline.lean]
 
 [CriticalStripFlipOffline.lean]
 
-#### 12) Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
-[CriticalLineClassifier.lean] 
-
-1. theorem no\_offline\_passes\_detector
-theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
+#### 11) Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
 
 [OffAxisZeta.lean] 
 
@@ -103,10 +89,10 @@ theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
 
 [PrimeHarmonicReflection.lean]
 
-#### 13) Prove zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
+#### 12) Prove zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
 [ZetaCoshReflection.lean]
 
-#### 14) Conclude offline zeta zeros do not exist
+#### 13) Conclude offline zeta zeros do not exist
 [DualReflectionImpossibility.lean]
 
 1.  Any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
@@ -114,7 +100,7 @@ theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
 3. Reflection symmetry for cosh fails due non-vanishing cosh zero residues
 4. Zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
 
-#### 15) Conclude Riemann Hypothesis follows
+#### 14) Conclude Riemann Hypothesis follows
 1. If all offline zeros proven impossible 
 2. it follows that all zeta zeros must be located on the critical strip at 1/2
 
