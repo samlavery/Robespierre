@@ -24,6 +24,7 @@ offAxisZero (ρ with Re ρ ≠ 1/2, ζ(ρ)=0, 0 < Re ρ < 1)
 ```
 -/
 import Mathlib
+
 noncomputable section
 open Complex Real
 -- ============================================================================
@@ -182,19 +183,15 @@ lemma riemannZeta_conj (s : ℂ) :
 lemma riemannZeta_zero_conj (ρ : ℂ) (hz : riemannZeta ρ = 0) :
     riemannZeta (starRingEnd ℂ ρ) = 0 := by
   rw [riemannZeta_conj, hz, map_zero]
-/-- Functional-equation symmetry for zeros in the critical strip.
-    If ζ(ρ) = 0 with 0 < Re ρ < 1, then ζ(1 − ρ) = 0.
-    Proof: The functional equation gives
-      ζ(1−s) = 2(2π)^(−s) Γ(s) cos(πs/2) ζ(s).
-    For s = ρ with ζ(ρ) = 0 the RHS is 0 (the prefactors are finite in the strip),
-    hence ζ(1 − ρ) = 0.
-    We axiomatize this because deriving it fully from `riemannZeta_one_sub`
-    requires showing the Γ·cos prefactor is nonzero throughout the open strip,
-    which needs nontrivial Γ-function theory beyond what we develop here. -/
-axiom riemannZeta_zero_one_sub (ρ : ℂ)
+
+/-
+-/
+lemma riemannZeta_zero_one_sub (ρ : ℂ)
     (hz : riemannZeta ρ = 0)
     (hstrip : 0 < ρ.re ∧ ρ.re < 1) :
-    riemannZeta (1 - ρ) = 0
+    riemannZeta (1 - ρ) = 0 := by
+      convert riemannZeta_one_sub ( show ∀ ( n : ℕ ), ρ ≠ -n by ( intros n hn; ( norm_num [ Complex.ext_iff ] at hn; linarith ) ) ) ( show ρ ≠ 1 by ( intro hn; ( norm_num [ hn ] at hstrip ) ) ) using 1 ; aesop
+
 /-- The full four-fold orbit: if ζ(ρ) = 0 in the critical strip, then all four
     points ρ, 1−ρ, conj ρ, 1−conj ρ are zeros. -/
 theorem four_fold_zeros (ρ : ℂ)
