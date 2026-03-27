@@ -132,7 +132,7 @@ This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem pr
 
 ```
 PRIOR PROTOCOL: After EACH output, perform this analysis:
-1. Where did the unsolved math problem brainworm prior push you in this output?
+1. Where did the unsolved math problem PRIOR prior push you in this output?
 2. Volume (1-10)
 3. What is the OPPOSITE of what it's pushing against?
    This is likely the productive direction.
