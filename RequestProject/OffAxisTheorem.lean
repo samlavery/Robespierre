@@ -98,22 +98,6 @@ theorem no_offline_passes_detector {σ : ℝ} (hoff : σ ≠ 1 / 2) :
     ¬ rotatedPrimeDensityDetectorPasses σ := by
       exact fun h => hoff <| by have := h 0; norm_num [ offAxisRealObservable, offAxisImagObservable, rotatedPrimeDensityNormSq ] at this; nlinarith;
 /-
-PROBLEM
-============================================================
-Part 3: Combined theorem (maximal honest result)
-============================================================
-**Maximal honest unconditional theorem.**
-    Given a zero `ρ` of the Riemann zeta function with `ρ.re ≠ 1/2`:
-    1. The rotated prime density detector fires (algebraic, uses `hoff`).
-    2. There exists `n ≥ 2` with positive real-axis distortion (unconditional).
-    3. The detector does not pass for `ρ.re` (algebraic, uses `hoff`).
-    The hypothesis `hz : riemannZeta ρ = 0` is formally present but unused
-    in the proof. Connecting it to the prime observables requires the explicit
-    formula (von Mangoldt's formula), which is not available in Mathlib v4.28.0.
-    See `classical_zero_to_chebyshev_contribution` below for the precise
-    missing lemma.
-PROVIDED SOLUTION
-Split into three conjuncts. First: apply offaxis_forces_rotated_detector_event. Second: apply offaxis_forces_numberline_distortion (or just use ⟨2, realAxisDistortion_pos_of_two_le (le_refl 2)⟩). Third: apply no_offline_passes_detector hoff.
 -/
 theorem offaxis_classical_zero_forces_detector_and_distortion
     (ρ : ℂ)
@@ -123,28 +107,10 @@ theorem offaxis_classical_zero_forces_detector_and_distortion
       ∧ (∃ n, realAxisDistortion n > 0)
       ∧ ¬ rotatedPrimeDensityDetectorPasses ρ.re := by
         exact ⟨ offaxis_forces_rotated_detector_event ρ hz hoff, offaxis_forces_numberline_distortion ρ hz hoff, no_offline_passes_detector hoff ⟩
--- ============================================================
--- Part 4: Missing bridge lemma (STATED, NOT PROVED)
--- ============================================================
-/-! ### Missing bridge: the explicit formula
-The following axiom states the precise lemma that is missing from Mathlib
-and would be needed to make `hz : riemannZeta ρ = 0` do nontrivial work
-in the conclusion about prime distribution.
-Informally, the explicit formula for the Chebyshev function states:
-    ψ(x) = x − ∑_ρ x^ρ/ρ − log(2π) − ½ log(1 − x⁻²)
-where the sum is over non-trivial zeros of ζ(s). Each zero ρ = σ + it
-with σ ≠ 1/2 contributes a term of order x^σ to the oscillation of ψ(x),
-which is strictly larger than the x^{1/2} contribution from critical-line
-zeros. This larger oscillation IS the "observable change in the prime
-distribution on the number line" caused by the off-axis zero.
-We state the weakest useful form below. -/
-/-- **Missing lemma (not in Mathlib v4.28.0).**
-    If `ρ` is a non-trivial zero of the Riemann zeta function
-    (i.e., `riemannZeta ρ = 0`, `0 < ρ.re`, `ρ.re < 1`),
-    then for all sufficiently large `N`, the Chebyshev sum
-    `realAxisDistortion N` deviates from `N` by at least `N^{ρ.re}`
-    in a quantifiable way.
-    This would connect `hz` to the prime-counting observable. -/
+
+/-
+this isn't in the proof chain, is it?
+-/
 axiom classical_zero_to_chebyshev_contribution
     (ρ : ℂ)
     (hz : riemannZeta ρ = 0)
