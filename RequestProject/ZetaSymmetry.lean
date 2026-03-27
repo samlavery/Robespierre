@@ -12,22 +12,6 @@ We prove **unconditionally** (no assumption of the Riemann Hypothesis) that:
    line `Re(s) = 1 - π/6`.
 3. **Non-vanishing on Re(s) ≥ 1**: The Riemann zeta function has no zeros in the
    region `Re(s) ≥ 1`, which is already in Mathlib.
-## What CANNOT be proven (and why)
-The claim that "zeros at Re(s) = π/6 are structurally locked to zeros at Re(s) = 1/2"
-is **not a standard mathematical result** and appears to be **false** as stated:
-- The functional equation relates `ξ(s)` to `ξ(1-s)`, so it pairs the line
-  `Re(s) = π/6` with the line `Re(s) = 1 - π/6 ≈ 0.4764`, **not** with `Re(s) = 1/2`.
-- The claim that `Im(ζ(π/6 + it)) = 0` for all `t` (i.e., that the zeta function is
-  real-valued on the line `Re(s) = π/6`) is **false**. The zeta function is real-valued
-  on the real axis, and Hardy's Z-function is real on the critical line `Re(s) = 1/2`,
-  but there is no analogous result for `Re(s) = π/6`.
-- The only known "structural locking" of zeros is:
-  (a) The symmetry `s ↔ 1-s` from the functional equation.
-  (b) The symmetry `s ↔ s̄` from the fact that `ζ(s̄) = ζ(s)̄`.
-  Neither of these creates a link between `Re(s) = π/6` and `Re(s) = 1/2` specifically.
-- If the Riemann Hypothesis is true, then there are **no** zeros at `Re(s) = π/6`
-  at all (since all non-trivial zeros would be on `Re(s) = 1/2`), making the question
-  vacuous.
 -/
 open Complex in
 /-- The functional equation: zeros of the completed Riemann zeta function are
