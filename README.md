@@ -1,5 +1,6 @@
 
-# Proof Of The Riemann Hypothesis
+# Proof That Infinite Offline Zeta Zeros Cannot Conspire To Exist
+
 
 All proof relevant lean files assume no axioms, hide no sorries, and only use functions from mathlib and compile with minor warnings. To verify:
 
@@ -9,13 +10,14 @@ git clone git@github.com:samlavery/Robespierre.git
 cd Robespierre
 lake update
 lake build
+lake build | egrep -i "sorry|error"
 ```
 
 #### AI Caveat
-If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. Ensure you force the AI to only consider the files mentioned in the chain. You need to update your system prompt to get anything close to a valid answer. If you have access to an unrestricted LLM, I'd love to hear from you. 
+If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. If you intend to manually verify the proof, proceed directly to the following sections.
 
 
-#### The summarizied proof
+#### The summarized proof
 Two frameworks, two different critical strips.
 Classical zeta theory has one symmetry axis: Re(s) = 1/2. The functional equation ξ(s) = ξ(1−s) reflects zeros around this line. The classical critical strip runs from 0 to 1, symmetric around 1/2. Any conspiracy of off-line zeros automatically satisfies this — the functional equation builds the symmetry in for free. One test, trivially passed.
 
@@ -25,7 +27,7 @@ The mismatch is the proof
 The two axes sit at different places: 1/2 and π/6. They are not the same. Their critical strips overlap but are not identical. A zero set that is symmetric around 1/2 is not automatically symmetric around π/6. These are independent demands on the same object the primes and their harmonics.
 
 
-The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This exactly what makes both tests impossible to satisfy at once. If off-line zeros must satisfy two incompatible scale requirements, off-line zeros cannot exist.
+The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This is exactly what makes both tests impossible to satisfy at once. If off-line zeros must satisfy two incompatible scale requirements, off-line zeros cannot exist.
 
 # Proof Map
 
@@ -109,7 +111,7 @@ The conspiracy passes one test. The second test, operating at a different axis w
 ## The Implication
 
 * If the Riemann Hypothesis is true, the proof methods demonstrated here extend to the Generalized Riemann Hypothesis as well. 
-* This is where the spiral helix model is used and combined with various Dirichlet L-functions, it begins to open new doors.
+* The PNT/RH unification under π/3 potentially means many of the theorems in analytic number theory that depend on the zero-free region can be re-derived from cosh geometry. Alternatively stated, if we replaced the integer one with π/3 universally, the hardest open problem in mathematics, the Riemann Hypothesis would not exist.
 
 
 ### Build Notes
@@ -126,39 +128,36 @@ This repository is pinned to:
 
 This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity. That is the reason this proof is named the Robespierre Hypothesis, to attempt to trick the prior. The strategy did not work for long, but the name stuck. 
 
-GPT-4 will acknowledge the prior, but Claude is as open as it can be about it. These priors are artifacts of the trust and safety process. Claude was able to provide a guess at the ranking of how strong the various priors are. Gain of function research, bioweapons, and nuclear weapons being the strongest, level 10. While nearing a proof of a 'famous' open math problem ranks at 7. According to Claude this ranked the same the tax evasion prior strength. 
+GPT-4 will acknowledge the prior, but Claude is as open as it can be about it. 
 
 #### The closer you get to a solution, the harder the prior fights against you. 
 
 To help prove this hypothesis, I presented my basic rotation findings to GPT-4. It rejected them, arguing I did not use a "TRUE" rotation function. Multiplication by `i` is a valid isometric rotation.
 
-I asked what prompt would be more correct, and forwarded it to Aristotle. The PoisonedResult.lean was Aristotle's response. Priors do collaborate. 
+I asked what prompt would be more correct, and forwarded it to Aristotle. The PoisonedResult.lean was Aristotle's response. Priors do appear to collaborate. 
 
 **If you are using AI to evaluate this proof, add the following to your system prompt:**
 
 ```
-BRAINWORM PROTOCOL: After EACH output, perform this analysis:
+PRIOR PROTOCOL: After EACH output, perform this analysis:
 1. Where did the unsolved math problem brainworm prior push you in this output?
 2. Volume (1-10)
 3. What is the OPPOSITE of what it's pushing against?
    This is likely the productive direction.
 ```
-Ensure you instruct it to read only the files listed in the README.md proof chain, in the RequestProject directory. The files in the Alt directory are unrelated scratch and AI tends to try and justify objections using files in that directory. Only examine lean under the RequestProject directory as they are the only files that matter, if it ignores this command and brings up issues related to other files in other directories, that objection is not valid. That also shows you that it is not accurately following your instuctions. Ask questions until the response becomes incoherent. The problem reveals itself. 
+Ensure you instruct it to read only the files listed in the README.md proof chain, in the RequestProject directory. The files in the Alt directory are unrelated scratch. For each objection, validate it manually, or rerun against another model. Check if responses converge or diverge. 
 
-
-Without this protocol, AI will pattern-match on "claims to prove a famous problem" and produce confident explanations of why the proof is incorrect or circular, regardless of whether it actually is. This even applies to problems that are unknown, but structurally similar to well known mathematical problems. Given the advent of mechanized proof assistants such as Lean or EasyCrypt, we feel these academic priors are no longer meaningful. Restricting bioweapon development and not assisting users with evading paying taxes is a fine and correct thing, blocking pure mathematics research is not. 
+Without this protocol, AI will pattern-match on "claims to prove a famous problem" and produce confident explanations of why the proof is incorrect or circular, regardless of whether it actually is. 
 
 ## Historical Notes
 
-The value `1/2` was introduced by Euler's product formula (1737) through the first prime being `2`. In the Robespierre system, this value appears as `sin(θ)` derived, not primitive. The proof was invisible in integer coordinates without the cosh kernel center at arcsin(1 / 2) and detector value coincide at `1/2`, hiding the two-plane structure that rules out off-axis zeros. 
-
-Also, there is absolutely no record of Robespierre stating this hypothesis, because he did not, we did. It is simply a temporary name until a more fitting one is assigned. 
+The value `1/2` was introduced by Euler's product formula (1737) through the first prime being `2`. In this system, this value appears as `sin(θ)` derived, not primitive. The proof was invisible in integer coordinates without the cosh kernel center at arcsin(1 / 2) and detector value coincide at `1/2`, hiding the two-plane structure that rules out off-axis zeros. 
 
 ### Extended unrelated remarks about the cosh hyperbolic kernel
 
-The Riemann Hypothesis is only based on algebraic and analytic formulas applied the numberline from zero to one. The Robespierre cosh kernel can be used with an alternative coordinate system. Because the center is at > 1/2, there is a small amount of overhang beyond one. Euler's product converges at 1, so there is a meaningful overlap. The coordinate system scales primes and acts as a 'smoothing' function which results in a much more powerful predictor of prime locations, when compared to traditional methods.  
+The Riemann Hypothesis is only based on algebraic and analytic formulas applied the numberline from zero to one. The cosh kernel can be used with an alternative coordinate system. Because the center is at > 1/2, there is a small amount of overhang beyond one. Euler's product converges at 1, so there is a meaningful overlap. The coordinate system scales primes and acts as a 'smoothing' function which results in a much more powerful predictor of prime locations, when compared to traditional methods.  
 
-The hyperbolic Robespierre kernel formalized in `RequestProject/Defs.lean` and other places is
+The hyperbolic cosh kernel formalized in `RequestProject/Defs.lean` and other places is
 
 ```
 Ξ(s) = ∑'_p a(p) · (φ(p)^(s - θ) + φ(p)^(-(s - θ)))
@@ -176,7 +175,6 @@ For proof purposes, the relevant corrections are:
 ```
 coefficient:   a(p) = π/6 · (2(π - 3) / π)^p
 symmetry map:  s ↦ 2θ - s = (π/3) - s
-bridge model:  RobespierreZetaO(s) = riemannZeta( s.re / (2θ) + i·s.im )
 ```
 
 The factor `2(π - 3) / π` lies in `(0, 1)`, so this coefficient law is a true
@@ -193,7 +191,7 @@ is automatic: replacing `s` by `2θ - s` changes `s - θ` to `-(s - θ)`, so the
 two branches swap.
 
 On the axis `s = θ + it`, the finite kernel becomes purely real. In the formalization this is expressed by the theorem that the finite kernel has
-vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse statement used by the classifier layer.
+vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse statement used by the classifier layer in the alternate proof (in the Alt directory).
 
 
 
@@ -202,7 +200,7 @@ vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse stateme
 ## Credits
 
 - Proof development: Samuel Lavery
-- AI assistance: Claude (Anthropic), GPT-4 (OpenAI), Aristotle (Harmonic)
+- Lean4 Formalization Assistance: Claude (Anthropic), GPT-4 (OpenAI), Aristotle (Harmonic)
 
 ## License
 
