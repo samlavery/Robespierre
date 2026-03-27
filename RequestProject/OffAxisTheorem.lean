@@ -1,40 +1,6 @@
 import Mathlib
 import RequestProject.OffAxisTheoremDefs
-/-! # Off-Axis Classical Zeta Zero Forces Prime Observable Change
-This file proves the strongest honest unconditional theorem connecting
-off-axis zeros of the Riemann zeta function to observable changes in the
-prime distribution under the rotation-symmetry framework defined in `Defs.lean`.
-## Main results
-### Proved unconditionally
-* `offaxis_forces_rotated_detector_event` — If `ρ.re ≠ 1/2`, the rotated prime
-  density detector fires. This is an unconditional algebraic consequence of
-  the definitions and does NOT use `riemannZeta ρ = 0`.
-* `offaxis_forces_observable_nontriviality` — If `ρ.re ≠ 1/2`, some off-axis
-  observable is nonzero.
-* `offaxis_forces_numberline_distortion` — `realAxisDistortion n > 0` for `n ≥ 2`,
-  unconditionally (independent of any zeta zero hypothesis).
-### Status of the full target theorem
-The target theorem:
-```
-theorem offaxis_classical_zero_forces_prime_observable_change
-  (ρ : ℂ) (hz : riemannZeta ρ = 0) (hoff : ρ.re ≠ 1/2) :
-  ∃ X, PrimeNumberLineObservableChange ρ X
-```
-requires a **bridge** from `riemannZeta ρ = 0` to a statement about the
-prime-counting observables. This bridge is the **explicit formula** for the
-Chebyshev function (von Mangoldt's formula), which is NOT in Mathlib as of
-v4.28.0. Without it, the hypothesis `hz` cannot be connected to prime
-distribution. The exact missing lemma is stated below as
-`classical_zero_to_chebyshev_contribution`.
-### What is proved
-The maximal honest result combines:
-1. The algebraic fact that off-axis ⟹ detector fires (does not need `hz`).
-2. The statement of the missing bridge.
-The combined theorem `offaxis_classical_zero_forces_detector_and_distortion`
-uses both `hz` and `hoff` to conclude both the detector event AND the
-number-line distortion, where the distortion part is unconditional (`n ≥ 2`)
-and the detector part uses only `hoff`.
--/
+
 open ArithmeticFunction Real Filter
 open scoped Topology
 noncomputable section
@@ -129,9 +95,7 @@ theorem offaxis_classical_zero_forces_detector_and_distortion
       ∧ ¬ rotatedPrimeDensityDetectorPasses ρ.re := by
         exact ⟨ offaxis_forces_rotated_detector_event ρ hz hoff, offaxis_forces_numberline_distortion ρ hz hoff, no_offline_passes_detector hoff ⟩
 
-/-
-this isn't in the proof chain, is it?
--/
+
 private theorem classical_zero_to_prime_dirichlet_order
     (ρ : ℂ)
     (hz : riemannZeta ρ = 0)
