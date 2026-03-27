@@ -15,6 +15,18 @@ lake build
 If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol section below. Ensure you force the AI to only consider the files mentioned in the chain. You need to update your system prompt to get anything close to a valid answer. If you have access to an unrestricted LLM, I'd love to hear from you. 
 
 
+#### The summarizied proof
+Two frameworks, two different critical strips.
+Classical zeta theory has one symmetry axis: Re(s) = 1/2. The functional equation ξ(s) = ξ(1−s) reflects zeros around this line. The classical critical strip runs from 0 to 1, symmetric around 1/2. Any conspiracy of off-line zeros automatically satisfies this — the functional equation builds the symmetry in for free. One test, trivially passed.
+
+The cosh kernel prime harmonic decomposition has a different symmetry axis: Re(s) = arcsin(1/2) = π/6. Its critical strip runs from 0 to π/3, symmetric around π/6. This strip is wider than 1 — it extends past the classical strip's right edge. The reflection here is not about the zero set. It is about the exponent structure of the prime harmonics themselves.
+
+The mismatch is the proof
+The two axes sit at different places: 1/2 and π/6. They are not the same. Their critical strips overlap but are not identical. A zero set that is symmetric around 1/2 is not automatically symmetric around π/6. These are independent demands on the same object the primes and their harmonics.
+
+
+The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This exactly what makes both tests impossible to satisfy at once. If off-line zeros satisfy two incompatible scale requirements, off-line zeros cannot exist.
+
 # Proof Map
 
 ### Assumptions 
@@ -44,6 +56,7 @@ If you intend to validate this proof with a public AI model (Claude/GPT/Aristotl
 
 #### 5) Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
 [PrimeHarmonicReflection.lean]
+[DualReflectionImpossibility.lean]
 
 #### 6) Prove cosh kernel projects unabsorbed unbalanced harmonic residues to 1/2
 [HarmonicCancellation.lean]
@@ -94,6 +107,7 @@ theorem robespierre\_harmonic\_collapse (P : ℕ) (t : ℝ) :
 [ZetaCoshReflection.lean]
 
 #### 14) Conclude offline zeta zeros do not exist
+[DualReflectionImpossibility.lean]
 
 1.  Any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
 2. Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncancelled harmonic residues
