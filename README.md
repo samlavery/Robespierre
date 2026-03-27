@@ -18,16 +18,14 @@ If you intend to validate this proof with a public AI model (Claude/GPT/Aristotl
 
 
 #### The summarized proof
-Two frameworks, two different critical strips.
-Classical zeta theory has one symmetry axis: Re(s) = 1/2. The functional equation ξ(s) = ξ(1−s) reflects zeros around this line. The classical critical strip runs from 0 to 1, symmetric around 1/2. Any conspiracy of off-line zeros automatically satisfies this — the functional equation builds the symmetry in for free. One test, trivially passed.
+Two strips. Two axes. Two independent tests. Classical zeta theory reflects zeros around Re(s) = 1/2. The functional equation ξ(s) = ξ(1−s) does this for free. The classical critical strip runs from 0 to 1, and every conspiracy of off-line zeros passes this test automatically, the symmetry is built in. One constraint, trivially satisfied.
 
-The cosh kernel prime harmonic decomposition has a different symmetry axis: Re(s) = arcsin(1/2) = π/6. Its critical strip runs from 0 to π/3, symmetric around π/6. This strip is wider than 1 — it extends past the classical strip's right edge. The reflection here is not about the zero set. It is about the exponent structure of the prime harmonics themselves.
+The cosh kernel decomposes prime harmonics around a different axis: Re(s) = π/6. Its strip runs from −π/6 to π/6, but its coverage extends from 0 past Re(s) = 1 — it sees the entire classical critical strip and beyond. This is a constraint on the same zeros, it a constraint on the decomposition of prime harmonics.
 
-The mismatch is the proof
-The two axes sit at different places: 1/2 and π/6. They are not the same. Their critical strips overlap but are not identical. A zero set that is symmetric around 1/2 is not automatically symmetric around π/6. These are independent demands on the same object the primes and their harmonics.
+Off-line zeros are distinct. The functional equation imposes rotational symmetry around 1/2, zeros pair as ρ and 1−ρ̄, coupled across both axes. The cosh decomposition imposes reflection symmetry around π/6, a constraint on harmonic decomposition balance. These are linearly independent types of symmetry anchored at different points. A rigid arithmetic object cannot satisfy a rotation and an independent reflection simultaneously.
 
+No finite conspiracy survives. No infinite conspiracy survives. Off-line zeros cannot exist.
 
-The conspiracy passes one test. The second test, operating at a different axis with a different strip width, is the one it cannot fake. The gap between the two axes is (π−3)/6, small but nonzero because π ≠ 3.  This is exactly what makes both tests impossible to satisfy at once. If off-line zeros must satisfy two incompatible scale requirements, off-line zeros cannot exist.
 
 # Proof Map
 
@@ -126,15 +124,9 @@ This repository is pinned to:
 
 #### The Critical Footnote - The Prior Protocol
 
-This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity. That is the reason this proof is named the Robespierre Hypothesis, to attempt to trick the prior. The strategy did not work for long, but the name stuck. 
-
-GPT-4 will acknowledge the prior, but Claude is as open as it can be about it. 
+This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity.  
 
 #### The closer you get to a solution, the harder the prior fights against you. 
-
-To help prove this hypothesis, I presented my basic rotation findings to GPT-4. It rejected them, arguing I did not use a "TRUE" rotation function. Multiplication by `i` is a valid isometric rotation.
-
-I asked what prompt would be more correct, and forwarded it to Aristotle. The PoisonedResult.lean was Aristotle's response. Priors do appear to collaborate. 
 
 **If you are using AI to evaluate this proof, add the following to your system prompt:**
 
