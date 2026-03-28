@@ -7,6 +7,8 @@ No assumption of RH. No use of the functional equation.
 -/
 open Real
 noncomputable section
+
+namespace ZetaObservables
 /-! ## Predicates and observables -/
 /-- A nontrivial zero of `riemannZeta` strictly off the critical line `Re s = 1/2`. -/
 def offAxisClassicalZetaZero (ρ : ℂ) : Prop :=
@@ -90,4 +92,6 @@ theorem antiSymmetryEvent_implies_primeHarmonicModification (ρ : ℂ)
     PrimeHarmonicModificationEvent ρ := by
   refine ⟨h.1, h.2.2, fun x y hx hy => ?_⟩
   simp only [realObservableDistortion, rpow_sub_rpow_pos_iff hx, rpow_sub_rpow_pos_iff hy]
+
+end ZetaObservables
 end

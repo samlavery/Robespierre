@@ -33,6 +33,8 @@ open Real
 
 noncomputable section
 
+namespace ZetaCoshReflection
+
 /-- The critical line σ = 1/2 is invariant under 180° rotation s ↦ 1-s of the
     critical strip. This holds iff σ = 1 - σ. -/
 def StripRotationInvariant (σ : ℝ) : Prop := σ = 1 - σ
@@ -87,4 +89,5 @@ theorem both_pass :
     StripRotationInvariant criticalLine ∧ CoshReflectionVanishes coshTestPoint :=
   ⟨strip_rotation_passes, cosh_reflection_passes⟩
 
+end ZetaCoshReflection
 end
