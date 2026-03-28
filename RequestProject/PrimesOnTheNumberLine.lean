@@ -93,6 +93,18 @@ This is how prime placement is encoded analytically. -/
 theorem vonMangoldt_detects_primes (p : ℕ) (hp : Nat.Prime p) :
     ArithmeticFunction.vonMangoldt p = Real.log p :=
   vonMangoldt_apply_prime hp
+
+/-- A prime is the same arithmetic datum viewed in two compatible ways:
+as a canonical point `(p : ℝ)` on the number line, and as a harmonic weight
+`log p` recorded by the von Mangoldt function. In this sense, primes are
+numbers viewed harmonically. -/
+theorem prime_is_number_viewed_as_harmonic (p : ℕ) (hp : Nat.Prime p) :
+    ∃ x ω : ℝ,
+      x = (p : ℝ) ∧
+      ω = Real.log x ∧
+      ArithmeticFunction.vonMangoldt p = ω := by
+  refine ⟨(p : ℝ), Real.log (p : ℝ), rfl, rfl, ?_⟩
+  simpa using vonMangoldt_apply_prime hp
 /-- The fundamental identity: Λ * ζ = log.
 This says that summing the von Mangoldt function over divisors recovers log:
   ∑_{d | n} Λ(d) = log n.

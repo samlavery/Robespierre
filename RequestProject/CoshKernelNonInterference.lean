@@ -4,6 +4,8 @@ open Complex Real
 
 noncomputable section
 
+namespace CoshKernelNonInterference
+
 /-!
 # Prime Harmonics, RH, and Cosh Kernel Balance
 
@@ -156,4 +158,5 @@ theorem prime_harmonic_cosh_synthesis (zeros : Set ℂ) (hConj : ConjClosed zero
            by norm_num [Complex.cosh_zero],
            by norm_num [Real.sin_arcsin]⟩
 
+end CoshKernelNonInterference
 end

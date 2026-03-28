@@ -249,4 +249,119 @@ theorem cosh_symmetric_pole_structure
   intro z hz; rw [ h_eq z hz ] ; rw [ meromorphicOrderAt_comp_coshReflect ] ;
   exact hf_mero _ ( hU_sym _ hz )
 
+/-! ## Global Symmetries of the Cosh Kernel
+
+Three global symmetries, each propagated from a local identity on an overlap region
+to the entire preconnected domain via the identity theorem for meromorphic functions.
+
+1. **Conjugation symmetry (Schwarz reflection):** `f(s) = conj(f(conj(s)))`
+2. **Functional equation symmetry:** `f(s) = f(a - s)` for a general center `a`
+3. **Cosh kernel symmetry at π/3:** `f(s) = f(π/3 - s)`, the specialization to
+   center `c = π/3 = 2 arcsin(1/2)`
+-/
+
+/- 
+PROBLEM
+**General meromorphic equality propagation.** If two meromorphic functions on a
+preconnected open set agree on an open subset, they agree on punctured neighborhoods
+of every point in the domain. This is a direct corollary of the identity theorem
+for meromorphic functions.
+
+PROVIDED SOLUTION
+Apply meromorphic_identity_theorem to h = f - g (using hf.sub hg for meromorphicity). The base point is hV_nonempty.some_mem (which is in U via hV_sub). The local zero hypothesis follows from heq on the open set V: filter_upwards with hV_open.mem_nhds and sub_eq_zero.mpr. Then convert the conclusion from f w - g w = 0 to f w = g w using sub_eq_zero.mp.
+-/
+theorem meromorphic_eq_propagation
+    (f g : ℂ → ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U) (hg : MeromorphicOn g U)
+    (heq : ∀ s ∈ V, f s = g s) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = g w := by
+  intros z hz
+  have := meromorphic_identity_theorem hU_open hU_conn (hf.sub hg)
+    (hV_nonempty.some_mem |> hV_sub) (by
+      filter_upwards [hV_open.mem_nhds hV_nonempty.some_mem] with w hw
+      exact sub_eq_zero.mpr (heq w hw))
+  simpa [sub_eq_zero] using this z hz
+
+/-! ### Symmetry 1: Conjugation (Schwarz reflection) -/
+
+/- 
+PROBLEM
+**Conjugation symmetry (Schwarz reflection).** If `f` is meromorphic on a
+preconnected open domain `U`, and `f(s) = conj(f(conj(s)))` on an open overlap
+region `V ⊆ U`, then this identity propagates to all of `U`.
+
+The hypothesis that `s ↦ conj(f(conj(s)))` is meromorphic on `U` encodes the
+Schwarz reflection principle: composing a meromorphic function with two
+anti-holomorphic maps (conjugation) yields a meromorphic function.
+
+PROVIDED SOLUTION
+Direct application of meromorphic_eq_propagation with g = fun s => starRingEnd ℂ (f (starRingEnd ℂ s)). All hypotheses match directly: hf for f, hg for g, heq for the equality on V.
+-/
+theorem conjugation_symmetry
+    (f : ℂ → ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (hg : MeromorphicOn (fun s => starRingEnd ℂ (f (starRingEnd ℂ s))) U)
+    (heq : ∀ s ∈ V, f s = starRingEnd ℂ (f (starRingEnd ℂ s))) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ,
+      f w = starRingEnd ℂ (f (starRingEnd ℂ w)) := by
+  intro z hz
+  convert meromorphic_eq_propagation f
+    (fun s => starRingEnd ℂ (f (starRingEnd ℂ s))) U V
+    hU_open hU_conn hV_open hV_sub hV_nonempty hf hg
+    (fun s hs => heq s hs) z hz using 1
+
+/-! ### Symmetry 2: Functional equation -/
+
+/- 
+PROBLEM
+**Functional equation symmetry.** If `f` is meromorphic on a preconnected open
+domain `U` that is symmetric under the reflection `s ↦ a - s`, and `f(s) = f(a - s)`
+on an open overlap region `V ⊆ U`, then the functional equation propagates to
+all of `U` by the identity theorem.
+
+PROVIDED SOLUTION
+Apply meromorphic_eq_propagation with g = f ∘ coshReflect a. The meromorphicity of g follows from meromorphicOn_comp_coshReflect hf hU_sym. The equality heq works because (f ∘ coshReflect a) s = f (a - s) by definition of coshReflect.
+-/
+theorem functional_equation_symmetry
+    (f : ℂ → ℂ) (a : ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hU_sym : CoshSymmetric a U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (heq : ∀ s ∈ V, f s = f (a - s)) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f (a - w) := by
+  intros z hz
+  apply meromorphic_eq_propagation f (fun s => f (a - s)) U V
+    hU_open hU_conn hV_open hV_sub hV_nonempty hf (by
+      convert meromorphicOn_comp_coshReflect hf hU_sym using 1) heq z hz
+
+/-! ### Symmetry 3: Cosh kernel at π/3 = 2 arcsin(1/2) -/
+
+/- 
+PROBLEM
+**Cosh kernel symmetry at π/3.** The specialization of the functional equation
+symmetry to center `c = π/3 = 2 arcsin(1/2)`, the natural center of the cosh kernel.
+If `f(s) = f(π/3 - s)` on the overlap region (e.g. the region of absolute convergence
+of a Dirichlet series with cosh-symmetric coefficients), this identity propagates to the
+entire preconnected domain by the identity theorem.
+
+PROVIDED SOLUTION
+Direct application of functional_equation_symmetry with a = ↑(Real.pi / 3). All hypotheses match directly.
+-/
+theorem cosh_kernel_pi_third_symmetry
+    (f : ℂ → ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hU_sym : CoshSymmetric (↑(Real.pi / 3) : ℂ) U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (heq : ∀ s ∈ V, f s = f ((↑(Real.pi / 3) : ℂ) - s)) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f ((↑(Real.pi / 3) : ℂ) - w) := by
+  convert functional_equation_symmetry f ((↑(Real.pi / 3) : ℂ)) U V
+    hU_open hU_conn _ hV_open hV_sub hV_nonempty hf heq using 1
+  all_goals aesop
+
 end

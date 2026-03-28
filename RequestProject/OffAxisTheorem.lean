@@ -96,7 +96,7 @@ theorem offaxis_classical_zero_forces_detector_and_distortion
         exact ⟨ offaxis_forces_rotated_detector_event ρ hz hoff, offaxis_forces_numberline_distortion ρ hz hoff, no_offline_passes_detector hoff ⟩
 
 
-private theorem classical_zero_to_prime_dirichlet_order
+theorem classical_zero_to_prime_dirichlet_order
     (ρ : ℂ)
     (hz : riemannZeta ρ = 0)
     (hρ1 : ρ ≠ 1) :

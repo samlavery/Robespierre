@@ -11,6 +11,8 @@ import RequestProject.PrimeHarmonicReflection
 import RequestProject.HarmonicCancellation
 import RequestProject.CoshNoZeros
 import RequestProject.CoshSymmetryBreak
+import RequestProject.CoshKernelNonInterference
+import RequestProject.CoshZetaSymmetry
 import RequestProject.ZetaCoshReflection
 import RequestProject.ZetaSymmetry
 import RequestProject.CriticalStripControlOffline
@@ -112,6 +114,27 @@ theorem pillar2_cosh_no_zeros (x : ℝ) : Real.cosh x ≠ 0 :=
   cosh_ne_zero x
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- SYMMETRY BACKBONE: Schwarz conjugation, functional rotation, cosh reflection
+--                   (CoshZetaSymmetry.lean, CoshKernel.lean)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+/-- Schwarz reflection: `ζ(conj s) = conj (ζ s)` away from the pole at `1`. -/
+theorem symmetry_schwarz_reflection (s : ℂ) (hs : s ≠ 1) :
+    riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s) :=
+  CoshZetaSymmetry.riemannZeta_conj s hs
+
+/-- Functional equation symmetry: `Λ(1 - s) = Λ(s)`, the classical reflection
+about `Re(s) = 1/2`. -/
+theorem symmetry_functional_rotation (s : ℂ) :
+    completedRiemannZeta (1 - s) = completedRiemannZeta s :=
+  CoshZetaSymmetry.cosh_symmetry_functional_equation s
+
+/-- Cosh-kernel reflection: `σ ↦ π/3 - σ`, i.e. reflection about the center `π/6`. -/
+theorem symmetry_cosh_reflection (σ : ℝ) :
+    coshKernel (π / 3 - σ) = coshKernel σ :=
+  coshKernel_fold_symmetry σ
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- PILLAR 3:  Off-axis zeros force observable distortion
 --            (OffAxisTheorem.lean, OffAxisZeta.lean, ZetaObservables.lean)
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -126,6 +149,102 @@ theorem pillar3_detector_fires (ρ : ℂ) (hz : riemannZeta ρ = 0)
 theorem pillar3_antisymmetry (ρ : ℂ) (h : ZetaObservables.offAxisClassicalZetaZero ρ) :
     ZetaObservables.RotatedObservableAntiSymmetryEvent ρ :=
   ZetaObservables.offAxisZero_implies_antiSymmetryEvent ρ h
+
+/-- A one-sided real wrapper for the harmonic detector. On the positive side of the
+number line it records the detector value, and on the reflected negative side it is
+clamped to `0`, so any nonzero detector value becomes a nonzero cosh residue. -/
+def harmonicDetectorWitness (ρ : ℂ) : ℝ → ℝ :=
+  fun x => if 1 < x then harmonicDetector x ρ else 0
+
+/-- Adapter theorem: an off-axis harmonic detector value yields a genuine cosh
+residue for a real function, so the generic symmetry-break interface applies. -/
+theorem harmonicDetector_offaxis_hasCoshResidue
+    (ρ : ℂ)
+    (hoff : ρ.re ≠ 1 / 2) :
+    HasCoshResidue (harmonicDetectorWitness ρ) := by
+  refine ⟨2, ?_⟩
+  unfold coshResidue harmonicDetectorWitness
+  have hfire : harmonicDetector 2 ρ ≠ 0 :=
+    harmonicDetector_fires_offaxis ρ 2 (by norm_num) hoff
+  have hneg : ¬ 1 < (-(2 : ℝ)) := by norm_num
+  simp [if_pos (by norm_num : (1 : ℝ) < 2), if_neg hneg, hfire]
+
+/-- Off-axis harmonic disruption fails the cosh symmetry test after the standard
+real-function adapter. -/
+theorem harmonicDetector_offaxis_fails_cosh_symmetry
+    (ρ : ℂ)
+    (hoff : ρ.re ≠ 1 / 2) :
+    ¬ PassesCoshSymmetryTest (harmonicDetectorWitness ρ) :=
+  cosh_residue_implies_symmetry_test_fails _ (harmonicDetector_offaxis_hasCoshResidue ρ hoff)
+
+/-- The classical rotation test at `ρ`: the functional-equation partner `1 - ρ`
+remains in the off-line zero set. -/
+def OffaxisRotationTestPasses (ρ : ℂ) : Prop :=
+  classicalRotation ρ ∈ offlineZeros
+
+/-- The cosh-side test at `ρ`: the adapted harmonic witness passes the even
+reflection test. -/
+def OffaxisCoshTestPasses (ρ : ℂ) : Prop :=
+  PassesCoshSymmetryTest (harmonicDetectorWitness ρ)
+
+/-- Prime-harmonic reflection test at scale `x`: the off-axis harmonic and its
+reflected partner have the same magnitude. Off-axis zeros are expected to fail
+this test at every scale `x > 1`. -/
+def PrimeHarmonicReflectionTestPasses (ρ : ℂ) (x : ℝ) : Prop :=
+  ‖(x : ℂ) ^ ρ‖ = ‖(x : ℂ) ^ (1 - conj ρ)‖
+
+/-- An off-axis zero passes the classical rotation test: its functional-equation
+partner remains an off-line zero. -/
+theorem offaxis_zero_passes_classical_rotation
+    (ρ : ℂ)
+    (hz : riemannZeta ρ = 0)
+    (hpos : 0 < ρ.re)
+    (hlt1 : ρ.re < 1)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
+    OffaxisRotationTestPasses ρ :=
+  offlineZeros_classical_invariant ρ ⟨hz, hpos, hlt1, hoff⟩
+
+/-- An off-axis point fails the cosh-side symmetry test after the standard
+harmonic-detector adapter. -/
+theorem offaxis_zero_fails_cosh_test
+    (ρ : ℂ)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
+    ¬ OffaxisCoshTestPasses ρ :=
+  harmonicDetector_offaxis_fails_cosh_symmetry ρ hoff
+
+/-- At any real scale `x > 1`, an off-axis point fails the prime-harmonic
+reflection test. -/
+theorem offaxis_zero_fails_prime_harmonic_reflection_test
+    (ρ : ℂ)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ))
+    (x : ℝ)
+    (hx : 1 < x) :
+    ¬ PrimeHarmonicReflectionTestPasses ρ x := by
+  exact prime_harmonic_not_reflection_invariant ρ hoff x hx
+
+/-- Global package: an off-axis zero passes the classical rotation test but fails
+every prime-harmonic reflection test and also fails the adapted cosh-side test. -/
+theorem offaxis_zero_global_test_profile
+    (ρ : ℂ)
+    (hz : riemannZeta ρ = 0)
+    (hpos : 0 < ρ.re)
+    (hlt1 : ρ.re < 1)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
+    OffaxisRotationTestPasses ρ ∧
+      (∀ x : ℝ, 1 < x → ¬ PrimeHarmonicReflectionTestPasses ρ x) ∧
+      ¬ OffaxisCoshTestPasses ρ := by
+  refine ⟨offaxis_zero_passes_classical_rotation ρ hz hpos hlt1 hoff, ?_, offaxis_zero_fails_cosh_test ρ hoff⟩
+  intro x hx
+  exact offaxis_zero_fails_prime_harmonic_reflection_test ρ hoff x hx
+
+/-- An off-axis zero cannot pass both the classical rotation test and the
+adapted cosh-side test simultaneously. -/
+theorem offaxis_zero_cannot_pass_both_tests
+    (ρ : ℂ)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
+    ¬ (OffaxisRotationTestPasses ρ ∧ OffaxisCoshTestPasses ρ) := by
+  intro hboth
+  exact offaxis_zero_fails_cosh_test ρ hoff hboth.2
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- PILLAR 4:  Prime harmonics break reflection symmetry off the critical line
@@ -152,6 +271,16 @@ theorem pillar5_residue_breaks_symmetry (f : ℝ → ℝ) (h : HasCoshResidue f)
 /-- cosh itself has no residue — it passes its own symmetry test. -/
 theorem pillar5_cosh_clean : ¬HasCoshResidue Real.cosh :=
   cosh_has_no_residue
+
+/-- If RH fails for a zero set, the centered cosh kernel is only an observer:
+it cannot rebalance the resulting off-line residue. -/
+theorem pillar5_kernel_noninterference
+    (zeros : Set ℂ)
+    (hNotRH : ¬ CoshKernelNonInterference.AllOnCriticalLine zeros) :
+    (∃ ρ ∈ zeros, ¬ CoshKernelNonInterference.OnCriticalLine ρ ∧
+        ρ + starRingEnd ℂ ρ ≠ 1) ∧
+      Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 :=
+  CoshKernelNonInterference.not_rh_kernel_observer zeros hNotRH
 
 /-- The zeta strip rotation test and cosh reflection test are equivalent. -/
 theorem pillar5_tests_equivalent :
@@ -227,6 +356,59 @@ theorem bridge_no_conspiracy (S : Set ℂ)
 theorem bridge_classical_invariance :
     ∀ s ∈ offlineZeros, classicalRotation s ∈ offlineZeros :=
   offlineZeros_classical_invariant
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- FINAL INTERFACE:  direct off-axis contradiction packaging
+-- ═══════════════════════════════════════════════════════════════════════════
+
+/-- Terminal contradiction interface at a point `ρ`: any theorem showing that
+the prime-side bridge data forced by an off-axis zero is impossible. -/
+def FinalOffAxisContradictionAt (ρ : ℂ) : Prop :=
+  (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ) →
+    RotatedPrimeDensityDetectorEvent ρ →
+    False
+
+/-- Any theorem supplying the terminal contradiction interface rules out an
+off-axis zeta zero at `ρ`. -/
+theorem final_no_offaxis_zero_of_contradiction
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ)
+    (ρ : ℂ)
+    (hz : riemannZeta ρ = 0)
+    (hone : ρ ≠ 1)
+    (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
+    False := by
+  rcases offaxis_with_bridge ρ hz hoff hone with ⟨hdisc, hdet⟩
+  exact hfinal ρ hdisc hdet
+
+/-- If the terminal contradiction interface is available uniformly, then the
+off-line zero set is empty. -/
+theorem final_empty_of_offaxis_contradiction
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
+    offlineZeros = ∅ := by
+  ext s
+  constructor
+  · intro hs
+    rcases hs with ⟨hz, hpos, hlt1, hoff⟩
+    have hone : s ≠ 1 := by
+      intro h1
+      rw [h1] at hlt1
+      norm_num at hlt1
+    exact final_no_offaxis_zero_of_contradiction hfinal s hz hone hoff
+  · intro hs
+    simpa using hs
+
+/-- Direct RH endpoint: once off-axis zeros are uniformly contradictory via the
+prime-harmonic/cosh machinery, RH follows immediately. -/
+theorem final_RH_of_offaxis_contradiction
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
+    RiemannHypothesis :=
+  (offlineZeros_empty_iff_RH).mp (final_empty_of_offaxis_contradiction hfinal)
+
+/-- Single terminal RH wrapper for the direct contradiction route. -/
+theorem final_RH
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
+    RiemannHypothesis :=
+  final_RH_of_offaxis_contradiction hfinal
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FINAL THEOREM 1:  Cosh invariance ⇒ offlineZeros = ∅

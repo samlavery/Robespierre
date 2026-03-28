@@ -41,6 +41,8 @@ open Complex Filter Topology Set
 
 noncomputable section
 
+namespace CoshZetaSymmetry
+
 /-! ## Cosh axis placement: arcsin(1/2) = π/6
 
 The cosh axis of symmetry is placed at arcsin(1/2) = π/6. This value lies
@@ -359,4 +361,5 @@ theorem coshAxis_between_critical_and_euler :
     (1 : ℝ) / 2 < coshAxis ∧ coshAxis < 1 :=
   ⟨coshAxis_gt_half, coshAxis_in_critical_strip.2⟩
 
+end CoshZetaSymmetry
 end
