@@ -103,7 +103,7 @@ No finite conspiracy survives. No infinite conspiracy survives. Off-line zeros c
 #### 14) Conclude Riemann Hypothesis follows
 1. If all offline zeros proven impossible 
 2. it follows that all zeta zeros must be located on the critical strip at 1/2
-
+[FinalAssembly.lean]
 
 
 ## The Implication
