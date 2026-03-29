@@ -13,8 +13,8 @@ lake update
 # Builds, but with a wall of info, warnings, suggestions considered harmless
 lake build
 
-# will cleanly show if any axioms (shown as SorryAx), sorries, admits, or actual errors are present. 
-lake build | egrep -i "sorry|error" 
+# Will cleanly show if any axioms (shown as SorryAx), sorries, admits, or actual errors are present. 
+lake build | egrep -i "sorry|error|Build completed successfully" 
 ```
 
 
