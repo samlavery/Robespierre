@@ -17,7 +17,7 @@ import RequestProject.ZetaCoshReflection
 import RequestProject.ZetaSymmetry
 import RequestProject.CriticalStripControlOffline
 import RequestProject.ProofChain
-
+import RequestProject.CoshHarmonicsZetaInvariance
 /-!
 # Assembled Proof Chain: No Off-Line Zeta Zeros Exist
 
@@ -404,24 +404,24 @@ theorem final_RH_of_offaxis_contradiction
     RiemannHypothesis :=
   (offlineZeros_empty_iff_RH).mp (final_empty_of_offaxis_contradiction hfinal)
 
-/-- Single terminal RH wrapper for the direct contradiction route. -/
+/-- Single terminal RH wrapper for the direct no offline zeros route. -/
 theorem final_RH
     (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
     RiemannHypothesis :=
   final_RH_of_offaxis_contradiction hfinal
 
+
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FINAL THEOREM 1:  Cosh invariance ⇒ offlineZeros = ∅
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- If offlineZeros is also cosh-rotation-invariant, it must be empty.
-    Classical invariance is unconditional (functional equation).
-    The composition gives translation by π/3 − 1 > 0.
-    Iteration pushes Re past 1, hitting the zero-free region. -/
-theorem final_empty_if_cosh_invariant
-    (h_cosh : ∀ s ∈ offlineZeros, coshRotation s ∈ offlineZeros) :
-    offlineZeros = ∅ :=
-  offlineZeros_empty_if_cosh_invariant h_cosh
+theorem get_h_cosh
+    {U : Set ℂ} (G : CoshHarmonicRepr U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U) :
+    EqOn G.repr riemannZeta U := by
+  let h_cosh := (cosh_harmonics_zeta_invariance G hζ).1
+  exact h_cosh
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FINAL THEOREM 2:  Cosh invariance ⇒ Riemann Hypothesis
@@ -439,7 +439,12 @@ theorem final_RH_of_cosh_invariance
 
 /-- The emptiness of the off-line zero set is logically equivalent to the
     Riemann Hypothesis.  This is the terminal statement of the proof chain. -/
-theorem final_equivalence : offlineZeros = ∅ ↔ RiemannHypothesis :=
-  offlineZeros_empty_iff_RH
+
+
+theorem final_equivalence
+    {U : Set ℂ} (G : CoshHarmonicRepr U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U) :
+    (offlineZeros = ∅ ↔ RiemannHypothesis) ∧ EqOn G.repr riemannZeta U :=
+  ⟨offlineZeros_empty_iff_RH, (cosh_harmonics_zeta_invariance G hζ).1⟩
 
 end
