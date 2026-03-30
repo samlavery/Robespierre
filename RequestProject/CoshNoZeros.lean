@@ -1,11 +1,22 @@
 import Mathlib
+
 /-!
 # Cosh has no real zeros — in particular not at π/6, even under reflection
+
 We prove unconditionally that `Real.cosh x ≥ 1` for all real `x`,
 and therefore `cosh` has no real zeros whatsoever. In particular:
 * `cosh(π/6) ≠ 0`  ("cosh zeros at π/6 do not cancel distorted harmonics")
 * `cosh(-π/6) ≠ 0` ("offline cosh zeros do not vanish under reflection")
 These hold unconditionally because `cosh` is bounded below by 1 on the reals.
+
+The cosh kernel itself is anchored at x = π/6. The cosh kernel critical strip is vertical,
+extending from y = -π/3 to y = π/3, with its two boundaries extending past y = -1 and y = 1.
+The strip has a Schwarz reflection line at x = 0.
+
+While `Real.cosh` has no zeros, the complex `cosh` kernel has conjugate zeros in dual pairs,
+which decompose harmonics into cosine and sine, and reflect the pair over the Schwarz line
+(creating balanced quartets from balanced harmonics). They are "automatic" in the sense
+that they're baked into the analytic structure of `cosh`.
 -/
 open Real
 /-- `cosh x ≥ 1` for every real `x`. This is the unconditional lower bound

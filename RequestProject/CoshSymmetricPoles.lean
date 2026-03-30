@@ -256,8 +256,8 @@ to the entire preconnected domain via the identity theorem for meromorphic funct
 
 1. **Conjugation symmetry (Schwarz reflection):** `f(s) = conj(f(conj(s)))`
 2. **Functional equation symmetry:** `f(s) = f(a - s)` for a general center `a`
-3. **Cosh kernel symmetry at π/3:** `f(s) = f(π/3 - s)`, the specialization to
-   center `c = π/3 = 2 arcsin(1/2)`
+3. **Cosh kernel symmetry at π/6:** `f(s) = f(π/6 - s)`, the specialization to
+   center `c = π/6 = arcsin(1/2)`
 -/
 
 /- 
@@ -339,28 +339,28 @@ theorem functional_equation_symmetry
     hU_open hU_conn hV_open hV_sub hV_nonempty hf (by
       convert meromorphicOn_comp_coshReflect hf hU_sym using 1) heq z hz
 
-/-! ### Symmetry 3: Cosh kernel at π/3 = 2 arcsin(1/2) -/
+/-! ### Symmetry 3: Cosh kernel at π/6 = arcsin(1/2) -/
 
 /- 
 PROBLEM
-**Cosh kernel symmetry at π/3.** The specialization of the functional equation
-symmetry to center `c = π/3 = 2 arcsin(1/2)`, the natural center of the cosh kernel.
-If `f(s) = f(π/3 - s)` on the overlap region (e.g. the region of absolute convergence
+**Cosh kernel symmetry at π/6.** The specialization of the functional equation
+symmetry to center `c = π/6 = arcsin(1/2)`, the natural center of the cosh kernel.
+If `f(s) = f(π/6 - s)` on the overlap region (e.g. the region of absolute convergence
 of a Dirichlet series with cosh-symmetric coefficients), this identity propagates to the
 entire preconnected domain by the identity theorem.
 
 PROVIDED SOLUTION
-Direct application of functional_equation_symmetry with a = ↑(Real.pi / 3). All hypotheses match directly.
+Direct application of functional_equation_symmetry with a = ↑(Real.pi / 6). All hypotheses match directly.
 -/
-theorem cosh_kernel_pi_third_symmetry
+theorem cosh_kernel_pi_sixth_symmetry
     (f : ℂ → ℂ) (U V : Set ℂ)
     (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
-    (hU_sym : CoshSymmetric (↑(Real.pi / 3) : ℂ) U)
+    (hU_sym : CoshSymmetric (↑(Real.pi / 6) : ℂ) U)
     (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
     (hf : MeromorphicOn f U)
-    (heq : ∀ s ∈ V, f s = f ((↑(Real.pi / 3) : ℂ) - s)) :
-    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f ((↑(Real.pi / 3) : ℂ) - w) := by
-  convert functional_equation_symmetry f ((↑(Real.pi / 3) : ℂ)) U V
+    (heq : ∀ s ∈ V, f s = f ((↑(Real.pi / 6) : ℂ) - s)) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f ((↑(Real.pi / 6) : ℂ) - w) := by
+  convert functional_equation_symmetry f ((↑(Real.pi / 6) : ℂ)) U V
     hU_open hU_conn _ hV_open hV_sub hV_nonempty hf heq using 1
   all_goals aesop
 

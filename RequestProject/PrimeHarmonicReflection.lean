@@ -68,8 +68,8 @@ theorem prime_harmonic_magnitude_ratio
       = (x : ℝ) ^ (2 * s.re - 1) := by
   have := Complex.norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans hx) s
   have := Complex.norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans hx) (1 - (starRingEnd ℂ) s)
-  simp_all +decide [Real.rpow_sub (zero_lt_one.trans hx)]; ring; norm_num;
-  rw [mul_two, Real.rpow_add] <;> ring; linarith
+  simp_all +decide [Real.rpow_sub (zero_lt_one.trans hx)]; ring_nf; norm_num;
+  rw [mul_two, Real.rpow_add] <;> ring_nf; linarith
 
 /-- The magnitude ratio is not equal to 1 when Re(s) ≠ 1/2 and x > 1. -/
 theorem magnitude_ratio_ne_one

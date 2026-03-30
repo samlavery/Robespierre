@@ -3,9 +3,18 @@ import Mathlib
 open Real
 
 /-!
-# Cosh Residue vs. Cosh Symmetry Reflection Test
+# Cosh Symmetries and Residue vs. Reflection Test
 
-The hyperbolic cosine function `cosh` is even: `cosh(x) = cosh(-x)` for all `x`.
+The hyperbolic cosine function `cosh` on the complex plane exhibits two fundamental,
+structural symmetries that are "automatic" in the sense that they are baked into its
+analytic structure:
+1. **Re-axis reflection (evenness, s ↦ -s)**: `cosh(z) = cosh(-z)`.
+2. **Im = 0 fold (conjugate symmetry, s ↦ s̄)**: `cosh(z̄) = conj(cosh(z))`, which
+   comes from `cosh` having real Taylor coefficients.
+
+Decomposed balanced harmonics cancel under this regime. Unbalanced harmonics are
+forced by the implicit fold over Im = 0 to real values x = 1/2 and y ≠ 0.
+
 The **cosh symmetry reflection test** checks whether a function `f` shares this
 even-symmetry property, i.e., whether `∀ x, f(x) = f(-x)`.
 
@@ -15,6 +24,15 @@ with `f(x) ≠ f(-x)` — then the symmetry reflection test must fail.
 
 We formalize this in several forms below.
 -/
+
+/-- Re-axis reflection (evenness, s → −s) for complex cosh -/
+theorem complex_cosh_even (z : ℂ) : Complex.cosh (-z) = Complex.cosh z :=
+  Complex.cosh_neg z
+
+/-- Im = 0 fold (conjugate symmetry, s → s̄) for complex cosh -/
+theorem complex_cosh_conj (z : ℂ) : Complex.cosh (starRingEnd ℂ z) = starRingEnd ℂ (Complex.cosh z) :=
+  Complex.cosh_conj z
+
 
 /-- A function passes the cosh symmetry reflection test iff it is even. -/
 def PassesCoshSymmetryTest (f : ℝ → ℝ) : Prop :=

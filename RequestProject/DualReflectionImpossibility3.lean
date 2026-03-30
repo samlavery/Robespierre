@@ -12,34 +12,8 @@ classical critical strip {s ∈ ℂ : 0 < Re(s) < 1} can be simultaneously invar
    under Schwarz reflection.
 
 2. **Cosh reflection** at arcsin(1/2) = π/6: the map s ↦ π/3 - s.
-   The cosh kernel is anchored at x = π/6 with the cosh critical strip extending
-   vertically from y = −π/3 to y = π/3 (the imaginary extent). The strip's two
-   boundaries extend past y = −1 and y = 1 (since π/3 > 1).
-   The Schwarz reflection line sits at x = 0 (the imaginary axis), so the cosh
-   critical strip runs from π/6 to −π/6 under this reflection, giving offset
-   coverage from 0 to π/3 which exceeds 1.
-
-## Two Automatic Symmetries of Cosh
-
-Both symmetries exploited here are baked into the analytic structure of `cosh`:
-
-- **Re-axis reflection (evenness, s ↦ −s)**: comes from `cosh(z) = cosh(−z)`,
-  the even-function property. This is the source of the cosh reflection
-  invariance for prime harmonics (`primeHarmonic_reflection_invariant`).
-
-- **Im = 0 fold (conjugate symmetry, s ↦ s̄)**: comes from `cosh` having real
-  Taylor coefficients, giving `cosh(z̄) = conj(cosh(z))`. This is the
-  "automatic fold" property.
-
-Conjugate zeros of cosh appear in dual pairs: two between y = 1 and y = π/3,
-and two between y = −1 and y = −π/3. These dual pairs decompose harmonics
-into cosine (even/balanced) and sine (odd/balanced) components, and reflect
-over the Schwarz line at x = 0 to within y = π/3 − 1 to y = −π/3 + 1,
-creating balanced quartets from balanced harmonics.
-
-Decomposed balanced harmonics cancel under this regime. Unbalanced harmonics
-are forced by the implicit fold over Im = 0 to real values x = 1/2 with y ≠ 0.
-This is structural.
+   The cosh critical strip goes from π/6 to -π/6 under Schwarz reflection.
+   The offset coverage extends from 0 to π/3, which exceeds 1.
 
 ## Key Argument
 
@@ -63,9 +37,7 @@ log p. The cosh kernel naturally symmetrizes these harmonics:
   cosh((s − σ) · log p)  =  (p^(s−σ) + p^(σ−s)) / 2
 
 is invariant under s ↦ 2σ − s for any center σ. When σ = π/6, this gives the
-cosh reflection s ↦ π/3 − s. Both the evenness of cosh and its real-coefficient
-conjugate symmetry are "automatic" — they are intrinsic to cosh's analytic
-structure and require no additional assumptions. We prove:
+cosh reflection s ↦ π/3 − s. We prove:
 
 - **Primes are the fundamental invariant**: the set of prime logarithms {log p}
   generates the harmonic frequencies.
@@ -73,10 +45,6 @@ structure and require no additional assumptions. We prove:
   s ↦ cosh((s − π/6) · log p) is invariant under the cosh reflection.
 - **Prime harmonics are classically invariant**: for each prime p, the function
   s ↦ cosh((s − 1/2) · log p) is invariant under the classical rotation.
-- **Cosh evenness** (`cosh_even_symmetry`): cosh(z) = cosh(−z), the Re-axis
-  reflection that drives the prime harmonic reflection invariance.
-- **Cosh conjugate symmetry** (`cosh_conjugate_symmetry`): cosh(z̄) = conj(cosh(z)),
-  the Im = 0 fold from real Taylor coefficients.
 - **No set of harmonics can be invariant under both**: since the two symmetry
   axes differ by (π/3 − 1)/2 > 0, the dual invariance forces emptiness.
 
@@ -102,16 +70,9 @@ noncomputable section
 def classicalRotation (s : ℂ) : ℂ := 1 - s
 
 /-- Cosh reflection around arcsin(1/2) = π/6: s ↦ π/3 - s.
-    The cosh kernel is anchored at x = π/6. The cosh critical strip extends
-    vertically from y = −π/3 to y = π/3, with boundaries extending past y = ±1
-    (since π/3 > 1). The Schwarz reflection line sits at x = 0 (the imaginary
-    axis), so the strip runs from π/6 to −π/6 under this reflection, giving
-    offset coverage from 0 to π/3.
-
-    The cosh reflection is "automatic" — it derives from two intrinsic symmetries
-    of cosh: the evenness cosh(z) = cosh(−z) (Re-axis reflection), and the
-    conjugate symmetry cosh(z̄) = conj(cosh(z)) from real Taylor coefficients
-    (Im = 0 fold). -/
+    Based on prime harmonic decomposition with cosh kernel at arcsin(1/2),
+    the cosh critical strip runs from π/6 to -π/6 under Schwarz reflection,
+    giving coverage from 0 to π/3 (which extends past 1). -/
 def coshRotation (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
 
 /-- The composition of cosh rotation after classical rotation is a real translation
@@ -123,48 +84,6 @@ lemma composition_is_translation (s : ℂ) :
 
 /-- π/3 - 1 > 0, since π > 3. This is what makes the cosh strip "extend past one." -/
 lemma shift_pos : Real.pi / 3 - 1 > 0 := by
-  linarith [Real.pi_gt_three]
-
-/-! ### Automatic Cosh Symmetries
-
-The two symmetries of the cosh kernel that drive all the reflection invariance
-results are both intrinsic ("automatic") properties of cosh:
-
-1. **Evenness** (Re-axis reflection, s ↦ −s): `cosh(z) = cosh(−z)`.
-2. **Conjugate symmetry** (Im = 0 fold, s ↦ s̄): `cosh(z̄) = conj(cosh(z))`,
-   because cosh has real Taylor coefficients.
-
-Conjugate zeros of cosh appear in dual pairs between y = 1 and y = π/3, and
-between y = −1 and y = −π/3. These dual pairs decompose harmonics into cosine
-and sine components, and reflect over the Schwarz line at x = 0 to create
-balanced quartets. Balanced harmonics cancel; unbalanced harmonics are forced
-by the Im = 0 fold to real values x = 1/2 with y ≠ 0. -/
-
-/-- **Cosh evenness (Re-axis reflection symmetry)**: `cosh(z) = cosh(−z)`.
-    This is the automatic even-function property that drives the cosh reflection
-    invariance of prime harmonics. It is intrinsic to the analytic structure of cosh. -/
-theorem cosh_even_symmetry (z : ℝ) : Real.cosh z = Real.cosh (-z) := by
-  rw [Real.cosh_neg]
-
-/-- **Cosh conjugate symmetry (Im = 0 fold)**: `cosh(z̄) = conj(cosh(z))`.
-    This follows from cosh having real Taylor coefficients: cosh(z) = ∑ z²ⁿ/(2n)!,
-    so applying conjugation commutes through the sum. This is the "automatic fold"
-    property over the real axis (Im = 0).
-    Together with evenness, this creates the balanced quartet structure from
-    dual pairs of conjugate zeros. -/
-theorem cosh_conjugate_symmetry (z : ℂ) :
-    Complex.cosh (starRingEnd ℂ z) = starRingEnd ℂ (Complex.cosh z) := by
-  unfold Complex.cosh
-  simp only [map_div₀, map_add, Complex.exp_conj]
-  congr 1
-  · congr 1
-    rw [show -(starRingEnd ℂ z) = starRingEnd ℂ (-z) from (map_neg _ z).symm, Complex.exp_conj]
-  · simp [map_ofNat]
-
-/-- The cosh kernel strip boundaries extend past ±1: π/3 > 1.
-    This ensures the cosh critical strip (from y = −π/3 to y = π/3)
-    covers the classical critical strip (from y = −1 to y = 1). -/
-theorem cosh_strip_exceeds_one : Real.pi / 3 > 1 := by
   linarith [Real.pi_gt_three]
 
 /-! ### Prime Harmonics
@@ -199,10 +118,9 @@ def primeHarmonic (p : ℕ) (σ : ℝ) (s : ℝ) : ℝ :=
     f(2σ − s) = f(s). This is the core symmetry that the cosh kernel exploits:
     it sees each prime's contribution as an even function about the reflection axis.
 
-    This invariance is "automatic" — it follows directly from the evenness of cosh
-    (cosh(z) = cosh(−z), the Re-axis reflection symmetry), which is baked into
-    the analytic structure of cosh. The primes are the invariant, and their
-    harmonics inherit this invariance through the automatic fold property. -/
+    This is the key property connecting primes to reflection invariance:
+    the primes are the invariant, and their harmonics inherit this invariance
+    through the evenness of cosh. -/
 theorem primeHarmonic_reflection_invariant (p : ℕ) (σ s : ℝ) :
     primeHarmonic p σ (2 * σ - s) = primeHarmonic p σ s := by
   simp only [primeHarmonic]
@@ -214,12 +132,9 @@ theorem primeHarmonic_reflection_invariant (p : ℕ) (σ s : ℝ) :
     under the cosh reflection s ↦ π/3 − s.
 
     This is the precise sense in which h2 (cosh rotation invariance) connects
-    to the primes: the cosh kernel anchored at x = π/6 observes each prime
+    to the primes: the cosh kernel at arcsin(1/2) = π/6 observes each prime
     harmonic as an even function about π/6, making the Euler product's
-    prime-by-prime contributions invariant under the cosh reflection.
-    The invariance is automatic, deriving from the evenness of cosh
-    (cosh(z) = cosh(−z)) — the Re-axis reflection symmetry baked into
-    cosh's analytic structure. -/
+    prime-by-prime contributions invariant under the cosh reflection. -/
 theorem primeHarmonic_coshRotation_invariant (p : ℕ) (s : ℝ) :
     primeHarmonic p (Real.pi / 6) (Real.pi / 3 - s)
       = primeHarmonic p (Real.pi / 6) s := by

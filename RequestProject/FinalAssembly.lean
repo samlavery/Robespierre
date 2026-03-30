@@ -412,6 +412,74 @@ theorem final_RH
 
 
 
+/-- The observer-neutrality package: if a zero set is not entirely on the
+critical line, then some residue is unbalanced, while the centered cosh kernel
+stays fixed at `1` and the sine anchor stays fixed at `1/2`. -/
+theorem observer_neutrality
+    (zeros : Set ℂ)
+    (hNotRH : ¬ CoshKernelNonInterference.AllOnCriticalLine zeros) :
+    (∃ ρ ∈ zeros, ρ + starRingEnd ℂ ρ ≠ 1) ∧
+    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+    Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
+  rcases CoshKernelNonInterference.not_rh_kernel_observer zeros hNotRH with
+    ⟨hzero, hcosh⟩
+  rcases hzero with ⟨ρ, hρ, _, hunbal⟩
+  exact ⟨⟨ρ, hρ, hunbal⟩, hcosh, CoshKernelNonInterference.sin_arcsin_half⟩
+
+/-- A genuine nontrivial off-line zero is automatically unbalanced, while the
+observer anchor stays fixed at `1/2` and the centered cosh kernel stays `1`. -/
+theorem observer_neutrality_at_offline_zero
+    (ρ : ℂ)
+    (hρ : IsNontrivialOfflineZero ρ) :
+    ρ + starRingEnd ℂ ρ ≠ 1 ∧
+    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+    Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
+  refine ⟨CoshKernelNonInterference.off_line_unbalanced ρ ?_, ?_, ?_⟩
+  · exact hρ.2.2.2
+  · exact CoshKernelNonInterference.cosh_kernel_at_half_is_identity
+  · exact CoshKernelNonInterference.sin_arcsin_half
+
+/-- If `offlineZeros` is nonempty, it is not concentrated on the critical line. -/
+theorem offlineZeros_not_allOnCriticalLine_of_nonempty
+    (h : offlineZeros.Nonempty) :
+    ¬ CoshKernelNonInterference.AllOnCriticalLine offlineZeros := by
+  intro hall
+  rcases h with ⟨ρ, hρ⟩
+  exact hρ.2.2.2 (hall ρ hρ)
+
+/-- Observer-neutrality instantiated to the actual off-line zero set. -/
+theorem observer_neutrality_for_offlineZeros
+    (h : offlineZeros.Nonempty) :
+    (∃ ρ ∈ offlineZeros, ρ + starRingEnd ℂ ρ ≠ 1) ∧
+    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+    Real.sin (Real.arcsin (1 / 2)) = 1 / 2 :=
+  observer_neutrality offlineZeros
+    (offlineZeros_not_allOnCriticalLine_of_nonempty h)
+
+/-- Observer-neutrality holds uniformly for every actual off-line zero. -/
+theorem observer_neutrality_uniform_on_offlineZeros :
+    ∀ ρ ∈ offlineZeros,
+      ρ + starRingEnd ℂ ρ ≠ 1 ∧
+      Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+      Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
+  intro ρ hρ
+  exact observer_neutrality_at_offline_zero ρ hρ
+
+/-- The same observer-neutrality statement propagates to any subset of
+`offlineZeros`, including infinite conspiracies. -/
+theorem observer_neutrality_on_any_offline_set
+    (S : Set ℂ)
+    (hS : S ⊆ offlineZeros) :
+    ∀ ρ ∈ S,
+      ρ + starRingEnd ℂ ρ ≠ 1 ∧
+      Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+      Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
+  intro ρ hρ
+  exact observer_neutrality_at_offline_zero ρ (hS hρ)
+
+
+
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FINAL THEOREM 1:  Cosh invariance ⇒ offlineZeros = ∅
 -- ═══════════════════════════════════════════════════════════════════════════
