@@ -486,10 +486,10 @@ theorem observer_neutrality_on_any_offline_set
 -- ═══════════════════════════════════════════════════════════════════════════
 
 theorem get_h_cosh
-    {U : Set ℂ} (G : CoshHarmonicRepr U)
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
     EqOn G.repr riemannZeta U := by
-  let h_cosh := (cosh_harmonics_zeta_invariance G hζ).1
+  let h_cosh := (cosh_harmonics_zeta_invarianceI G hζ).1
   exact h_cosh
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -511,9 +511,9 @@ theorem final_RH_of_cosh_invariance
 
 
 theorem final_equivalence
-    {U : Set ℂ} (G : CoshHarmonicRepr U)
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
     (offlineZeros = ∅ ↔ RiemannHypothesis) ∧ EqOn G.repr riemannZeta U :=
-  ⟨offlineZeros_empty_iff_RH, (cosh_harmonics_zeta_invariance G hζ).1⟩
+  ⟨offlineZeros_empty_iff_RH, (cosh_harmonics_zeta_invarianceI G hζ).1⟩
 
 end
