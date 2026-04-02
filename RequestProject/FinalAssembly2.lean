@@ -16,7 +16,6 @@ import RequestProject.CoshZetaSymmetry
 import RequestProject.ZetaCoshReflection
 import RequestProject.ZetaSymmetry
 import RequestProject.CriticalStripControlOffline
-import RequestProject.CoshHarmonicReprInstance
 import RequestProject.ProofChain
 import RequestProject.CoshHarmonicsZetaInvariance
 /-!
