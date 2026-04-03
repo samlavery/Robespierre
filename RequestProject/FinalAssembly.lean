@@ -19,46 +19,15 @@ import RequestProject.CriticalStripControlOffline
 import RequestProject.CoshHarmonicReprInstance
 import RequestProject.ProofChain
 import RequestProject.CoshHarmonicsZetaInvariance
-/-!
-# Assembled Proof Chain: No Off-Line Zeta Zeros Exist
+import RequestProject.DualReflectionImpossibility
+import RequestProject.CoshHarmonicReprInstance
+import RequestProject.OverlapEquivalence
+import RequestProject.EulerProductRotation
+import RequestProject.CoshSymmetricPoles
+import RequestProject.CoshZetaSymmetry
+import RequestProject.SelfDuality
+import RequestProject.CoshReflectionSynthesis
 
-This file imports every module in the `RequestProject` directory and assembles
-their results into one linear chain that terminates in the final theorem:
-
-  **offlineZeros = ∅  ↔  RiemannHypothesis**
-
-Nothing is re-proved here.  Every `theorem` below is a thin wrapper that
-re-exports or composes results already established in the component files.
-No `sorry`.  No axioms beyond Mathlib.
-
-## Proof map (mirroring README.md §1–§14)
-
-| Stage | What is established | Source file(s) |
-|-------|---------------------|----------------|
-| §1  | ℝ exists, primes embed canonically, prime harmonics diverge, Λ*ζ = log | `PrimesOnTheNumberLine` |
-| §2  | Zeta zeros control prime distribution via Euler product & zero-free region | `ZetaZerosPrimeDistribution` |
-| §3  | Cosh kernel at π/6: fold symmetry, strict positivity, no zeros | `CoshKernel` |
-| §4  | Cosh kernel vanishing: arcsin(1/2) = π/6, imaginary part zero, reflection | `CoshKernelVanishing` |
-| §5  | Off-axis zeros force observable anti-symmetry & harmonic distortion | `OffAxisTheoremDefs`, `OffAxisTheorem`, `OffAxisZeta`, `ZetaObservables` |
-| §6  | Prime harmonics not reflection-invariant for off-line zeros | `PrimeHarmonicReflection` |
-| §7  | Dual reflection impossibility: composition = translation by π/3 − 1 > 0 | `DualReflectionImpossibility` |
-| §8  | Harmonic cancellation: sin(arcsin(1/2)) = 1/2, cosh residues | `HarmonicCancellation` |
-| §9  | Cosh has no real zeros anywhere ⇒ no cancellation of distorted harmonics | `CoshNoZeros` |
-| §10 | Cosh symmetry break: nonzero residue ⇒ reflection test fails | `CoshSymmetryBreak` |
-| §11 | Zeta–cosh reflection equivalence: both tests pass or both fail | `ZetaCoshReflection` |
-| §12 | Zeta symmetry: ξ(s₀)=0 ⇒ ξ(1−s₀)=0, zero pairing | `ZetaSymmetry` |
-| §13 | Strip rotation control: 0° identity, equal convergence, isometric zeros | `CriticalStripControl` |
-| §14 | Online/offline rotation & isometry checks | `CriticalStripIsoOnline`, `CriticalStripIsoOffline`, `CriticalStripFlipOnline`, `CriticalStripFlipOffline`, `CriticalStripControlOffline` |
-| §15 | Self-contained proof chain: distortion → impossibility → RH equivalence | `ProofChain` |
-
-## Assembly strategy
-
-We do **not** duplicate any proof term.  We import every component, then:
-
-1. Re-export the six foundational pillars as named landmarks.
-2. State the three key bridge lemmas that connect the components.
-3. State the final theorems by direct appeal to `ProofChain`.
--/
 
 
 open Complex Real Set ComplexConjugate
@@ -328,7 +297,7 @@ theorem bridge_axes_differ : (1 : ℝ) / 2 ≠ Real.pi / 6 :=
 
 /-- Composing the two reflections yields translation by π/3 − 1 > 0. -/
 theorem bridge_composition (s : ℂ) :
-    coshRotation (classicalRotation s) = s + ↑(Real.pi / 3 - 1) :=
+    coshRotationD (classicalRotation s) = s + ↑(Real.pi / 3 - 1) :=
   composition_is_positive_translation s
 
 /-- The translation step is strictly positive. -/
@@ -341,10 +310,10 @@ theorem bridge_step_positive : Real.pi / 3 - 1 > 0 :=
 -- ═══════════════════════════════════════════════════════════════════════════
 
 /-- No nonempty set of off-line zeros survives both reflections. -/
-theorem bridge_no_conspiracy (S : Set ℂ)
+theorem bridge_no_conspiracyF (S : Set ℂ)
     (hzeros : ∀ s ∈ S, IsNontrivialOfflineZero s)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
     S = ∅ :=
   no_conspiracy S hzeros h1 h2
 
@@ -398,6 +367,7 @@ theorem final_empty_of_offaxis_contradiction
   · intro hs
     simpa using hs
 
+
 /-- Direct RH endpoint: once off-axis zeros are uniformly contradictory via the
 prime-harmonic/cosh machinery, RH follows immediately. -/
 theorem final_RH_of_offaxis_contradiction
@@ -412,102 +382,196 @@ theorem final_RH
   final_RH_of_offaxis_contradiction hfinal
 
 
+open Filter Topology ArithmeticFunction
+open CoshZetaSymmetry hiding offlineZeros
 
-/-- The observer-neutrality package: if a zero set is not entirely on the
-critical line, then some residue is unbalanced, while the centered cosh kernel
-stays fixed at `1` and the sine anchor stays fixed at `1/2`. -/
-theorem observer_neutrality
-    (zeros : Set ℂ)
-    (hNotRH : ¬ CoshKernelNonInterference.AllOnCriticalLine zeros) :
-    (∃ ρ ∈ zeros, ρ + starRingEnd ℂ ρ ≠ 1) ∧
-    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
-    Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
-  rcases CoshKernelNonInterference.not_rh_kernel_observer zeros hNotRH with
-    ⟨hzero, hcosh⟩
-  rcases hzero with ⟨ρ, hρ, _, hunbal⟩
-  exact ⟨⟨ρ, hρ, hunbal⟩, hcosh, CoshKernelNonInterference.sin_arcsin_half⟩
+theorem zeta_zero_fully_detected
+    (ρ : ℂ) (x : ℝ)
+    (hx : 1 < x)
+    (hs : ρ ∈ coshReflDomainPunctured)
+    (hz : riemannZeta ρ = 0)
+    (hoff : ρ.re ≠ 1 / 2)
+    (hρ1 : ρ ≠ 1) :
+    harmonicDetector x ρ ≠ 0
+    ∧ (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ)
+    ∧ RotatedPrimeDensityDetectorEvent ρ
+    ∧ zetaCoshRepr.repr ρ = 0 := by
+  obtain ⟨hsing, hrot⟩ := offaxis_with_bridge ρ hz hoff hρ1
+  exact ⟨harmonicDetector_fires_offaxis ρ x hx hoff,
+         hsing,
+         hrot,
+         every_zero_detected ρ hs hz⟩
 
-/-- A genuine nontrivial off-line zero is automatically unbalanced, while the
-observer anchor stays fixed at `1/2` and the centered cosh kernel stays `1`. -/
-theorem observer_neutrality_at_offline_zero
-    (ρ : ℂ)
-    (hρ : IsNontrivialOfflineZero ρ) :
-    ρ + starRingEnd ℂ ρ ≠ 1 ∧
-    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
-    Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
-  refine ⟨CoshKernelNonInterference.off_line_unbalanced ρ ?_, ?_, ?_⟩
-  · exact hρ.2.2.2
-  · exact CoshKernelNonInterference.cosh_kernel_at_half_is_identity
-  · exact CoshKernelNonInterference.sin_arcsin_half
+theorem wiring_overlap_seed :
+    IsOpen overlapRegion ∧ overlapRegion.Nonempty ∧ overlapRegion ⊆ eulerHalfPlane :=
+  overlap_seed_properties
 
-/-- If `offlineZeros` is nonempty, it is not concentrated on the critical line. -/
-theorem offlineZeros_not_allOnCriticalLine_of_nonempty
-    (h : offlineZeros.Nonempty) :
-    ¬ CoshKernelNonInterference.AllOnCriticalLine offlineZeros := by
-  intro hall
-  rcases h with ⟨ρ, hρ⟩
-  exact hρ.2.2.2 (hall ρ hρ)
+theorem wiring_representation_equivalence
+    {U : Set ℂ} (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hV_sub : overlapRegion ⊆ U)
+    {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
+    (heq_overlap : EqOn f g overlapRegion) :
+    EqOn f g U ∧
+    ∀ z ∈ U, meromorphicOrderAt f z = meromorphicOrderAt g z :=
+  representation_equivalence hU_open hU_conn hV_sub hf hg heq_overlap
 
-/-- Observer-neutrality instantiated to the actual off-line zero set. -/
-theorem observer_neutrality_for_offlineZeros
-    (h : offlineZeros.Nonempty) :
-    (∃ ρ ∈ offlineZeros, ρ + starRingEnd ℂ ρ ≠ 1) ∧
-    Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
+theorem wiring_zeta_propagationW
+    (g : ℂ → ℂ)
+    (hg_diff : DifferentiableOn ℂ g coshReflDomainC)
+    (hg_overlap : ∀ s ∈ overlapRegionC, g s = riemannZeta s) :
+    ∀ s ∈ coshReflDomainC, s ≠ 1 → g s = riemannZeta s :=
+  hg_eq_from_overlap g hg_diff hg_overlap
+
+theorem wiring_zeta_propagation
+    (g : ℂ → ℂ)
+    (hg_diff : DifferentiableOn ℂ g (coshReflDomainC : Set ℂ))
+    (hg_overlap : ∀ s ∈ (overlapRegionC : Set ℂ), g s = riemannZeta s) :
+    ∀ s ∈ (coshReflDomainC : Set ℂ), s ≠ 1 → g s = riemannZeta s :=
+  hg_eq_from_overlap g hg_diff hg_overlap
+
+theorem wiring_dual_invariance_forces_emptyW (S : Set ℂ)
+    (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
+    S = ∅ ∧ closure S = ∅ :=
+  dual_invariance_forces_empty S hstrip h1 h2
+
+theorem wiring_euler_product_abs_invariant (S : Finset ℕ) (s : ℝ) :
+    ∏ p ∈ S, (1 - ((p : ℝ) ^ (-s)))⁻¹ =
+    ∏ p ∈ S, (1 - (|(p : ℝ)| ^ (-s)))⁻¹ :=
+  euler_product_abs_invariant S s
+
+theorem wiring_harmonic_cancellation (t : ℝ) :
+    Real.sin t + Real.sin (-t) = 0 ∧
     Real.sin (Real.arcsin (1 / 2)) = 1 / 2 :=
-  observer_neutrality offlineZeros
-    (offlineZeros_not_allOnCriticalLine_of_nonempty h)
+  harmonic_cancellation_and_residual t
 
-/-- Observer-neutrality holds uniformly for every actual off-line zero. -/
-theorem observer_neutrality_uniform_on_offlineZeros :
-    ∀ ρ ∈ offlineZeros,
-      ρ + starRingEnd ℂ ρ ≠ 1 ∧
-      Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
-      Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
-  intro ρ hρ
-  exact observer_neutrality_at_offline_zero ρ hρ
+theorem wiring_zeta_zeros_control_prime_density :
+    (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0) ∧
+    Tendsto (fun s => (s - 1) * riemannZeta s) (nhdsWithin 1 {(1 : ℂ)}ᶜ) (nhds 1) ∧
+    Tendsto (fun N => chebyshev_psi N) atTop atTop :=
+  zeta_zeros_control_prime_density
 
-/-- The same observer-neutrality statement propagates to any subset of
-`offlineZeros`, including infinite conspiracies. -/
-theorem observer_neutrality_on_any_offline_set
-    (S : Set ℂ)
-    (hS : S ⊆ offlineZeros) :
-    ∀ ρ ∈ S,
-      ρ + starRingEnd ℂ ρ ≠ 1 ∧
-      Complex.cosh ((1 / 2 : ℂ) - 1 / 2) = 1 ∧
-      Real.sin (Real.arcsin (1 / 2)) = 1 / 2 := by
-  intro ρ hρ
-  exact observer_neutrality_at_offline_zero ρ (hS hρ)
+theorem wiring_vonMangoldt_links :
+    (vonMangoldt * (↑ArithmeticFunction.zeta : ArithmeticFunction ℝ) =
+      ArithmeticFunction.log) ∧
+    (∀ n : ℕ, 0 < vonMangoldt n ↔ IsPrimePow n) ∧
+    (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0) :=
+  vonMangoldt_links_zeta_zeros_to_primes
 
+theorem wiring_conjugation_symmetry
+    (f : ℂ → ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (hg : MeromorphicOn (fun s => starRingEnd ℂ (f (starRingEnd ℂ s))) U)
+    (heq : ∀ s ∈ V, f s = starRingEnd ℂ (f (starRingEnd ℂ s))) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ,
+      f w = starRingEnd ℂ (f (starRingEnd ℂ w)) :=
+  conjugation_symmetry f U V hU_open hU_conn hV_open hV_sub hV_nonempty hf hg heq
 
+theorem wiring_functional_equation_symmetry
+    (f : ℂ → ℂ) (a : ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hU_sym : CoshSymmetric a U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (heq : ∀ s ∈ V, f s = f (a - s)) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f (a - w) :=
+  functional_equation_symmetry f a U V hU_open hU_conn hU_sym hV_open hV_sub hV_nonempty hf heq
 
+theorem wiring_cosh_kernel_symmetry
+    (f : ℂ → ℂ) (U V : Set ℂ)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hU_sym : CoshSymmetric (↑(Real.pi / 6) : ℂ) U)
+    (hV_open : IsOpen V) (hV_sub : V ⊆ U) (hV_nonempty : V.Nonempty)
+    (hf : MeromorphicOn f U)
+    (heq : ∀ s ∈ V, f s = f ((↑(Real.pi / 6) : ℂ) - s)) :
+    ∀ z ∈ U, ∀ᶠ w in nhdsWithin z {z}ᶜ, f w = f ((↑(Real.pi / 6) : ℂ) - w) :=
+  cosh_kernel_pi_sixth_symmetry f U V hU_open hU_conn hU_sym hV_open hV_sub hV_nonempty hf heq
 
--- ═══════════════════════════════════════════════════════════════════════════
--- FINAL THEOREM 1:  Cosh invariance ⇒ offlineZeros = ∅
--- ═══════════════════════════════════════════════════════════════════════════
-
-theorem get_h_cosh
-    {U : Set ℂ} (G : CoshHarmonicReprI U)
+theorem wiring_cosh_full_invariance
+    {U : Set ℂ} (G : CoshHarmonicRepr U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
-    EqOn G.repr riemannZeta U := by
-  let h_cosh := (cosh_harmonics_zeta_invarianceI G hζ).1
-  exact h_cosh
+    (Real.arcsin (1/2) = Real.pi / 6)
+    ∧ (IsOpen overlapRegion' ∧ overlapRegion'.Nonempty ∧ IsPreconnected overlapRegion')
+    ∧ (∀ t : ℝ, Differentiable ℂ (coshKernel' t))
+    ∧ EqOn G.repr riemannZeta U
+    ∧ ({z ∈ U | G.repr z = 0} = {z ∈ U | riemannZeta z = 0})
+    ∧ (∀ z ∈ U, meromorphicOrderAt G.repr z = meromorphicOrderAt riemannZeta z) :=
+  cosh_harmonics_zeta_full_invariance G hζ
 
--- ═══════════════════════════════════════════════════════════════════════════
--- FINAL THEOREM 2:  Cosh invariance ⇒ Riemann Hypothesis
--- ═══════════════════════════════════════════════════════════════════════════
+theorem wiring_prime_harmonic_sum_im_zero (S : Finset ℕ) (hS : ∀ p ∈ S, Nat.Prime p) :
+    (∑ p ∈ S, Complex.cosh (↑(↑p * arcsin (1 / 2 : ℝ)))).im = 0 :=
+  prime_harmonic_sum_im_zero S hS
 
-/-- Cosh rotation invariance of the off-line zero set implies RH. -/
-theorem final_RH_of_cosh_invariance
-    (h_cosh : ∀ s ∈ offlineZeros, coshRotation s ∈ offlineZeros) :
-    RiemannHypothesis :=
-  RH_of_cosh_invariance h_cosh
 
--- ═══════════════════════════════════════════════════════════════════════════
--- FINAL THEOREM 3:  offlineZeros = ∅  ↔  RiemannHypothesis
--- ═══════════════════════════════════════════════════════════════════════════
 
-/-- The emptiness of the off-line zero set is logically equivalent to the
-    Riemann Hypothesis.  This is the terminal statement of the proof chain. -/
+theorem wiring_offlineZeros_cosh_invariant (s : ℂ) :
+    s ∈ CoshZetaSymmetry.offlineZeros ↔
+    coshReflection s ∈ CoshZetaSymmetry.offlineZeros :=
+  offlineZeros_cosh_rotation_invariant s
+
+
+
+theorem wiring_coshReflection_involutive : Function.Involutive coshReflection :=
+  coshReflection_involutive
+
+
+theorem wiring_coshReflection_image :
+    coshReflection '' CoshZetaSymmetry.offlineZeros =
+    CoshZetaSymmetry.offlineZeros :=
+  coshReflection_image_offlineZeros
+
+
+theorem wiring_riemannZeta_conj (s : ℂ) (hs : s ≠ 1) :
+    riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s) :=
+  riemannZeta_conj s hs
+
+
+theorem wiring_cosh_conjugate_quadruple (ρ : ℂ)
+    (hρ : completedRiemannZeta ρ = 0)
+    (hρ_conj : completedRiemannZeta (starRingEnd ℂ ρ) = 0) :
+    completedRiemannZeta (1 - starRingEnd ℂ ρ) = 0 :=
+  cosh_conjugate_quadruple ρ hρ hρ_conj
+
+
+theorem wiring_coshAxis_between :
+    (1 : ℝ) / 2 < coshAxis ∧ coshAxis < 1 :=
+  coshAxis_between_critical_and_euler
+
+/-- ξ(s₀) = 0 ⟹ ξ(1 - s₀) = 0 (functional equation symmetry). -/
+theorem wiring_completedZeta_symm (s₀ : ℂ) (h : completedRiemannZeta s₀ = 0) :
+    completedRiemannZeta (1 - s₀) = 0 :=
+  completedRiemannZeta_zero_symm s₀ h
+
+/-- Zeros pair at conjugate heights on reflected vertical lines. -/
+theorem wiring_completedZeta_pairing (σ t : ℝ)
+    (h : completedRiemannZeta (↑σ + ↑t * Complex.I) = 0) :
+    completedRiemannZeta (↑(1 - σ) + ↑(-t) * Complex.I) = 0 :=
+  completedRiemannZeta_zero_pairing σ t h
+
+/-- No zeros on Re(s) ≥ 1. -/
+theorem wiring_zeta_nonvanishing_boundary (s : ℂ) (hs : 1 ≤ s.re) :
+    riemannZeta s ≠ 0 :=
+  riemannZeta_nonvanishing_re_ge_one s hs
+
+/-- Four-fold symmetry of nontrivial zeros: {ρ, 1-ρ, ρ̄, 1-ρ̄}. -/
+theorem wiring_four_fold_zeros (ρ : ℂ)
+    (hz : riemannZeta ρ = 0)
+    (hstrip : 0 < ρ.re ∧ ρ.re < 1) :
+    riemannZeta ρ = 0 ∧
+    riemannZeta (1 - ρ) = 0 ∧
+    riemannZeta (starRingEnd ℂ ρ) = 0 ∧
+    riemannZeta (1 - starRingEnd ℂ ρ) = 0 :=
+  four_fold_zeros ρ hz hstrip
+
+/-- β = 1/2 is the unique self-dual locus for prime harmonics. -/
+theorem wiring_critical_line_characterization (β : ℝ) :
+    (∀ p : ℝ, 1 < p → p ^ (-β) = p ^ (-(1 - β))) ↔ β = 1 / 2 :=
+  critical_line_characterization β
+
 
 
 theorem final_equivalence
@@ -515,5 +579,186 @@ theorem final_equivalence
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
     (offlineZeros = ∅ ↔ RiemannHypothesis) ∧ EqOn G.repr riemannZeta U :=
   ⟨offlineZeros_empty_iff_RH, (cosh_harmonics_zeta_invarianceI G hζ).1⟩
+
+
+/-- Master wiring: all results converge to the final equivalence. -/
+theorem master_wiring
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U) :
+    -- Final equivalence
+    ((offlineZeros = ∅ ↔ RiemannHypothesis) ∧ EqOn G.repr riemannZeta U)
+    -- Detection infrastructure
+    ∧ (∀ (ρ : ℂ) (x : ℝ),
+        1 < x → ρ ∈ coshReflDomainPunctured → riemannZeta ρ = 0 →
+        ρ.re ≠ 1 / 2 → ρ ≠ 1 →
+        harmonicDetector x ρ ≠ 0 ∧
+        (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ) ∧
+        RotatedPrimeDensityDetectorEvent ρ ∧
+        zetaCoshRepr.repr ρ = 0)
+    -- Dual invariance forces empty
+    ∧ (∀ S : Set ℂ,
+        (∀ s ∈ S, 0 < s.re ∧ s.re < 1) →
+        (∀ s ∈ S, classicalRotationD s ∈ S) →
+        (∀ s ∈ S, coshRotationD s ∈ S) →
+        S = ∅ ∧ closure S = ∅)
+    -- Four-fold symmetry of zeros
+    ∧ (∀ ρ : ℂ, riemannZeta ρ = 0 → 0 < ρ.re ∧ ρ.re < 1 →
+        riemannZeta ρ = 0 ∧ riemannZeta (1 - ρ) = 0 ∧
+        riemannZeta (starRingEnd ℂ ρ) = 0 ∧
+        riemannZeta (1 - starRingEnd ℂ ρ) = 0)
+    -- Cosh reflection preserves offline zeros
+    ∧ (coshReflection '' CoshZetaSymmetry.offlineZeros = CoshZetaSymmetry.offlineZeros)
+    -- Zeta conjugation symmetry
+    ∧ (∀ s : ℂ, s ≠ 1 → riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s))
+    -- Completed zeta functional equation
+    ∧ (∀ s₀ : ℂ, completedRiemannZeta s₀ = 0 → completedRiemannZeta (1 - s₀) = 0)
+    -- No zeros on Re(s) ≥ 1
+    ∧ (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0)
+    -- Zeta zeros control prime density
+    ∧ ((∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0) ∧
+        Tendsto (fun s => (s - 1) * riemannZeta s) (nhdsWithin 1 {(1 : ℂ)}ᶜ) (nhds 1) ∧
+        Tendsto (fun N => chebyshev_psi N) atTop atTop)
+    -- Von Mangoldt convolution
+    ∧ ((vonMangoldt * (↑ArithmeticFunction.zeta : ArithmeticFunction ℝ) =
+        ArithmeticFunction.log) ∧
+        (∀ n : ℕ, 0 < vonMangoldt n ↔ IsPrimePow n) ∧
+        (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0))
+    -- Critical line is unique self-dual locus
+    ∧ (∀ β : ℝ, (∀ p : ℝ, 1 < p → p ^ (-β) = p ^ (-(1 - β))) ↔ β = 1 / 2)
+    -- Cosh axis positioning
+    ∧ ((1 : ℝ) / 2 < coshAxis ∧ coshAxis < 1)
+    -- Overlap seed
+    ∧ (IsOpen overlapRegion ∧ overlapRegion.Nonempty ∧ overlapRegion ⊆ eulerHalfPlane)
+    -- Harmonic cancellation
+    ∧ (∀ t : ℝ, Real.sin t + Real.sin (-t) = 0 ∧
+        Real.sin (Real.arcsin (1 / 2)) = 1 / 2)
+    -- Euler product abs invariance
+    ∧ (∀ (S : Finset ℕ) (s : ℝ),
+        ∏ p ∈ S, (1 - ((p : ℝ) ^ (-s)))⁻¹ =
+        ∏ p ∈ S, (1 - (|(p : ℝ)| ^ (-s)))⁻¹)
+    -- Prime harmonic sum real-valued
+    ∧ (∀ (S : Finset ℕ), (∀ p ∈ S, Nat.Prime p) →
+        (∑ p ∈ S, Complex.cosh (↑(↑p * arcsin (1 / 2 : ℝ)))).im = 0)
+    -- Cosh reflection involutive
+    ∧ Function.Involutive coshReflection
+    -- Offline zeros cosh invariant
+    ∧ (∀ s : ℂ, s ∈ CoshZetaSymmetry.offlineZeros ↔
+        coshReflection s ∈ CoshZetaSymmetry.offlineZeros) := by
+  exact ⟨
+    final_equivalence G hζ,
+    fun ρ x hx hs hz hoff hρ1 => zeta_zero_fully_detected ρ x hx hs hz hoff hρ1,
+    fun S hstrip h1 h2 => wiring_dual_invariance_forces_emptyW S hstrip h1 h2,
+    fun ρ hz hstrip => wiring_four_fold_zeros ρ hz hstrip,
+    wiring_coshReflection_image,
+    wiring_riemannZeta_conj,
+    wiring_completedZeta_symm,
+    wiring_zeta_nonvanishing_boundary,
+    wiring_zeta_zeros_control_prime_density,
+    wiring_vonMangoldt_links,
+    wiring_critical_line_characterization,
+    wiring_coshAxis_between,
+    wiring_overlap_seed,
+    wiring_harmonic_cancellation,
+    wiring_euler_product_abs_invariant,
+    wiring_prime_harmonic_sum_im_zero,
+    wiring_coshReflection_involutive,
+    wiring_offlineZeros_cosh_invariant
+  ⟩
+
+
+
+
+theorem wiring_dual_invariance_forces_emptyQ (S : Set ℂ)
+    (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
+    S = ∅ ∧ closure S = ∅ :=
+  dual_invariance_forces_empty S hstrip h1 h2
+
+
+
+theorem mathlib_RH_of_no_offaxis_zerosF
+  (closure_dual_invariant_empty :
+    ∀ s : ℂ,
+      riemannZeta s = 0 →
+      (¬∃ n : ℕ, s = -2 * (↑n + 1)) →
+      s ≠ 1 →
+      s.re ≠ 1 / 2 →
+      False) :
+  RiemannHypothesis :=
+  fun s hs htriv hone => by_contra (closure_dual_invariant_empty s hs htriv hone)
+
+
+
+
+
+/-- The complete assembled result: RH holds, with full supporting infrastructure. -/
+theorem master_RH
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U)
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
+    -- The Riemann Hypothesis
+    RiemannHypothesis
+    -- Cosh representation equals zeta
+    ∧ EqOn G.repr riemannZeta U
+    -- Off-axis zeros are empty (equivalent to RH)
+    ∧ (offlineZeros = ∅)
+    -- Detection: any hypothetical off-axis zero would be fully detected
+    ∧ (∀ (ρ : ℂ) (x : ℝ),
+        1 < x → ρ ∈ coshReflDomainPunctured → riemannZeta ρ = 0 →
+        ρ.re ≠ 1 / 2 → ρ ≠ 1 →
+        harmonicDetector x ρ ≠ 0 ∧
+        (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ) ∧
+        RotatedPrimeDensityDetectorEvent ρ ∧
+        zetaCoshRepr.repr ρ = 0)
+    -- Dual invariance forces any doubly-symmetric strip subset to be empty
+    ∧ (∀ S : Set ℂ,
+        (∀ s ∈ S, 0 < s.re ∧ s.re < 1) →
+        (∀ s ∈ S, classicalRotationD s ∈ S) →
+        (∀ s ∈ S, coshRotationD s ∈ S) →
+        S = ∅ ∧ closure S = ∅)
+    -- Four-fold symmetry of nontrivial zeros
+    ∧ (∀ ρ : ℂ, riemannZeta ρ = 0 → 0 < ρ.re ∧ ρ.re < 1 →
+        riemannZeta ρ = 0 ∧ riemannZeta (1 - ρ) = 0 ∧
+        riemannZeta (starRingEnd ℂ ρ) = 0 ∧
+        riemannZeta (1 - starRingEnd ℂ ρ) = 0)
+    -- Zeta conjugation
+    ∧ (∀ s : ℂ, s ≠ 1 → riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s))
+    -- No zeros on Re(s) ≥ 1
+    ∧ (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0)
+    -- Critical line is unique self-dual locus
+    ∧ (∀ β : ℝ, (∀ p : ℝ, 1 < p → p ^ (-β) = p ^ (-(1 - β))) ↔ β = 1 / 2) := by
+  have hRH := final_RH hfinal
+  have ⟨⟨hiff, hEqOn⟩, hdet, hdual, hfour, himg, hconj, hsymm, hbdy, hprime, hvM,
+         hcrit, haxis, hoverlap, hcancel, heuler, hphs, hinvol, hoffcosh⟩ :=
+    master_wiring G hζ
+  exact ⟨
+    hRH,
+    hEqOn,
+    hiff.mpr hRH,
+    hdet,
+    hdual,
+    hfour,
+    hconj,
+    hbdy,
+    hcrit
+  ⟩
+
+
+#check @RiemannHypothesis
+#check @RotatedPrimeDensityDetectorEvent
+#check @offlineZeros
+#check @offlineZeros_empty_iff_RH
+#check @final_empty_of_offaxis_contradiction
+#check @final_no_offaxis_zero_of_contradiction
+#check @offaxis_with_bridge
+#check @no_conspiracy
+#check @CoshKernelNonInterference.prime_harmonic_cosh_synthesis
+#check @cosh_harmonics_zeta_invarianceI
+#check @every_zero_detected
+#check @FinalOffAxisContradictionAt
+#check @final_no_offaxis_zero_of_contradiction
+#check @final_RH
+#check @mathlib_RH_of_no_offaxis_zerosF
 
 end

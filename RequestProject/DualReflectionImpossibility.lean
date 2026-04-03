@@ -99,7 +99,7 @@ noncomputable section
 
 /-- Classical 180° rotation around s = 1/2: s ↦ 1 - s.
     This is the symmetry of the Riemann xi function: ξ(s) = ξ(1 - s). -/
-def classicalRotation (s : ℂ) : ℂ := 1 - s
+def classicalRotationD (s : ℂ) : ℂ := 1 - s
 
 /-- Cosh reflection around arcsin(1/2) = π/6: s ↦ π/3 - s.
     The cosh kernel is anchored at x = π/6. The cosh critical strip extends
@@ -112,13 +112,13 @@ def classicalRotation (s : ℂ) : ℂ := 1 - s
     of cosh: the evenness cosh(z) = cosh(−z) (Re-axis reflection), and the
     conjugate symmetry cosh(z̄) = conj(cosh(z)) from real Taylor coefficients
     (Im = 0 fold). -/
-def coshRotation (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
+def coshRotationD (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
 
 /-- The composition of cosh rotation after classical rotation is a real translation
     by π/3 - 1, the key offset between the two symmetry axes. -/
 lemma composition_is_translation (s : ℂ) :
-    coshRotation (classicalRotation s) = s + ↑(Real.pi / 3 - 1) := by
-  simp [classicalRotation, coshRotation]
+    coshRotationD (classicalRotationD s) = s + ↑(Real.pi / 3 - 1) := by
+  simp [classicalRotationD, coshRotationD]
   ring
 
 /-- π/3 - 1 > 0, since π > 3. This is what makes the cosh strip "extend past one." -/
@@ -191,7 +191,7 @@ def primeHarmonicFreqs : Set ℝ :=
     s ↦ cosh((s − σ) · log p).
     When σ = π/6, this is the cosh kernel's observation of the p-th prime harmonic.
     When σ = 1/2, this is the classical symmetrization. -/
-def primeHarmonic (p : ℕ) (σ : ℝ) (s : ℝ) : ℝ :=
+def primeHarmonicD (p : ℕ) (σ : ℝ) (s : ℝ) : ℝ :=
   Real.cosh ((s - σ) * Real.log p)
 
 /-- **Prime harmonics are invariant under reflection about their center.**
@@ -203,9 +203,9 @@ def primeHarmonic (p : ℕ) (σ : ℝ) (s : ℝ) : ℝ :=
     (cosh(z) = cosh(−z), the Re-axis reflection symmetry), which is baked into
     the analytic structure of cosh. The primes are the invariant, and their
     harmonics inherit this invariance through the automatic fold property. -/
-theorem primeHarmonic_reflection_invariant (p : ℕ) (σ s : ℝ) :
-    primeHarmonic p σ (2 * σ - s) = primeHarmonic p σ s := by
-  simp only [primeHarmonic]
+theorem primeHarmonic_reflection_invariantD (p : ℕ) (σ s : ℝ) :
+    primeHarmonicD p σ (2 * σ - s) = primeHarmonicD p σ s := by
+  simp only [primeHarmonicD]
   have : (2 * σ - s - σ) * Real.log ↑p = -((s - σ) * Real.log ↑p) := by ring
   rw [this, Real.cosh_neg]
 
@@ -221,11 +221,11 @@ theorem primeHarmonic_reflection_invariant (p : ℕ) (σ s : ℝ) :
     (cosh(z) = cosh(−z)) — the Re-axis reflection symmetry baked into
     cosh's analytic structure. -/
 theorem primeHarmonic_coshRotation_invariant (p : ℕ) (s : ℝ) :
-    primeHarmonic p (Real.pi / 6) (Real.pi / 3 - s)
-      = primeHarmonic p (Real.pi / 6) s := by
+    primeHarmonicD p (Real.pi / 6) (Real.pi / 3 - s)
+      = primeHarmonicD p (Real.pi / 6) s := by
   have : Real.pi / 3 - s = 2 * (Real.pi / 6) - s := by ring
   rw [this]
-  exact primeHarmonic_reflection_invariant p (Real.pi / 6) s
+  exact primeHarmonic_reflection_invariantD p (Real.pi / 6) s
 
 /-- **Classical rotation invariance of prime harmonics.**
     For each prime p, the harmonic s ↦ cosh((s − 1/2) · log p) is invariant
@@ -235,11 +235,11 @@ theorem primeHarmonic_coshRotation_invariant (p : ℕ) (s : ℝ) :
     generate h1's classical invariance — the primes are the common invariant
     underlying both symmetries. -/
 theorem primeHarmonic_classicalRotation_invariant (p : ℕ) (s : ℝ) :
-    primeHarmonic p (1/2 : ℝ) (1 - s)
-      = primeHarmonic p (1/2 : ℝ) s := by
+    primeHarmonicD p (1/2 : ℝ) (1 - s)
+      = primeHarmonicD p (1/2 : ℝ) s := by
   have : (1 : ℝ) - s = 2 * (1/2 : ℝ) - s := by ring
   rw [this]
-  exact primeHarmonic_reflection_invariant p (1/2) s
+  exact primeHarmonic_reflection_invariantD p (1/2) s
 
 /-
 PROBLEM
@@ -262,7 +262,7 @@ Each prime harmonic frequency is positive (log p > 0 for p ≥ 2).
     This ensures each harmonic oscillates nontrivially.
 
 PROVIDED SOLUTION
-If ω ∈ primeHarmonicFreqs, then ω = log p for some prime p. Since p ≥ 2, we have (p : ℝ) ≥ 2 > 1, so log p > 0 (Real.log_pos).
+If ω ∈ primeHarmonicDFreqs, then ω = log p for some prime p. Since p ≥ 2, we have (p : ℝ) ≥ 2 > 1, so log p > 0 (Real.log_pos).
 -/
 theorem primeHarmonicFreq_pos {ω : ℝ} (hω : ω ∈ primeHarmonicFreqs) : 0 < ω := by
   obtain ⟨ p, hp, rfl ⟩ := hω; exact Real.log_pos ( Nat.one_lt_cast.mpr hp.one_lt ) ;
@@ -290,16 +290,16 @@ theorem symmetry_centers_differ : (1 : ℝ) / 2 ≠ Real.pi / 6 := by
 
 /-- If S is invariant under both rotations, any element can be translated by π/3 - 1. -/
 lemma translate_step (S : Set ℂ)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S)
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S)
     {s : ℂ} (hs : s ∈ S) :
     s + ↑(Real.pi / 3 - 1) ∈ S := by
   simpa [composition_is_translation] using h2 _ (h1 _ hs)
 
 /-- Iterating: s + n * (π/3 - 1) ∈ S for all n ∈ ℕ. -/
 lemma iterate_translate (S : Set ℂ)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S)
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S)
     {s : ℂ} (hs : s ∈ S) (n : ℕ) :
     s + ↑(↑n * (Real.pi / 3 - 1)) ∈ S := by
   induction n with
@@ -322,10 +322,10 @@ lemma iterate_translate (S : Set ℂ)
     another invariant under reflection about 1/2
     (via `primeHarmonic_classicalRotation_invariant`), but since π/6 ≠ 1/2
     (via `symmetry_centers_differ`), no point set can satisfy both at once. -/
-theorem no_dual_symmetric_set (S : Set ℂ)
+theorem no_dual_symmetric_setD (S : Set ℂ)
     (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
     S = ∅ := by
   by_contra h_nonempty
   obtain ⟨s, hs⟩ : ∃ s ∈ S, 0 < s.re ∧ s.re < 1 :=
@@ -353,16 +353,16 @@ theorem no_infinite_offline_zeros_pass_both_tests (S : Set ℂ)
     (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
     (hoffline : ∀ s ∈ S, s.re ≠ 1/2)
     (hinf : S.Infinite)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
     False := by
-  have hempty := no_dual_symmetric_set S hstrip h1 h2
+  have hempty := no_dual_symmetric_setD S hstrip h1 h2
   subst hempty
   exact hinf Set.finite_empty
 
 /-! ## Closure invariance
 
-The maps `classicalRotation` and `coshRotation` are continuous (in fact, affine).
+The maps `classicalRotation` and `coshRotationD` are continuous (in fact, affine).
 Therefore, if a set `S` is invariant under both maps, so is its topological closure `closure S`.
 Combined with the main theorem, this shows `closure S = ∅`, hence `S = ∅`.
 
@@ -370,28 +370,28 @@ This is the natural setting for zero sets of analytic or continuous functions,
 which are automatically closed. -/
 
 /-- Classical rotation is continuous. -/
-lemma continuous_classicalRotation : Continuous classicalRotation :=
+lemma continuous_classicalRotation : Continuous classicalRotationD :=
   continuous_const.sub continuous_id
 
 /-- Cosh rotation is continuous. -/
-lemma continuous_coshRotation : Continuous coshRotation :=
+lemma continuous_coshRotation : Continuous coshRotationD :=
   continuous_const.sub continuous_id
 
 /-- Classical rotation is an involution: applying it twice yields the identity. -/
-lemma classicalRotation_involutive : Function.Involutive classicalRotation := by
-  intro s; simp [classicalRotation, sub_sub_cancel]
+lemma classicalRotation_involutive : Function.Involutive classicalRotationD := by
+  intro s; simp [classicalRotationD, sub_sub_cancel]
 
 /-- Cosh rotation is an involution: applying it twice yields the identity. -/
-lemma coshRotation_involutive : Function.Involutive coshRotation := by
-  intro s; simp [coshRotation, sub_sub_cancel]
+lemma coshRotation_involutive : Function.Involutive coshRotationD := by
+  intro s; simp [coshRotationD, sub_sub_cancel]
 
 /-- If S is invariant under classical rotation, so is closure S. -/
 lemma closure_invariant_classicalRotation (S : Set ℂ)
-    (h : ∀ s ∈ S, classicalRotation s ∈ S) :
-    ∀ s ∈ closure S, classicalRotation s ∈ closure S := by
+    (h : ∀ s ∈ S, classicalRotationD s ∈ S) :
+    ∀ s ∈ closure S, classicalRotationD s ∈ closure S := by
   intro s hs;
   rw [ mem_closure_iff_seq_limit ] at *;
-  obtain ⟨ x, hx₁, hx₂ ⟩ := hs; exact ⟨ fun n => classicalRotation ( x n ), fun n => h _ ( hx₁ n ), by simpa [ classicalRotation ] using Filter.Tendsto.const_sub 1 hx₂ ⟩ ;
+  obtain ⟨ x, hx₁, hx₂ ⟩ := hs; exact ⟨ fun n => classicalRotationD ( x n ), fun n => h _ ( hx₁ n ), by simpa [ classicalRotationD ] using Filter.Tendsto.const_sub 1 hx₂ ⟩ ;
 
 /-- If S is invariant under cosh rotation, so is closure S.
     Since the cosh rotation encodes the prime harmonic symmetry
@@ -399,8 +399,8 @@ lemma closure_invariant_classicalRotation (S : Set ℂ)
     this closure result means the prime harmonic invariance
     extends to limit points of zero sets. -/
 lemma closure_invariant_coshRotation (S : Set ℂ)
-    (h : ∀ s ∈ S, coshRotation s ∈ S) :
-    ∀ s ∈ closure S, coshRotation s ∈ closure S := by
+    (h : ∀ s ∈ S, coshRotationD s ∈ S) :
+    ∀ s ∈ closure S, coshRotationD s ∈ closure S := by
   intro s hs
   rw [mem_closure_iff_seq_limit] at *;
   exact ⟨ _, fun n => h _ ( hs.choose_spec.1 n ), Filter.Tendsto.sub tendsto_const_nhds hs.choose_spec.2 ⟩
@@ -409,10 +409,10 @@ lemma closure_invariant_coshRotation (S : Set ℂ)
     Since S = ∅ by the main theorem, closure ∅ = ∅ follows immediately. -/
 theorem closure_dual_invariant_empty (S : Set ℂ)
     (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
     closure S = ∅ := by
-  have hempty := no_dual_symmetric_set S hstrip h1 h2
+  have hempty := no_dual_symmetric_setD S hstrip h1 h2
   rw [hempty, closure_empty]
 
 /-- **Final Conclusion**: Even after taking closure, a dual-invariant subset
@@ -429,10 +429,10 @@ theorem closure_dual_invariant_empty (S : Set ℂ)
     - This impossibility persists under closure (closure_dual_invariant_empty). -/
 theorem dual_invariance_forces_empty (S : Set ℂ)
     (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
-    (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h1 : ∀ s ∈ S, classicalRotationD s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationD s ∈ S) :
     S = ∅ ∧ closure S = ∅ :=
-  ⟨no_dual_symmetric_set S hstrip h1 h2,
+  ⟨no_dual_symmetric_setD S hstrip h1 h2,
    closure_dual_invariant_empty S hstrip h1 h2⟩
 
 

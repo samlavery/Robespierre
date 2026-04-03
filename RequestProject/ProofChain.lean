@@ -19,7 +19,7 @@ self-contained chain. No sorry. No axioms beyond Mathlib.
 
 **Part III** (§8–§9): The closed reduction.
   offlineZeros is classically-rotation-invariant (functional equation).
-  If also cosh-rotation-invariant, offlineZeros = ∅ by Part II.
+  If also cosh-rotation-test-passes, offlineZeros = ∅ by Part II.
   offlineZeros = ∅ ↔ RH.
 
 ## The Six Components
@@ -63,7 +63,7 @@ noncomputable section
 def classicalRotation (s : ℂ) : ℂ := 1 - s
 
 /-- The cosh rotation: s ↦ π/3 - s (cosh kernel reflection at π/6). -/
-def coshRotation (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
+def coshRotationP (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
 
 /-- A nontrivial off-line zero of ζ in the critical strip. -/
 def IsNontrivialOfflineZero (ρ : ℂ) : Prop :=
@@ -186,8 +186,8 @@ theorem axes_differ : (1 : ℝ) / 2 ≠ Real.pi / 6 := by
 
 /-- The composition of the two reflections is a translation by π/3 - 1 > 0. -/
 theorem composition_is_positive_translation (s : ℂ) :
-    coshRotation (classicalRotation s) = s + ↑(Real.pi / 3 - 1) := by
-  simp [classicalRotation, coshRotation]; ring
+    coshRotationP (classicalRotation s) = s + ↑(Real.pi / 3 - 1) := by
+  simp [classicalRotation, coshRotationP]; ring
 
 /-- The translation step is positive: π/3 - 1 > 0. -/
 theorem translation_positive : Real.pi / 3 - 1 > 0 := by
@@ -204,7 +204,7 @@ theorem translation_positive : Real.pi / 3 - 1 > 0 := by
 /-- Iterating the translation pushes any point out of the strip. -/
 private lemma iterate_translate (S : Set ℂ)
     (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S)
+    (h2 : ∀ s ∈ S, coshRotationP s ∈ S)
     {s : ℂ} (hs : s ∈ S) (n : ℕ) :
     s + ↑(↑n * (Real.pi / 3 - 1)) ∈ S := by
   induction n with
@@ -226,7 +226,7 @@ private lemma iterate_translate (S : Set ℂ)
 theorem no_dual_symmetric_set (S : Set ℂ)
     (hstrip : ∀ s ∈ S, 0 < s.re ∧ s.re < 1)
     (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h2 : ∀ s ∈ S, coshRotationP s ∈ S) :
     S = ∅ := by
   by_contra h_nonempty
   obtain ⟨s, hs⟩ : ∃ s ∈ S, 0 < s.re ∧ s.re < 1 :=
@@ -242,7 +242,7 @@ theorem no_dual_symmetric_set (S : Set ℂ)
 theorem no_conspiracy (S : Set ℂ)
     (hzeros : ∀ s ∈ S, IsNontrivialOfflineZero s)
     (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h2 : ∀ s ∈ S, coshRotationP s ∈ S) :
     S = ∅ :=
   no_dual_symmetric_set S (fun s hs => ⟨(hzeros s hs).2.1, (hzeros s hs).2.2.1⟩) h1 h2
 
@@ -251,7 +251,7 @@ theorem no_infinite_conspiracy (S : Set ℂ)
     (hzeros : ∀ s ∈ S, IsNontrivialOfflineZero s)
     (hinf : S.Infinite)
     (h1 : ∀ s ∈ S, classicalRotation s ∈ S)
-    (h2 : ∀ s ∈ S, coshRotation s ∈ S) :
+    (h2 : ∀ s ∈ S, coshRotationP s ∈ S) :
     False := by
   have := no_conspiracy S hzeros h1 h2
   subst this; exact hinf Set.finite_empty
@@ -380,7 +380,7 @@ private theorem nontrivial_zero_re_pos
     The composition gives translation by π/3-1 > 0. Iteration pushes
     Re past 1, hitting the zero-free region. Contradiction. -/
 theorem offlineZeros_empty_if_cosh_invariant
-    (h_cosh : ∀ s ∈ offlineZeros, coshRotation s ∈ offlineZeros) :
+    (h_cosh : ∀ s ∈ offlineZeros, coshRotationP s ∈ offlineZeros) :
     offlineZeros = ∅ := by
   by_contra h_ne
   obtain ⟨ρ, hρ⟩ := Set.nonempty_iff_ne_empty.mpr h_ne
@@ -393,9 +393,9 @@ theorem offlineZeros_empty_if_cosh_invariant
   nlinarith [translation_positive, hρ.2.1,
     mul_div_cancel₀ (1 - ρ.re) (show Real.pi / 3 - 1 ≠ 0 by linarith [translation_positive])]
 
-/-- **Corollary.** Cosh rotation invariance implies RH. -/
+/-- **Corollary.** This isn't real -/
 theorem RH_of_cosh_invariance
-    (h_cosh : ∀ s ∈ offlineZeros, coshRotation s ∈ offlineZeros) :
+    (h_cosh : ∀ s ∈ offlineZeros, coshRotationP s ∈ offlineZeros) :
     RiemannHypothesis := by
   have hempty := offlineZeros_empty_if_cosh_invariant h_cosh
   intro s hs htriv hone
