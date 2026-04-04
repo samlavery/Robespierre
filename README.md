@@ -234,6 +234,21 @@ Therefore, no finite configuration survives. No infinite configuration survives.
 
 [ProofChain.lean]
 
+#### 22b) Translation-based strip emptiness (unconditional) — cleanest closure route
+
+`Translation.lean` is the most direct path to the dual-reflection impossibility result and is already integrated into `FinalAssembly.lean`. It is an **unconditional result** — no hypotheses about zeta zeros are assumed.
+
+* 22b.1 `composition_eq_translation`: The composition of the functional equation reflection s ↦ 1 − s and the cosh reflection s ↦ −s is a translation by −1.
+* 22b.2 `composition_eq_translation'`: In the other order, the composition is a translation by +1.
+* 22b.3 `iterate_translation_in_S`: If S is invariant under both reflections, then s₀ + n ∈ S for all n ∈ ℕ.
+* 22b.4 `no_dual_invariant_set_in_strip`: No nonempty subset of the critical strip can be simultaneously invariant under both reflections. One translation step suffices to leave the strip.
+* 22b.5 `balance_point_from_funcEq`: If a vertical line Re(s) = c is invariant under s ↦ 1 − s, then c = 1/2.
+* 22b.6 `critical_line_unique_balance`: Re(s) = 1/2 is the unique vertical line in the critical strip preserved by all three symmetries (functional equation, cosh reflection, cosh folding).
+
+This file is likely to become more central to the proof as it provides the cleanest algebraic closure of the dual-reflection argument in a single translation step.
+
+[Translation.lean]
+
 #### 23) Cosh reflection synthesis
 
 * 23.1 `offlineZeros_cosh_rotation_invariant`: Offline zeros are invariant under cosh reflection.
@@ -392,8 +407,9 @@ vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse stateme
 | DualReflectionImpossibility.lean | No dual-symmetric set in the strip |
 | DualReflectionImpossibility3.lean | Closure also empty, unconditional impossibility |
 | CoshReflectionSynthesis.lean | Cosh reflection preserves offline zeros, involution |
+| Translation.lean | Unconditional strip emptiness via translation by 1, cleanest closure route |
 | ProofChain.lean | Self-contained proof chain, Parts I–III |
-| FinalAssembly.lean | Full assembly: master_wiring, master_RH |
+| FinalAssembly.lean | Full assembly: master_wiring, master_RH (imports Translation.lean) |
 
 
 ## Credits

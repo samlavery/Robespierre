@@ -27,7 +27,7 @@ import RequestProject.CoshSymmetricPoles
 import RequestProject.CoshZetaSymmetry
 import RequestProject.SelfDuality
 import RequestProject.CoshReflectionSynthesis
-
+import RequestProject.Translation
 
 
 open Complex Real Set ComplexConjugate
@@ -574,6 +574,45 @@ theorem wiring_critical_line_characterization (β : ℝ) :
 
 
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- NEW WIRING: Translation-based results (from Translation.lean)
+-- ═══════════════════════════════════════════════════════════════════════════
+ 
+/-- Wiring: the composition s ↦ 1-s then s ↦ -s is translation by -1. -/
+theorem wiring_translation_minus_one (s : ℂ) :
+    Translation.coshReflection (Translation.funcEqReflection s) = s - 1 :=
+  Translation.composition_eq_translation s
+ 
+/-- Wiring: the composition s ↦ -s then s ↦ 1-s is translation by +1. -/
+theorem wiring_translation_plus_one (s : ℂ) :
+    Translation.funcEqReflection (Translation.coshReflection s) = s + 1 :=
+  Translation.composition_eq_translation' s
+ 
+/-- Wiring: no nonempty subset of {0 < Re(s) < 1} survives both s ↦ 1-s and s ↦ -s. -/
+theorem wiring_translation_strip_empty (S : Set ℂ)
+    (hS : S ⊆ Translation.CriticalStrip)
+    (hFE : ∀ s ∈ S, Translation.funcEqReflection s ∈ S)
+    (hCR : ∀ s ∈ S, Translation.coshReflection s ∈ S) :
+    S = ∅ :=
+  Translation.no_dual_invariant_set_in_strip S hS hFE hCR
+ 
+/-- Wiring: the functional equation forces the balance point c = 1/2. -/
+theorem wiring_translation_balance_point (c : ℝ)
+    (hinv : ∀ s : ℂ, s.re = c → (Translation.funcEqReflection s).re = c) :
+    c = 1 / 2 :=
+  Translation.balance_point_from_funcEq c hinv
+ 
+/-- Wiring: Re(s) = 1/2 is the unique vertical line in the strip
+    preserved by the functional equation reflection. -/
+theorem wiring_translation_unique_balance (c : ℝ) (hc0 : 0 < c) (hc1 : c < 1)
+    (hinv_fe : ∀ s : ℂ, s.re = c → (Translation.funcEqReflection s).re = c)
+    (hinv_fold : ∀ s : ℂ, s.re = c → (Translation.coshFolding s).re = c) :
+    c = 1 / 2 :=
+  Translation.critical_line_unique_balance c hc0 hc1 hinv_fe hinv_fold
+ 
+
+
+
 theorem final_equivalence
     {U : Set ℂ} (G : CoshHarmonicReprI U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
@@ -581,8 +620,107 @@ theorem final_equivalence
   ⟨offlineZeros_empty_iff_RH, (cosh_harmonics_zeta_invarianceI G hζ).1⟩
 
 
-/-- Master wiring: all results converge to the final equivalence. -/
+/-- Master wiring: all results converge to the final equivalence.
+    Now includes Translation-based strip emptiness and balance point. -/
 theorem master_wiring
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U) :
+    -- Final equivalence
+    ((offlineZeros = ∅ ↔ RiemannHypothesis) ∧ EqOn G.repr riemannZeta U)
+    -- Detection infrastructure
+    ∧ (∀ (ρ : ℂ) (x : ℝ),
+        1 < x → ρ ∈ coshReflDomainPunctured → riemannZeta ρ = 0 →
+        ρ.re ≠ 1 / 2 → ρ ≠ 1 →
+        harmonicDetector x ρ ≠ 0 ∧
+        (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ) ∧
+        RotatedPrimeDensityDetectorEvent ρ ∧
+        zetaCoshRepr.repr ρ = 0)
+    -- Dual invariance forces empty (cosh-axis version)
+    ∧ (∀ S : Set ℂ,
+        (∀ s ∈ S, 0 < s.re ∧ s.re < 1) →
+        (∀ s ∈ S, classicalRotationD s ∈ S) →
+        (∀ s ∈ S, coshRotationD s ∈ S) →
+        S = ∅ ∧ closure S = ∅)
+    -- Four-fold symmetry of zeros
+    ∧ (∀ ρ : ℂ, riemannZeta ρ = 0 → 0 < ρ.re ∧ ρ.re < 1 →
+        riemannZeta ρ = 0 ∧ riemannZeta (1 - ρ) = 0 ∧
+        riemannZeta (starRingEnd ℂ ρ) = 0 ∧
+        riemannZeta (1 - starRingEnd ℂ ρ) = 0)
+    -- Cosh reflection preserves offline zeros
+    ∧ (coshReflection '' CoshZetaSymmetry.offlineZeros = CoshZetaSymmetry.offlineZeros)
+    -- Zeta conjugation symmetry
+    ∧ (∀ s : ℂ, s ≠ 1 → riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s))
+    -- Completed zeta functional equation
+    ∧ (∀ s₀ : ℂ, completedRiemannZeta s₀ = 0 → completedRiemannZeta (1 - s₀) = 0)
+    -- No zeros on Re(s) ≥ 1
+    ∧ (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0)
+    -- Zeta zeros control prime density
+    ∧ ((∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0) ∧
+        Tendsto (fun s => (s - 1) * riemannZeta s) (nhdsWithin 1 {(1 : ℂ)}ᶜ) (nhds 1) ∧
+        Tendsto (fun N => chebyshev_psi N) atTop atTop)
+    -- Von Mangoldt convolution
+    ∧ ((vonMangoldt * (↑ArithmeticFunction.zeta : ArithmeticFunction ℝ) =
+        ArithmeticFunction.log) ∧
+        (∀ n : ℕ, 0 < vonMangoldt n ↔ IsPrimePow n) ∧
+        (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0))
+    -- Critical line is unique self-dual locus
+    ∧ (∀ β : ℝ, (∀ p : ℝ, 1 < p → p ^ (-β) = p ^ (-(1 - β))) ↔ β = 1 / 2)
+    -- Cosh axis positioning
+    ∧ ((1 : ℝ) / 2 < coshAxis ∧ coshAxis < 1)
+    -- Overlap seed
+    ∧ (IsOpen overlapRegion ∧ overlapRegion.Nonempty ∧ overlapRegion ⊆ eulerHalfPlane)
+    -- Harmonic cancellation
+    ∧ (∀ t : ℝ, Real.sin t + Real.sin (-t) = 0 ∧
+        Real.sin (Real.arcsin (1 / 2)) = 1 / 2)
+    -- Euler product abs invariance
+    ∧ (∀ (S : Finset ℕ) (s : ℝ),
+        ∏ p ∈ S, (1 - ((p : ℝ) ^ (-s)))⁻¹ =
+        ∏ p ∈ S, (1 - (|(p : ℝ)| ^ (-s)))⁻¹)
+    -- Prime harmonic sum real-valued
+    ∧ (∀ (S : Finset ℕ), (∀ p ∈ S, Nat.Prime p) →
+        (∑ p ∈ S, Complex.cosh (↑(↑p * arcsin (1 / 2 : ℝ)))).im = 0)
+    -- Cosh reflection involutive
+    ∧ Function.Involutive coshReflection
+    -- Offline zeros cosh invariant
+    ∧ (∀ s : ℂ, s ∈ CoshZetaSymmetry.offlineZeros ↔
+        coshReflection s ∈ CoshZetaSymmetry.offlineZeros)
+    -- ── NEW: Translation-based strip emptiness ──
+    ∧ (∀ S : Set ℂ,
+        S ⊆ Translation.CriticalStrip →
+        (∀ s ∈ S, Translation.funcEqReflection s ∈ S) →
+        (∀ s ∈ S, Translation.coshReflection s ∈ S) →
+        S = ∅)
+    -- ── NEW: Balance point from functional equation ──
+    ∧ (∀ c : ℝ, (∀ s : ℂ, s.re = c → (Translation.funcEqReflection s).re = c) → c = 1 / 2)
+    -- ── NEW: Translation composition is +1 ──
+    ∧ (∀ s : ℂ, Translation.funcEqReflection (Translation.coshReflection s) = s + 1) := by
+  exact ⟨
+    final_equivalence G hζ,
+    fun ρ x hx hs hz hoff hρ1 => zeta_zero_fully_detected ρ x hx hs hz hoff hρ1,
+    fun S hstrip h1 h2 => wiring_dual_invariance_forces_emptyW S hstrip h1 h2,
+    fun ρ hz hstrip => wiring_four_fold_zeros ρ hz hstrip,
+    wiring_coshReflection_image,
+    wiring_riemannZeta_conj,
+    wiring_completedZeta_symm,
+    wiring_zeta_nonvanishing_boundary,
+    wiring_zeta_zeros_control_prime_density,
+    wiring_vonMangoldt_links,
+    wiring_critical_line_characterization,
+    wiring_coshAxis_between,
+    wiring_overlap_seed,
+    wiring_harmonic_cancellation,
+    wiring_euler_product_abs_invariant,
+    wiring_prime_harmonic_sum_im_zero,
+    wiring_coshReflection_involutive,
+    wiring_offlineZeros_cosh_invariant,
+    -- NEW Translation entries:
+    wiring_translation_strip_empty,
+    wiring_translation_balance_point,
+    Translation.composition_eq_translation'
+  ⟩
+
+/-- Master wiring: all results converge to the final equivalence. -/
+theorem master_wiringx
     {U : Set ℂ} (G : CoshHarmonicReprI U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U) :
     -- Final equivalence
@@ -691,9 +829,82 @@ theorem mathlib_RH_of_no_offaxis_zerosF
 
 
 
+theorem bridge_translation_no_dual_invariant (S : Set ℂ)
+    (hS : S ⊆ Translation.CriticalStrip)
+    (hFE : ∀ s ∈ S, Translation.funcEqReflection s ∈ S)
+    (hCR : ∀ s ∈ S, Translation.coshReflection s ∈ S) :
+    S = ∅ :=
+  Translation.no_dual_invariant_set_in_strip S hS hFE hCR
 
-/-- The complete assembled result: RH holds, with full supporting infrastructure. -/
+theorem bridge_translation_balance_point (c : ℝ)
+    (hinv : ∀ s : ℂ, s.re = c → (Translation.funcEqReflection s).re = c) :
+    c = 1 / 2 :=
+  Translation.balance_point_from_funcEq c hinv
+
+
 theorem master_RH
+    {U : Set ℂ} (G : CoshHarmonicReprI U)
+    (hζ : AnalyticOnNhd ℂ riemannZeta U)
+    (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
+    -- The Riemann Hypothesis
+    RiemannHypothesis
+    -- Cosh representation equals zeta
+    ∧ EqOn G.repr riemannZeta U
+    -- Off-axis zeros are empty (equivalent to RH)
+    ∧ (offlineZeros = ∅)
+    -- Detection: any hypothetical off-axis zero would be fully detected
+    ∧ (∀ (ρ : ℂ) (x : ℝ),
+        1 < x → ρ ∈ coshReflDomainPunctured → riemannZeta ρ = 0 →
+        ρ.re ≠ 1 / 2 → ρ ≠ 1 →
+        harmonicDetector x ρ ≠ 0 ∧
+        (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ) ∧
+        RotatedPrimeDensityDetectorEvent ρ ∧
+        zetaCoshRepr.repr ρ = 0)
+    -- Dual invariance forces any doubly-symmetric strip subset to be empty
+    ∧ (∀ S : Set ℂ,
+        (∀ s ∈ S, 0 < s.re ∧ s.re < 1) →
+        (∀ s ∈ S, classicalRotationD s ∈ S) →
+        (∀ s ∈ S, coshRotationD s ∈ S) →
+        S = ∅ ∧ closure S = ∅)
+    -- Four-fold symmetry of nontrivial zeros
+    ∧ (∀ ρ : ℂ, riemannZeta ρ = 0 → 0 < ρ.re ∧ ρ.re < 1 →
+        riemannZeta ρ = 0 ∧ riemannZeta (1 - ρ) = 0 ∧
+        riemannZeta (starRingEnd ℂ ρ) = 0 ∧
+        riemannZeta (1 - starRingEnd ℂ ρ) = 0)
+    -- Zeta conjugation
+    ∧ (∀ s : ℂ, s ≠ 1 → riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (riemannZeta s))
+    -- No zeros on Re(s) ≥ 1
+    ∧ (∀ s : ℂ, 1 ≤ s.re → riemannZeta s ≠ 0)
+    -- Critical line is unique self-dual locus
+    ∧ (∀ β : ℝ, (∀ p : ℝ, 1 < p → p ^ (-β) = p ^ (-(1 - β))) ↔ β = 1 / 2)
+    -- ── NEW: Translation strip emptiness ──
+    ∧ (∀ S : Set ℂ,
+        S ⊆ Translation.CriticalStrip →
+        (∀ s ∈ S, Translation.funcEqReflection s ∈ S) →
+        (∀ s ∈ S, Translation.coshReflection s ∈ S) →
+        S = ∅)
+    -- ── NEW: Balance point uniqueness ──
+    ∧ (∀ c : ℝ, (∀ s : ℂ, s.re = c → (Translation.funcEqReflection s).re = c) → c = 1 / 2) := by
+  have hRH := final_RH hfinal
+  have ⟨⟨hiff, hEqOn⟩, hdet, hdual, hfour, himg, hconj, hsymm, hbdy, hprime, hvM,
+         hcrit, haxis, hoverlap, hcancel, heuler, hphs, hinvol, hoffcosh,
+         htrans_empty, htrans_balance, _htrans_comp⟩ :=
+    master_wiring G hζ
+  exact ⟨
+    hRH,
+    hEqOn,
+    hiff.mpr hRH,
+    hdet,
+    hdual,
+    hfour,
+    hconj,
+    hbdy,
+    hcrit,
+    htrans_empty,
+    htrans_balance
+  ⟩
+/-- The complete assembled result: RH holds, with full supporting infrastructure. -/
+theorem master_RHx
     {U : Set ℂ} (G : CoshHarmonicReprI U)
     (hζ : AnalyticOnNhd ℂ riemannZeta U)
     (hfinal : ∀ ρ : ℂ, FinalOffAxisContradictionAt ρ) :
@@ -743,6 +954,9 @@ theorem master_RH
     hbdy,
     hcrit
   ⟩
+
+
+
 
 
 #check @RiemannHypothesis
