@@ -31,6 +31,8 @@ cosh kernel `K(x,y) = 1 / cosh((x-y)/2)` and the Riemann zeta function.
 These unproven claims are stated as comments only, not as theorems.
 -/
 
+namespace CoshKernelBridgeNew
+
 noncomputable section
 
 open Real Complex
@@ -126,4 +128,44 @@ theorem on_critical_line (y : ℝ) :
     conformalMap (-y) = 1 - conformalMap y :=
   ⟨conformalMap_re y, conformalMap_reflection y⟩
 
+/-! ## Part 5: The Full 2D Bridge and Intertwining -/
+
+/-- The full conformal bridge: `Φ(z) = (3/π) · z`.
+    Maps the cosh chart `{0 < Re < π/3}` to the zeta chart `{0 < Re < 1}`. -/
+def bridge (z : ℂ) : ℂ := (3 / ↑π : ℂ) * z
+
+/-- The cosh reflection: `R_cosh(z) = ⟨π/3 - Re(z), Im(z)⟩`. -/
+def coshRefl (z : ℂ) : ℂ := ⟨π / 3 - z.re, z.im⟩
+
+/-- The cosh folding: complex conjugation. -/
+def coshFold (z : ℂ) : ℂ := starRingEnd ℂ z
+
+/-- **Intertwining theorem**: `Φ(R_cosh(F(z))) = 1 - Φ(z)`.
+    The reflect-fold operation in the cosh chart corresponds to the
+    classical reflection `s ↦ 1 - s` in the zeta chart. -/
+theorem bridge_intertwining (z : ℂ) :
+    bridge (coshRefl (coshFold z)) = 1 - bridge z := by
+  apply Complex.ext <;> simp [bridge, coshRefl, coshFold, Complex.mul_re, Complex.mul_im,
+    Complex.ofReal_re, Complex.ofReal_im, sub_re, sub_im, one_re, one_im] <;>
+  ring_nf <;> simp [mul_div_cancel₀]
+
+/-- The balance locus of `R_cosh` is `Re(z) = π/6`: the unique
+    fixed-point set of the cosh reflection on the real part. -/
+theorem coshRefl_balance (z : ℂ) :
+    (coshRefl z).re = z.re ↔ z.re = π / 6 := by
+  simp [coshRefl]; constructor <;> intro h <;> linarith
+
+/-- After folding, `R_cosh ∘ F` has unique real-part balance at `π/6`. -/
+theorem reflect_fold_balance (z : ℂ) :
+    (coshRefl (coshFold z)).re = z.re ↔ z.re = π / 6 := by
+  simp [coshRefl, coshFold]; constructor <;> intro h <;> linarith
+
+/-- The bridge maps `Re = π/6` to `Re = 1/2`. -/
+theorem bridge_balance_transfer (z : ℂ) (hz : z.re = π / 6) :
+    (bridge z).re = 1 / 2 := by
+  simp [bridge, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, hz]
+  ring_nf; simp [mul_div_cancel₀]
+
 end
+
+end CoshKernelBridgeNew

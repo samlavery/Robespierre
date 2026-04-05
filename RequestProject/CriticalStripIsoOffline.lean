@@ -17,6 +17,8 @@ configuration where:
 All results are unconditional and proved from first principles of complex arithmetic.
 No assumption about RH is needed for the geometric/analytic structure theorems.
 -/
+namespace CriticalStripIsoOffline
+
 open Complex
 noncomputable section
 /-! ## Part 1: Rotation by 90° is multiplication by `I` -/
@@ -191,3 +193,5 @@ theorem main_detection_theorem (z : ℂ)
     ∧ distFromCriticalLine z = distFromRotatedCriticalLine (rotate90 z) := by
       exact ⟨ abs_pos.mpr ( sub_ne_zero.mpr h_off ), by intro; exact h_off <| by linarith [ non_cancellation z h_off |>.1 ‹_› ], rotation_ejects_from_strip z h_strip h_upper, isometric_detection z ⟩
 end
+
+end CriticalStripIsoOffline

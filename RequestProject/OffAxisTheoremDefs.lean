@@ -26,18 +26,51 @@ def offAxisRealObservable (σ t : ℝ) : ℝ :=
 /-- The off-axis imaginary observable. -/
 def offAxisImagObservable (σ t : ℝ) : ℝ :=
   (σ - 1 / 2) * sin t
-/-- Squared norm of the rotated prime density contribution. -/
+/-- Squared norm of the rotated prime density contribution (legacy geometric
+    form).  This is the `(σ − 1/2)²` observable that `rotatedPrimeDensityNormSq_eq`
+    proves below.  It is **t-independent** and so, by itself, is blind to rotation
+    — kept only for downstream compatibility with `ProofChain.harmonic_geometric_agreement`.
+    The rotation-aware detector lives in `rotatedDensity` below. -/
 def rotatedPrimeDensityNormSq (σ t : ℝ) : ℝ :=
   (offAxisRealObservable σ t) ^ 2 + (offAxisImagObservable σ t) ^ 2
 /-- The real observable distortion combines the off-axis deviation
     with the prime-counting distortion. -/
 def realObservableDistortion (σ : ℝ) (n : ℕ) : ℝ :=
   (σ - 1 / 2) * realAxisDistortion n
-/-- The rotated prime density detector event fires when the squared norm
-    is nonzero for some rotation parameter, detecting off-axis zeros. -/
-def RotatedPrimeDensityDetectorEvent (ρ : ℂ) : Prop :=
-  ∃ t : ℝ, rotatedPrimeDensityNormSq ρ.re t ≠ 0
-/-- The rotated prime density detector: σ passes iff σ = 1/2. -/
+/-- **Rotated density under the classical rotation group.**
+
+    The three classical rotations of the critical strip around the critical
+    line `Re = 1/2` — by `0°`, `90°`, `180°` — correspond to multiplying the
+    complex displacement `ρ − 1/2` by the first three powers of the imaginary
+    unit: `I⁰ = 1`, `I¹ = I`, `I² = −1`.  We take the real part of the rotated
+    displacement.  No trigonometry, no `π`, no primes — just multiplication by
+    `{1, I, −1}` and projection to `Re`.
+
+    * `rotatedDensityAt ρ 1  = ρ.re − 1/2`      (rot 0°,   identity)
+    * `rotatedDensityAt ρ I  = −ρ.im`           (rot 90°,  multiplication by i)
+    * `rotatedDensityAt ρ (−1) = 1/2 − ρ.re`    (rot 180°, FE reflection)
+
+    For `ρ.re = 1/2` the `0°` and `180°` values both vanish and the detector
+    sees no asymmetry.  For `ρ.re ≠ 1/2` the `0°` and `180°` values are
+    nonzero with opposite signs — that is the detector's signal. -/
+def rotatedDensityAt (ρ : ℂ) (rot : ℂ) : ℝ :=
+  (rot * (ρ - (1 / 2 : ℂ))).re
+/-- **Per-element firing predicate.**  The densities at rotations `rot = 1`
+    (i.e. `0°`) and `rot = −1` (i.e. `180°`) disagree.  Equivalent to
+    `ρ.re ≠ 1/2`. -/
+def rotatedPrimeDensityFires (ρ : ℂ) : Prop :=
+  rotatedDensityAt ρ 1 ≠ rotatedDensityAt ρ (-1)
+/-- **The rotated density detector event — set form.**  Given any set `S` of
+    candidate zeta zeros (finite or infinite, countable or uncountable), the
+    detector fires on `S` iff at least one element of `S` is off the critical
+    line.  Silent on `∅`, silent on any subset of the critical line, fires on
+    any set containing a single off-line candidate no matter how many on-line
+    candidates are also present. -/
+def RotatedPrimeDensityDetectorEvent (S : Set ℂ) : Prop :=
+  ∃ ρ ∈ S, rotatedPrimeDensityFires ρ
+/-- The rotated prime density detector: σ passes iff the legacy `(σ − 1/2)²`
+    geometric norm vanishes for every rotation parameter, which is equivalent
+    to `σ = 1/2` (proved below as `rotatedPrimeDensityDetector_iff`). -/
 def rotatedPrimeDensityDetectorPasses (σ : ℝ) : Prop :=
   ∀ t : ℝ, rotatedPrimeDensityNormSq σ t = 0
 /-
@@ -180,6 +213,51 @@ theorem rotatedPrimeDensityDetector_iff (σ : ℝ) :
       -- Using `rotatedPrimeDensityNormSq_eq`, we can rewrite the goal in terms of `σ - 1/2`.
       simp [rotatedPrimeDensityNormSq_eq];
       rw [ sub_eq_zero ]
+/-- Classical rotation by `0°` (multiply displacement by `1 = I⁰`):
+    density is `ρ.re − 1/2`. -/
+theorem rotatedDensityAt_rot0 (ρ : ℂ) :
+    rotatedDensityAt ρ 1 = ρ.re - 1 / 2 := by
+  unfold rotatedDensityAt
+  simp [Complex.sub_re, Complex.one_re]
+/-- Classical rotation by `90°` (multiply displacement by `I = I¹`):
+    density is `−ρ.im`.  Uses `(I · z).re = −z.im`. -/
+theorem rotatedDensityAt_rot90 (ρ : ℂ) :
+    rotatedDensityAt ρ Complex.I = -ρ.im := by
+  unfold rotatedDensityAt
+  simp [Complex.I_mul_re, Complex.sub_im]
+/-- Classical rotation by `180°` (multiply displacement by `−1 = I²`):
+    density is `1/2 − ρ.re` (functional-equation reflection). -/
+theorem rotatedDensityAt_rot180 (ρ : ℂ) :
+    rotatedDensityAt ρ (-1) = 1 / 2 - ρ.re := by
+  unfold rotatedDensityAt
+  simp [Complex.neg_re, Complex.sub_re]
+/-- **Per-element characterisation.**  `rotatedPrimeDensityFires ρ` iff
+    `ρ.re ≠ 1/2`.  The `0°` and `180°` densities are `ρ.re − 1/2` and
+    `1/2 − ρ.re` respectively, and these are equal iff their common
+    displacement from zero vanishes. -/
+theorem rotatedPrimeDensityFires_iff (ρ : ℂ) :
+    rotatedPrimeDensityFires ρ ↔ ρ.re ≠ 1 / 2 := by
+  unfold rotatedPrimeDensityFires
+  rw [rotatedDensityAt_rot0, rotatedDensityAt_rot180]
+  constructor
+  · intro hne hRe
+    apply hne
+    linarith
+  · intro hRe heq
+    apply hRe
+    linarith
+/--
+**Event characterisation — set form.**  `RotatedPrimeDensityDetectorEvent S`
+holds iff some element of `S` has real part different from `1/2`.
+-/
+theorem rotatedPrimeDensityDetectorEvent_iff (S : Set ℂ) :
+    RotatedPrimeDensityDetectorEvent S ↔ ∃ ρ ∈ S, ρ.re ≠ 1 / 2 := by
+  unfold RotatedPrimeDensityDetectorEvent
+  refine ⟨?_, ?_⟩
+  · rintro ⟨ρ, hρ, hfires⟩
+    exact ⟨ρ, hρ, (rotatedPrimeDensityFires_iff ρ).mp hfires⟩
+  · rintro ⟨ρ, hρ, hRe⟩
+    exact ⟨ρ, hρ, (rotatedPrimeDensityFires_iff ρ).mpr hRe⟩
 /-
 PROBLEM
 ============================================================

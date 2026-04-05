@@ -34,6 +34,8 @@ We prove unconditionally:
     of offline zeros, every single one is individually detected (moved) by the rotation.
 All results are unconditional — they follow from elementary properties of ℂ and ℝ.
 -/
+namespace CriticalStripFlipOffline
+
 open Complex
 noncomputable section
 /-! ## Definition of the strip rotation -/
@@ -301,3 +303,5 @@ theorem rh_implies_no_movement {ι : Type*} (zeros : ι → ℂ)
   intro i; rw [ ← Complex.re_add_im ( zeros i ) ] ; simp +decide [ h_on_line, h_im ] ; ring;
   unfold stripRotation; norm_num;
 end
+
+end CriticalStripFlipOffline

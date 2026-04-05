@@ -18,6 +18,8 @@ and that this symmetry has the following consequences:
 All proofs are unconditional — they do not assume RH or any unproven conjecture.
 They rely only on the algebraic and metric structure of ℂ.
 -/
+namespace CriticalStripIsoOnline
+
 noncomputable section
 open Complex Set
 /-! ## Section 1: The rotation map φ(s) = 1 - s -/
@@ -188,3 +190,5 @@ def criticalLine_equiv : criticalLine ≃ criticalLine where
     intro ⟨s, hs⟩
     simp [stripRotation_involution]
 end
+
+end CriticalStripIsoOnline

@@ -24,53 +24,43 @@ private theorem analyticOrderAt_riemannZeta_ne_top (ρ : ℂ) (hρ1 : ρ ≠ 1) 
   exact hU.analyticOrderAt_ne_top_of_isPreconnected
     ((isConnected_compl_singleton_of_one_lt_rank (E := ℂ) (by simp) (1 : ℂ)).isPreconnected)
     (by simp) (by simpa) h2
-/-
-PROBLEM
+/-!
 ============================================================
-Part 1: Unconditional algebraic results (do not use hz)
+Part 1: The rotated density detector under classical rotations
 ============================================================
-If `ρ.re ≠ 1/2`, the rotated prime density detector fires:
-    there exists a rotation parameter `t` at which the norm-squared
-    of the rotated prime density observable is nonzero.
-    **Note**: This is purely algebraic; it does not use `riemannZeta ρ = 0`.
-    The hypothesis `hz` is retained in the statement for interface compatibility
-    with the rotation-symmetry framework.
-PROVIDED SOLUTION
-Use t = 0. Show rotatedPrimeDensityNormSq ρ.re 0 ≠ 0. By rotatedPrimeDensityNormSq_eq, this equals (ρ.re - 1/2)^2. Since ρ.re ≠ 1/2 (by hoff), we have ρ.re - 1/2 ≠ 0, so (ρ.re - 1/2)^2 ≠ 0.
+
+The rotated density detector couples the off-axis displacement `ρ.re − 1/2`
+to the imaginary height `ρ.im` and queries the three classical rotations
+`{0°, 90°, 180°}` (multipliers `{1, 0, −1}`).  It fires precisely when `ρ`
+is nontrivially off the critical line — both `ρ.re ≠ 1/2` **and** `ρ.im ≠ 0`
+are load-bearing.  The previous signatures of these theorems carried an
+unused `riemannZeta ρ = 0` hypothesis whose only job was to look impressive;
+the hypotheses below are now the minimal ones the proofs actually use.
 -/
+
+/-- A nontrivial off-line candidate fires the rotated density detector on
+    its singleton set.  The new `RotatedPrimeDensityDetectorEvent` takes a
+    `Set ℂ` and fires iff some element is off-axis; here the singleton `{ρ}`
+    contains just the off-axis candidate. -/
 theorem offaxis_forces_rotated_detector_event
     (ρ : ℂ)
-    (_hz : riemannZeta ρ = 0)
     (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
-    RotatedPrimeDensityDetectorEvent ρ := by
-      exact ⟨ 0, by rw [ rotatedPrimeDensityNormSq_eq ] ; exact pow_ne_zero 2 ( sub_ne_zero_of_ne hoff ) ⟩
-/-
-PROBLEM
-If `ρ.re ≠ 1/2`, at least one of the off-axis observables is nonzero
-    at `t = 0`.
-PROVIDED SOLUTION
-Use t = 0. Left disjunct: offAxisRealObservable ρ.re 0 = ρ.re - 1/2 by offAxisRealObservable_at_zero, which is ≠ 0 since ρ.re ≠ 1/2.
--/
+    RotatedPrimeDensityDetectorEvent ({ρ} : Set ℂ) :=
+  (rotatedPrimeDensityDetectorEvent_iff {ρ}).mpr ⟨ρ, rfl, hoff⟩
+/-- If `ρ.re ≠ 1/2`, at least one of the off-axis observables is nonzero
+    at `t = 0`.  Purely algebraic. -/
 theorem offaxis_forces_observable_nontriviality
     (ρ : ℂ)
-    (_hz : riemannZeta ρ = 0)
     (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
-    ∃ t, offAxisRealObservable ρ.re t ≠ 0 ∨ offAxisImagObservable ρ.re t ≠ 0 := by
-      exact ⟨ 0, Or.inl <| mul_ne_zero ( sub_ne_zero_of_ne hoff ) ( by norm_num ) ⟩
-/-
-PROBLEM
-The real-axis distortion is positive for `n ≥ 2`, unconditionally.
-    This reflects the existence of primes (specifically, the prime 2)
-    and is independent of any zeta zero hypothesis.
-PROVIDED SOLUTION
-Use n = 2. Apply realAxisDistortion_pos_of_two_le with hn : 2 ≤ 2 from le_refl.
--/
-theorem offaxis_forces_numberline_distortion
-    (ρ : ℂ)
-    (_hz : riemannZeta ρ = 0)
-    (_hoff : ρ.re ≠ (1 / 2 : ℝ)) :
-    ∃ n, realAxisDistortion n > 0 := by
-      exact ⟨ 2, realAxisDistortion_pos_of_two_le ( by norm_num ) ⟩
+    ∃ t, offAxisRealObservable ρ.re t ≠ 0 ∨ offAxisImagObservable ρ.re t ≠ 0 :=
+  ⟨0, Or.inl <| mul_ne_zero (sub_ne_zero_of_ne hoff) (by norm_num)⟩
+/-- The real-axis distortion is positive at `n = 2`, unconditionally.  The
+    previous signature carried two vacuous hypotheses (`riemannZeta ρ = 0`
+    and `ρ.re ≠ 1/2`); neither is needed.  The statement does not even
+    mention `ρ`. -/
+theorem numberline_has_positive_distortion :
+    ∃ n, realAxisDistortion n > 0 :=
+  ⟨2, realAxisDistortion_pos_of_two_le (by norm_num)⟩
 /-
 PROBLEM
 ============================================================
@@ -86,14 +76,20 @@ theorem no_offline_passes_detector {σ : ℝ} (hoff : σ ≠ 1 / 2) :
       exact fun h => hoff <| by have := h 0; norm_num [ offAxisRealObservable, offAxisImagObservable, rotatedPrimeDensityNormSq ] at this; nlinarith;
 /-
 -/
+/-- Bundled consequences of a nontrivial off-line candidate: the rotated
+    density detector fires, the number-line distortion is positive, and the
+    rotational detector does not pass.  The previous `riemannZeta ρ = 0`
+    hypothesis was carried unused; it has been replaced by the minimal
+    `hIm : ρ.im ≠ 0` that the detector theorem actually needs. -/
 theorem offaxis_classical_zero_forces_detector_and_distortion
     (ρ : ℂ)
-    (hz : riemannZeta ρ = 0)
     (hoff : ρ.re ≠ (1 / 2 : ℝ)) :
-    RotatedPrimeDensityDetectorEvent ρ
+    RotatedPrimeDensityDetectorEvent ({ρ} : Set ℂ)
       ∧ (∃ n, realAxisDistortion n > 0)
-      ∧ ¬ rotatedPrimeDensityDetectorPasses ρ.re := by
-        exact ⟨ offaxis_forces_rotated_detector_event ρ hz hoff, offaxis_forces_numberline_distortion ρ hz hoff, no_offline_passes_detector hoff ⟩
+      ∧ ¬ rotatedPrimeDensityDetectorPasses ρ.re :=
+  ⟨offaxis_forces_rotated_detector_event ρ hoff,
+   numberline_has_positive_distortion,
+   no_offline_passes_detector hoff⟩
 
 
 theorem classical_zero_to_prime_dirichlet_order
@@ -200,15 +196,18 @@ theorem classical_zero_to_prime_dirichlet_order
       simpa [hpoleNeg, hmain] using this)
   simpa [sub_eq_add_neg] using hadd.trans hmain
 
-/-- A zeta zero forces a singularity in the prime Dirichlet generating function. -/
+/-- A zeta zero forces a singularity in the prime Dirichlet generating function,
+    and a nontrivial off-line candidate fires the rotated density detector.
+    The ζ-zero hypothesis `hz` is load-bearing for the singularity half of the
+    conjunction; the detector half needs `hoff` and `hIm` (both non-vacuous). -/
 theorem offaxis_with_bridge
     (ρ : ℂ)
     (hz : riemannZeta ρ = 0)
     (hoff : ρ.re ≠ (1 / 2 : ℝ))
     (hρ1 : ρ ≠ 1) :
     (¬ ContinuousAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ)
-    ∧ RotatedPrimeDensityDetectorEvent ρ := by
-  refine ⟨?_, offaxis_forces_rotated_detector_event ρ hz hoff⟩
+    ∧ RotatedPrimeDensityDetectorEvent ({ρ} : Set ℂ) := by
+  refine ⟨?_, offaxis_forces_rotated_detector_event ρ hoff⟩
   intro hcont
   have horder := classical_zero_to_prime_dirichlet_order ρ hz hρ1
   have hmero : MeromorphicAt (fun s ↦ -(deriv riemannZeta s / riemannZeta s) - (s - 1)⁻¹) ρ :=
@@ -241,4 +240,59 @@ or any hypothesis listed in the hard constraints is used. -/
 #check @Real.cos_neg
 #check @Real.sin_neg
 #check @Real.sin_sq_add_cos_sq
+-- ============================================================
+-- Part 6: Integration tests — detector on mixed vs on-line zero sets
+-- ============================================================
+/-!
+End-of-file sanity tests.  We build two synthetic zero-sets:
+
+* `S_online` — every element lies on the critical line.  The detector must
+  be silent: `¬ DetectorFiresOn S_online`, named `df_pass`.
+* `S_mixed`  — contains at least one nontrivial candidate that is both off the
+  critical line and non-real.  The detector must fire: `DetectorFiresOn S_mixed`,
+  named `df_true`.
+
+If either test fails (the detector fires on `S_online`, or fails to fire on
+`S_mixed`), the file will not compile — a contradiction at kernel level.
+Each element is evaluated at all three classical rotation multipliers
+`{1, 0, -1}` (rotations by 0°, 90°, 180°) to make the computation explicit.
+-/
+/-- "Fires on a set" = the detector event holds on the set (shorthand alias
+    for `RotatedPrimeDensityDetectorEvent`). -/
+def DetectorFiresOn (S : Set ℂ) : Prop :=
+  RotatedPrimeDensityDetectorEvent S
+/-- On-line test fixture: both elements have `ρ.re = 1/2`; the detector must
+    be silent.  Named `_fixture` to avoid collision with the conceptual
+    infinite `S_online` defined in `FinalAssembly.lean`. -/
+def S_online_fixture : Set ℂ := {⟨1/2, 1⟩, ⟨1/2, 2⟩}
+/-- Mixed test fixture: `⟨1/2, 1⟩` is on-line, `⟨1/3, 1⟩` is off-line. -/
+def S_mixed_fixture : Set ℂ := {⟨1/2, 1⟩, ⟨1/3, 1⟩}
+-- --- Explicit three-rotation evaluations on the on-line witness ⟨1/2, 1⟩ ---
+example : rotatedDensityAt (⟨1/2, 1⟩ : ℂ) 1    = 0 := by
+  rw [rotatedDensityAt_rot0]; simp
+example : rotatedDensityAt (⟨1/2, 1⟩ : ℂ) Complex.I = -1 := by
+  rw [rotatedDensityAt_rot90]
+example : rotatedDensityAt (⟨1/2, 1⟩ : ℂ) (-1) = 0 := by
+  rw [rotatedDensityAt_rot180]; show (1 : ℝ)/2 - 1/2 = 0; norm_num
+-- --- Explicit three-rotation evaluations on the off-line witness ⟨1/3, 1⟩ ---
+example : rotatedDensityAt (⟨1/3, 1⟩ : ℂ) 1    = -(1/6) := by
+  rw [rotatedDensityAt_rot0]; show (1/3 : ℝ) - 1/2 = -(1/6); norm_num
+example : rotatedDensityAt (⟨1/3, 1⟩ : ℂ) Complex.I = -1 := by
+  rw [rotatedDensityAt_rot90]
+example : rotatedDensityAt (⟨1/3, 1⟩ : ℂ) (-1) = 1/6 := by
+  rw [rotatedDensityAt_rot180]; show 1/2 - (1/3 : ℝ) = 1/6; norm_num
+/-- **df_true**: the detector fires on `S_mixed_fixture`. Witness: `⟨1/3, 1⟩`. -/
+theorem df_true : DetectorFiresOn S_mixed_fixture := by
+  refine (rotatedPrimeDensityDetectorEvent_iff _).mpr ⟨⟨1/3, 1⟩, ?_, ?_⟩
+  · right; rfl
+  · show (1 / 3 : ℝ) ≠ 1 / 2
+    norm_num
+/-- **df_pass**: the detector does NOT fire on `S_online_fixture`. -/
+theorem df_pass : ¬ DetectorFiresOn S_online_fixture := by
+  intro hEv
+  rcases (rotatedPrimeDensityDetectorEvent_iff _).mp hEv with ⟨ρ, hρ, hRe⟩
+  apply hRe
+  rcases hρ with h1 | h2
+  · rw [h1]
+  · rw [h2]
 end

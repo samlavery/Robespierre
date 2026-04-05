@@ -215,26 +215,44 @@ theorem meromorphic_order_cosh_symmetric (ρ : ℂ)
 /-- The set of zeros of the completed Riemann zeta function. -/
 def offlineZeros : Set ℂ := {s : ℂ | completedRiemannZeta s = 0}
 
-/-- The cosh reflection map s ↦ 1 − s. -/
-def coshReflection (s : ℂ) : ℂ := 1 - s
+/-- The cosh reflection: reflects Re(s) about π/6, preserving Im(s).
+    The cosh strip [0, π/3] maps to itself under this reflection.
+    Note: the *classical* reflection s ↦ 1 - s (functional equation) is separate.
+    The cosh reflection combined with conjugation (coshFolding) gives
+    s ↦ π/3 - s, which is the full cosh rotation. -/
+def coshReflection (s : ℂ) : ℂ := ⟨Real.pi / 3 - s.re, s.im⟩
 
-/-- The zero set of the completed zeta is invariant under s ↦ 1 − s. -/
-theorem offlineZeros_cosh_rotation_invariant (s : ℂ) :
-    s ∈ offlineZeros ↔ coshReflection s ∈ offlineZeros := by
-  unfold offlineZeros coshReflection
+/-- The cosh folding: complex conjugation. -/
+def coshFolding (s : ℂ) : ℂ := starRingEnd ℂ s
+
+/-- The full cosh rotation: s ↦ π/3 - s = coshReflection ∘ coshFolding. -/
+def coshRotation (s : ℂ) : ℂ := ↑(Real.pi / 3) - s
+
+/-- The classical functional equation reflection: s ↦ 1 - s. -/
+def classicalReflection (s : ℂ) : ℂ := 1 - s
+
+/-- The zero set of the completed zeta is invariant under the classical
+    reflection s ↦ 1 − s (functional equation symmetry). -/
+theorem offlineZeros_classical_reflection_invariant (s : ℂ) :
+    s ∈ offlineZeros ↔ classicalReflection s ∈ offlineZeros := by
+  unfold offlineZeros classicalReflection
   rw [Set.mem_setOf_eq, Set.mem_setOf_eq, completedRiemannZeta_one_sub]
 
-/-- The cosh reflection is an involution. -/
-theorem coshReflection_involutive : Function.Involutive coshReflection :=
-  fun x => by unfold coshReflection; ring
+/-- The classical reflection is an involution. -/
+theorem classicalReflection_involutive : Function.Involutive classicalReflection :=
+  fun x => by unfold classicalReflection; ring
 
-/-- The image of offlineZeros under cosh reflection equals offlineZeros. -/
-theorem coshReflection_image_offlineZeros :
-    coshReflection '' offlineZeros = offlineZeros := by
-  ext s; simp [coshReflection]
+/-- The cosh reflection (Re-part only) is an involution. -/
+theorem coshReflection_involutive : Function.Involutive coshReflection := by
+  intro x; simp [coshReflection, Complex.ext_iff]
+
+/-- The image of offlineZeros under classical reflection equals offlineZeros. -/
+theorem classicalReflection_image_offlineZeros :
+    classicalReflection '' offlineZeros = offlineZeros := by
+  ext s; simp [classicalReflection]
   constructor <;> intro h
   · obtain ⟨x, hx, rfl⟩ := h
-    exact (offlineZeros_cosh_rotation_invariant x).mp hx
+    exact (offlineZeros_classical_reflection_invariant x).mp hx
   · exact ⟨1 - s, by
       simpa [offlineZeros] using (cosh_symmetric_pole_structure s).symm ▸ h, by ring⟩
 

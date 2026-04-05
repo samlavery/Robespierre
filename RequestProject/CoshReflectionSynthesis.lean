@@ -334,5 +334,4 @@ theorem hg_eq_from_overlap
   · exact Filter.eventually_of_mem (IsOpen.mem_nhds overlapRegionC_isOpen hz₀.1) fun x hx => hg_overlap x hx
 
 
-
 end

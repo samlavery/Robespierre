@@ -15,10 +15,13 @@ noncomputable section
 /-! ## Domain definitions -/
 
 /-- The cosh reflection domain: `{s : ℂ | 0 < Re(s) < π/3}`. -/
+-- def coshReflDomain : Set ℂ :=
+--  {s : ℂ | 0 < s.re ∧ s.re < Real.pi / 3}
+
 def coshReflDomain : Set ℂ :=
   {s : ℂ | 0 < s.re ∧ s.re < Real.pi / 3}
 
-/-- The overlap region: `{s : ℂ | 1 < Re(s) < π/3}`. -/
+/-- The overlap region: `{s : ℂ | 1 < Re(s) < π/3}`. It overlaps Euler's product-/
 def overlapRegionI : Set ℂ :=
   {s : ℂ | 1 < s.re ∧ s.re < Real.pi / 3}
 
