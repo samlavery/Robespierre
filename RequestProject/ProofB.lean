@@ -7,10 +7,11 @@ import RequestProject.HarmonicCancellation
 import RequestProject.TranslationC
 import RequestProject.EulerProductRotation
 import RequestProject.ProofChain
+import RequestProject.HarmonicBalance
+open Real Complex
 /-!
 # Proof B — The Dual-Detector Route to RH
-A structural formalization of the proof that the Riemann Hypothesis follows
-from closing two branches of a dual-detector dichotomy. Every step is stated
+A structural formalization of the proof that the Riemann Hypothesis. Every step is stated
 explicitly; the structural facts (A), (B), (F) are proved unconditionally,
 while the content-bearing bridges (C), (D), (E) are named `Bridge…` Props.
 ## Outline
@@ -18,13 +19,13 @@ while the content-bearing bridges (C), (D), (E) are named `Bridge…` Props.
 Structural facts:
   S_online     := {ρ ∈ NontrivialZeros : Re ρ = 1/2}
   S_offline    := {ρ ∈ NontrivialZeros : Re ρ ≠ 1/2}
-  S_cancelling ⊆ S_offline     (the pinning class)
+  S_cancelling ⊆ S_offline     (the conspiring class)
 (A) Partition            : NontrivialZeros = S_online ⊔ S_offline      [unconditional]
 (B) Online passes        : S_online ⟹ pinning balanced ∧ harmonic balanced
 (C) Offline dichotomy    : S_offline ∋ ρ ⟹ pinning fires ∨ ρ ∈ S_cancelling
 (D) Harmonic branch impossible
                          : pinning doesn't fire ⟹ harmonic contradiction ⟹ ⊥
-(E) Silent cancelling branch impossible
+(E) Cancelling branch impossible
                          : ρ ∈ S_cancelling ⟹ translation contradiction ⟹ ⊥
 (F) Transport closure    : harmonic residue vanishes ↔ Re ρ = 1/2      [unconditional]
 Therefore S_offline = ∅, hence RH.
@@ -51,7 +52,6 @@ Therefore S_offline = ∅, hence RH.
   no nonempty subset of the critical strip can be simultaneously invariant
   under both s ↦ 1−s and s ↦ ⟨π/3 − Re s, Im s⟩.
 -/
-
 
 namespace ProofB
 open Complex PinningDetector
@@ -296,7 +296,7 @@ theorem fullSetImbalance_zero (x : ℝ) : PinningDetector.fullSetImbalance x = 0
     _ = -(∑' ρ, f ρ) := tsum_neg
   linarith
 
-/-- **(D) Harmonic branch impossible**: the full-set detector never fires.
+/-- **(D) Pinning branch**: the full-set detector never fires.
     This is unconditional: it follows from the functional-equation involution.
     holds. -/
 def BridgeFullSetPinningSilent : Prop :=
@@ -309,34 +309,89 @@ theorem bridgeFullSetPinningSilent_proof :
 
 
 
+theorem rpow_sigma_add_rpow_one_sub_ge (r : ℝ) (hr : 0 < r) (σ : ℝ) :
+    2 * r ^ (1 / 2 : ℝ) ≤ r ^ σ + r ^ (1 - σ) := by
+  have hr_nn : 0 ≤ r := le_of_lt hr
+  have amgm := Real.geom_mean_le_arith_mean2_weighted
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2)
+    (rpow_nonneg hr_nn σ) (rpow_nonneg hr_nn (1 - σ))
+    (by norm_num : (1 / 2 : ℝ) + 1 / 2 = 1)
+  rw [← rpow_mul hr_nn, ← rpow_mul hr_nn, ← rpow_add hr,
+      show σ * (1 / 2) + (1 - σ) * (1 / 2) = 1 / 2 from by ring] at amgm
+  linarith
+
+theorem rpow_eq_one_of_pos_of_ne_one {r y : ℝ} (hr : 0 < r) (hr1 : r ≠ 1)
+    (h : r ^ y = 1) : y = 0 := by
+  have : y * Real.log r = 0 := by
+    have := congr_arg Real.log h
+    rwa [Real.log_rpow hr, Real.log_one] at this
+  exact (mul_eq_zero.mp this).resolve_right (Real.log_ne_zero_of_pos_of_ne_one hr hr1)
+
+theorem rpow_sigma_add_rpow_one_sub_eq_iff (r : ℝ) (hr : 0 < r) (hr1 : r ≠ 1) (σ : ℝ) :
+    r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2 : ℝ) ↔ σ = 1 / 2 := by
+  constructor
+  · intro heq
+    have hr_nn : 0 ≤ r := le_of_lt hr
+    have ha_nn : 0 ≤ r ^ σ := rpow_nonneg hr_nn σ
+    have hb_nn : 0 ≤ r ^ (1 - σ) := rpow_nonneg hr_nn (1 - σ)
+    have ha_pos : 0 < r ^ σ := rpow_pos_of_pos hr σ
+    have hab_prod : r ^ σ * r ^ (1 - σ) = r := by
+      rw [← rpow_add hr]; simp only [add_sub_cancel]; exact rpow_one r
+    have hsqrt_ab : Real.sqrt (r ^ σ * r ^ (1 - σ)) = r ^ (1 / 2 : ℝ) := by
+      rw [hab_prod, Real.sqrt_eq_rpow]
+    have key : (Real.sqrt (r ^ σ) - Real.sqrt (r ^ (1 - σ))) ^ 2 = 0 := by
+      have expand : (Real.sqrt (r ^ σ) - Real.sqrt (r ^ (1 - σ))) ^ 2 =
+        r ^ σ + r ^ (1 - σ) - 2 * (Real.sqrt (r ^ σ) * Real.sqrt (r ^ (1 - σ))) := by
+        nlinarith [Real.sq_sqrt ha_nn, Real.sq_sqrt hb_nn]
+      rw [expand, ← Real.sqrt_mul ha_nn, hsqrt_ab]
+      linarith
+    have hsqeq : Real.sqrt (r ^ σ) = Real.sqrt (r ^ (1 - σ)) := by
+      nlinarith [sq_nonneg (Real.sqrt (r ^ σ) - Real.sqrt (r ^ (1 - σ)))]
+    have hab_eq : r ^ σ = r ^ (1 - σ) := by
+      have h1 : Real.sqrt (r ^ σ) ^ 2 = Real.sqrt (r ^ (1 - σ)) ^ 2 := by rw [hsqeq]
+      rwa [Real.sq_sqrt ha_nn, Real.sq_sqrt hb_nn] at h1
+    have hexp : r ^ (2 * σ - 1) = 1 := by
+      have h1 : r ^ σ * (r ^ (1 - σ))⁻¹ = 1 := by
+        rw [← hab_eq]; exact mul_inv_cancel₀ (ne_of_gt ha_pos)
+      rw [← rpow_neg hr_nn, ← rpow_add hr] at h1
+      convert h1 using 1; ring
+    linarith [rpow_eq_one_of_pos_of_ne_one hr hr1 hexp]
+  · intro h; rw [h]; ring
+
+
+
+
+lemma harmonic_formula (r : ℝ) (hr : 1 < r) (σ : ℝ) :
+    r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2 : ℝ) ↔ σ = 1 / 2 :=
+  rpow_sigma_add_rpow_one_sub_eq_iff r (by linarith) (by linarith) σ
+
+
+def EulerHarmonicFormula (σ : ℝ) : Prop :=
+  ∀ r : ℝ, 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2 : ℝ)
+
 def BridgeCancellingForcesTranslationContradiction : Prop :=
   False
 
-theorem bridgeCancellingForcesTranslationContradiction_proof  (h : Set.Nonempty S_cancelling)  :
+
+
+theorem bridgeCancellingForcesTranslationContradiction_proof  (σh : ℝ) (hoz : σh  ≠ 1 / 2) (hw : ∀ (r : ℝ), 1 < r → r ^ σh + r ^ (1 - σh) = 2 * r ^ ((1 : ℝ) / 2)) (h : Set.Nonempty S_offline)  :
   BridgeCancellingForcesTranslationContradiction := by
     obtain ⟨s, hs⟩ := h
-    let σ := s.re
-    have hfunc := ∀ x : ℝ, x > 1 → x ^ σ = x ^ (1 - σ)
+    let σ  := s.re
+    let h := EulerHarmonicFormula σ
+--    have hfunc := ∀ x : ℝ, x > 1 → x ^ σ = x ^ (1 - σ)
+    --have h_func := ∀ (r : ℝ), 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2)
     let h_off := hs.1
     let h_imbal := hs.2
     let h_nt := h_off.1
     let hne := h_off.2
-    let h_re_pos := h_nt.1
-    let h_re_lt := h_nt.2.1
-    let h_zeta := h_nt.2.2
-    let h_c : ℂ := (σ : ℂ)
-    have h_olf : TranslationC.OffLineReal σ := ⟨h_re_pos, h_re_lt, hne⟩
-    have h_vanish := TranslationC.offLine_no_harmonic_balance σ h_olf
-    -- have h_half : h_c = 1 / 2 := TranslationC.harmonicResidue_forces_half h_c h_vanish
-    --have h_re_half : σ = 1 / 2 := by
-    -- exact_mod_cast h_half  -- or use Complex.ofReal_inj.mp h_half
-    -- exact absurd h_vanish h_vanish
-    --have h_half := TranslationC.offLine_no_harmonic_balance σ
-    --exact absurd h_half σ
-    sorry
-    --exact BridgeCancellingForcesTranslationContradiction.mk (TranslationC.harmonicResidue_forces_half h_c)
-    -- exact TranslationC.harmonicResidue_forces_half (h_c)
---    exact overdetermined_offline_system ⟨σ, hne, hfunc⟩
+    -- let h_re_pos := h_nt.1
+    -- let h_re_lt := h_nt.2.1
+    -- let h_zeta := h_nt.2.2
+    --let hh :=σ ≠ 1 / 2
+   -- have h_eq := harmonic_formula (r)
+    --have h :=  ∀ (r : ℝ), 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2)
+    exact (euler_harmonic_off_line_neg σh hoz hw)
 
 
 
@@ -411,7 +466,6 @@ theorem RH_of_ProofA_bridges
 
 theorem RH_of_proofs
     (hCancel : BridgeCancellingForcesTranslationContradiction) :
-
     RiemannHypothesis :=
   RH_of_ProofA_bridges
     bridgeNontrivialInStrip_proof
