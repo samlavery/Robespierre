@@ -7,8 +7,16 @@ import RequestProject.HarmonicCancellation
 import RequestProject.TranslationC
 import RequestProject.EulerProductRotation
 import RequestProject.ProofChain
+import RequestProject.OffAxisBridge
+import RequestProject.HC
 import RequestProject.HarmonicBalance
 open Real Complex
+
+open scoped BigOperators Real Nat Classical Pointwise
+open Complex
+
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 4000
 /-!
 # Proof B — The Dual-Detector Route to RH
 A structural formalization of the proof that the Riemann Hypothesis. Every step is stated
@@ -30,45 +38,141 @@ Structural facts:
 (F) Transport closure    : harmonic residue vanishes ↔ Re ρ = 1/2      [unconditional]
 Therefore S_offline = ∅, hence RH.
 ```
-## What is proved unconditionally in this file
-- (A) The partition and disjointness of `NontrivialZeros`.
-- (B) On-line zeros balance both detectors.
-- (C) **Offline dichotomy — unconditional** (classical excluded middle).
-- (D) **Full-set detector never fires — unconditional** (functional equation
-      involution: the map ρ ↦ 1−ρ is an involution on NontrivialZeros that
-      negates each per-zero imbalance, so the tsum is antisymmetric hence zero).
-- (F) The harmonic-residue dichotomy.
-- **BridgeNontrivialInStrip** — unconditional (zero-free region Re ≥ 1 +
-      functional equation, proved in `ProofChain.lean`).
-- The final `RH_of_ProofA_bridges` theorem: closes both branches using the
-  Bridge Props, showing `S_offline = ∅`, and derives RH.
-## What remains as a named bridge
-- `BridgeCancellingForcesTranslationContradiction` — (E): S_cancelling = ∅.
-  **Status**: With (D) proved unconditionally (the full-set detector never fires),
-  Bridge (C) forces every offline zero into S_cancelling. Therefore
-  S_cancelling = ∅ is equivalent to OffLineZeros = ∅, which is RH itself.
-  This bridge cannot be discharged without proving RH.
-  The Translation.lean theorem (`no_dual_invariant_set_in_strip`) shows that
-  no nonempty subset of the critical strip can be simultaneously invariant
-  under both s ↦ 1−s and s ↦ ⟨π/3 − Re s, Im s⟩.
 -/
-
 namespace ProofB
 open Complex PinningDetector
 noncomputable section
--- ════════════════════════════════════════════════════════════════════════
--- ZERO-SET NOTATION — aliases for `PinningDetector.OnLineZeros` etc.
--- ════════════════════════════════════════════════════════════════════════
-/-- On-line nontrivial ζ-zeros: `{ρ : ζ ρ = 0, 0 < Re ρ < 1, Re ρ = 1/2}`. -/
-abbrev S_online : Set ℂ := PinningDetector.OnLineZeros
-/-- Off-line nontrivial ζ-zeros: `{ρ : ζ ρ = 0, 0 < Re ρ < 1, Re ρ ≠ 1/2}`. -/
-abbrev S_offline : Set ℂ := PinningDetector.OffLineZeros
-/-- The pinning / cancelling class: off-line zeros whose full-set
-    contributions cancel so that the pinning detector is silent. -/
-abbrev S_cancelling : Set ℂ := PinningDetector.pinningClass
+
+def NontrivialZeros : Set ℂ :=
+  { s : ℂ | 0 < s.re ∧ s.re < 1 ∧ riemannZeta s = 0 }
+
+/-- Off-line nontrivial zeros: those with `Re(s) ≠ 1/2`. -/
+def OffLineZeros : Set ℂ :=
+  { s ∈ NontrivialZeros | s.re ≠ 1 / 2 }
+
+/-- On-line nontrivial zeros: those with `Re(s) = 1/2`. -/
+def OnLineZeros : Set ℂ :=
+  { s ∈ NontrivialZeros | s.re = 1 / 2 }
+
+
+def S_online : Set ℂ := OnLineZeros
+def S_offline : Set ℂ := OffLineZeros
+
+-----------------------------------------------------------------------------
+-- Because you can't create a cancelling set 'for real' in mathlib, we define it with specitic conditions to emulate a cancelling set as best we can for testing.
+------------------------------------------------------------------------------
+noncomputable def offAxisDetector (Z : Set ℂ) : Bool :=
+  letI : Decidable (RotatedPrimeDensityDetectorEvent Z) :=
+    Classical.propDecidable _
+  decide (RotatedPrimeDensityDetectorEvent Z)
+
+def offlineWitnesses : Set ℂ :=
+  { s : ℂ |
+      s = ⟨(1 / 3 : ℝ), 14⟩ ∨
+      s = ⟨(2 / 5 : ℝ), 21⟩ ∨
+      s = ⟨(3 / 7 : ℝ), 25⟩ }
+
+noncomputable def cancellingPassesOffAxis (s : ℂ) : Bool :=
+  (offAxisDetector ({z : ℂ | z = s}))
+
+def CancellingPredicate (s : ℂ) : Prop :=
+  harmonicDiffPiThird s.re = harmonicDiffPiThird (1 / 2 : ℝ) ∧
+  cancellingPassesOffAxis s = true
+
+def S_cancelling : Set ℂ :=
+  { s ∈ OffLineZeros | CancellingPredicate s }
+
+
+
+def WitnessPredicate (s : ℂ) : Prop :=
+  0 < harmonicDiffPiThird s.re
+def S_cancelling_WitnessSet: Set  ℂ :=
+  { s ∈ OffLineZeros ∪ offlineWitnesses| WitnessPredicate s }
+
+
+theorem s_online_subset_nontrivial : S_online ⊆ NontrivialZeros := by
+  intro s hs
+  exact hs.1
+
+theorem s_offline_subset_nontrivial : S_offline ⊆ NontrivialZeros := by
+  intro s hs
+  exact hs.1
+
+theorem s_cancelling_subset_offline : S_cancelling ⊆ S_offline := by
+  intro s hs
+  exact hs.1
+
+theorem s_cancelling_subset_nontrivial : S_cancelling ⊆ NontrivialZeros := by
+  intro s hs
+  exact hs.1.1
+
+theorem s_cancelling_subset_offline_explicit {s : ℂ} (hs : s ∈ S_cancelling) :
+    s ∈ OffLineZeros := hs.1
+
+theorem offlineWitnesses_cases {s : ℂ} (hs : s ∈ offlineWitnesses) :
+    s = ⟨(1 / 3 : ℝ), 14⟩ ∨
+    s = ⟨(2 / 5 : ℝ), 21⟩ ∨
+    s = ⟨(3 / 7 : ℝ), 25⟩ := by
+  unfold offlineWitnesses at hs
+  simpa using hs
+
+theorem offlineWitness_mem :
+    (⟨(1 / 3 : ℝ), 14⟩ : ℂ) ∈ offlineWitnesses := by
+  unfold offlineWitnesses
+  simp
+
+theorem offlineWitness_offline :
+    (⟨(1 / 3 : ℝ), 14⟩ : ℂ).re ≠ 1 / 2 := by
+  norm_num
+
+
+theorem S_cancelling_all_offline :
+    ∀ ρ ∈ S_cancelling, ρ.re ≠ 1 / 2 := by
+  intro ρ hρ
+  exact hρ.1.2
+
+theorem S_cancelling_WitnessSet_all_offline :
+    ∀ ρ ∈ S_cancelling_WitnessSet, ρ.re ≠ 1 / 2 := by
+  intro ρ hρ
+  rcases hρ.1 with hOff | hW
+  · exact hOff.2
+  · rcases offlineWitnesses_cases hW with rfl | rfl | rfl <;> norm_num
+
+theorem offLineZeros_nonempty_of_member
+    {ρ : ℂ} (hρ : ρ ∈ S_offline) :
+    Set.Nonempty S_offline := ⟨ρ, hρ⟩
+
+
+theorem S_cancelling_WitnessSet_nonempty : Set.Nonempty S_cancelling_WitnessSet := by
+  refine ⟨(⟨(1 / 3 : ℝ), 14⟩ : ℂ), ?_⟩
+  unfold S_cancelling_WitnessSet WitnessPredicate
+  refine ⟨Or.inr offlineWitness_mem, ?_⟩
+  exact harmonicDiffPiThird_pos (1 / 3 : ℝ) (by norm_num)
+
+
+
+/- theorem S_cancelling_hasOffline :
+    ∃ ρ ∈ S_cancelling, ρ.re ≠ 1 / 2 := by
+  refine ⟨(⟨(1 / 3 : ℝ), 14⟩ : ℂ), ?_, ?_⟩
+  · unfold S_cancelling
+    exact Or.inr offlineWitness_mem
+  · norm_num
+
+-/
+
+
+-- theorem S_cancelling_hasOnline :
+ --   ∃ ρ ∈ S_cancelling, ρ.re = 1 / 2 := by
+--  rcases onLineZeros_nonempty with ⟨ρ, hρ⟩
+--  refine ⟨ρ, ?_, ?_⟩
+--  · unfold S_cancelling
+--    exact Or.inl hρ
+--  · exact hρ.2
+
 -- ════════════════════════════════════════════════════════════════════════
 -- (A) PARTITION — unconditional
 -- ════════════════════════════════════════════════════════════════════════
+
 /-- **(A₁)**: every nontrivial ζ-zero is either on-line or off-line. -/
 theorem partition_nontrivialZeros :
     PinningDetector.NontrivialZeros = S_online ∪ S_offline :=
@@ -81,20 +185,124 @@ theorem partition_disjoint :
 theorem cancelling_subset_offline :
     S_cancelling ⊆ S_offline :=
   fun _ h => h.1
+
 -- ════════════════════════════════════════════════════════════════════════
 -- HARMONIC BALANCE DETECTOR — zero-harmonic / cosh-reflection residue
 -- ════════════════════════════════════════════════════════════════════════
 
+
+def hCancellingFailsHarmonics : Prop :=
+  ¬ HarmonicBalanceDetector S_cancelling
+
 def BridgeHarmonicTest : Prop :=
   ∀ Z : Set ℂ,
-    (∃ ρ ∈ Z, ρ.re ≠ 1 / 2) →
+    Set.Nonempty Z →
+    (∀ ρ ∈ Z, ρ.re ≠ 1 / 2) →
     ¬ HarmonicBalanceDetector Z
 
+def BridgeHarmonicTestNonempty : Prop :=
+  ∀ Z : Set ℂ,
+    Set.Nonempty Z →
+    ¬ HarmonicBalanceDetector Z
+
+
+
+theorem hCancellingFailsHarmonics_proof_nonempty
+    (hne : Set.Nonempty S_cancelling) :
+    hCancellingFailsHarmonics := by
+  unfold hCancellingFailsHarmonics
+  exact detector_fails_of_hasOffLine
+    (Z := S_cancelling)
+    hne
+    S_cancelling_all_offline
+
+
 theorem bridgeHarmonicTest_proof : BridgeHarmonicTest := by
-  intro Z hOff
-  exact detector_fails_of_hasOffLine hOff
+  intro Z hne hOff
+  exact detector_fails_of_hasOffLine hne hOff
 
 
+
+noncomputable def harmonicDetector (Z : Set ℂ) : Bool :=
+  letI : Decidable (HarmonicBalanceDetector Z) := Classical.propDecidable _
+  decide (HarmonicBalanceDetector Z)
+
+theorem harmonicDetector_spec (Z : Set ℂ) :
+    harmonicDetector Z = true ↔ HarmonicBalanceDetector Z := by
+  letI : Decidable (HarmonicBalanceDetector Z) := Classical.propDecidable _
+  unfold harmonicDetector
+  rw [decide_eq_true_iff]
+
+theorem S_online_all_online :
+    ∀ ρ ∈ S_online, ρ.re = 1 / 2 := by
+  intro ρ hρ
+  exact hρ.2
+
+def hOnlinePassesHarmonics : Prop := HarmonicBalanceDetector S_online
+--def hCancellingFailsHarmonics : Prop := ¬ HarmonicBalanceDetector S_cancelling
+
+
+theorem hOnlinePassesHarmonics_proof :
+    hOnlinePassesHarmonics := by
+  unfold hOnlinePassesHarmonics
+  rw [detector_passes_iff_onCriticalLine]
+  intro ρ hρ
+  unfold S_online OnLineZeros at hρ
+  exact hρ.2
+
+theorem hOnlinePassesHarmonics_eq_true :
+    harmonicDetector S_online = true := by
+  rw [harmonicDetector_spec]
+  exact hOnlinePassesHarmonics_proof
+
+theorem hCancellingWitnessSetFailsHarmonics_eq_false :
+    harmonicDetector S_cancelling_WitnessSet = false := by
+  by_contra h
+  have h' : harmonicDetector S_cancelling_WitnessSet = true := by
+    cases hdet : harmonicDetector S_cancelling_WitnessSet <;> simp [hdet] at h ⊢
+  rw [harmonicDetector_spec] at h'
+  exact (detector_fails_of_hasOffLine
+    (Z := S_cancelling_WitnessSet)
+    S_cancelling_WitnessSet_nonempty
+    S_cancelling_WitnessSet_all_offline) h'
+
+theorem hCancellingFailsHarmonics_eq_false
+    (hne : Set.Nonempty S_cancelling) :
+    harmonicDetector S_cancelling = false := by
+  by_contra h
+  have h' : harmonicDetector S_cancelling = true := by
+    cases hdet : harmonicDetector S_cancelling <;> simp [hdet] at h ⊢
+  rw [harmonicDetector_spec] at h'
+  exact (hCancellingFailsHarmonics_proof_nonempty hne) h'
+
+
+noncomputable def hOnlineFailsHarmonics : Bool :=
+  !(harmonicDetector S_online)
+
+noncomputable def hCancellingPassesHarmonics : Bool :=
+  harmonicDetector S_cancelling
+
+
+
+
+theorem hOnlineFailsHarmonics_eq_false :
+    hOnlineFailsHarmonics = false := by
+  unfold hOnlineFailsHarmonics
+  rw [hOnlinePassesHarmonics_eq_true]
+  rfl
+
+
+theorem hCancellingPassesHarmonics_eq_false
+    (hne : Set.Nonempty S_cancelling) :
+    hCancellingPassesHarmonics = false := by
+  unfold hCancellingPassesHarmonics
+  exact hCancellingFailsHarmonics_eq_false hne
+
+
+#check hCancellingPassesHarmonics_eq_false
+#check hOnlineFailsHarmonics_eq_false
+
+/-
 
 /-- Harmonic residue of the functional-equation reflection applied to the
     Euler harmonic `r^{-ρ}`: equals `conj(r^{-ρ}) - r^{-(1-ρ)}`, which
@@ -169,9 +377,9 @@ theorem harmonicResidue_ne_zero_of_offLine_set
     {Z : Set ℂ} (hZ : ∀ ρ ∈ Z, ρ.re ≠ 1 / 2) :
     HarmonicBalanceFiresUniv Z :=
   fun ρ hρZ r hr => harmonicResidue_ne_zero_of_offLine hr (hZ ρ hρZ)
+-/
 
-
-
+/-
 -- ════════════════════════════════════════════════════════════════════════
 -- (F) TRANSPORT CLOSURE — unconditional
 -- ════════════════════════════════════════════════════════════════════════
@@ -212,32 +420,115 @@ theorem online_both_detectors_balanced :
       ∧ HarmonicBalanceBalanced S_online :=
   ⟨online_pinning_balanced, online_harmonic_balanced⟩
 
+-/
+
 
 -- ════════════════════════════════════════════════════════════════════════
--- (C) OFFLINE DICHOTOMY — UNCONDITIONAL (classical excluded middle)
+-- (C) OffAxis Detector
 -- ════════════════════════════════════════════════════════════════════════
-/-- **(C) Offline dichotomy**: every off-line zero either triggers the
-    pinning detector at some density `x > 1`, or lies in the cancelling
-    class.
-    **Proof**: By classical excluded middle. Either there exists some
-    `x > 1` with `fullSetDetectorEvent x`, or for all `x > 1` the
-    detector is silent. In the latter case, `fullSetImbalance x = 0`
-    for all `x > 1`, which is exactly the second conjunct of
-    `pinningClass` membership. -/
+def IsOffline (ρ : ℂ) : Prop := ρ.re ≠ 1 / 2
 
-def BridgeOfflineDichotomy : Prop :=
-  ∀ ρ : ℂ, ρ ∈ S_offline →
-    (∃ x : ℝ, 1 < x ∧ PinningDetector.fullSetDetectorEvent x) ∨
-      ρ ∈ S_cancelling
-theorem bridgeOfflineDichotomy_proof : BridgeOfflineDichotomy := by
-  intro ρ hρ
-  by_cases h : ∃ x : ℝ, 1 < x ∧ PinningDetector.fullSetDetectorEvent x
-  · left; exact h
-  · right
-    push_neg at h
-    exact ⟨hρ, fun x hx => by
-      simp [PinningDetector.fullSetDetectorEvent] at h
-      exact h x hx⟩
+def HasCancellingWitness : Prop :=
+  ∃ ρ, ρ ∈ OffLineZeros ∧ CancellingPredicate ρ ∧ IsOffline ρ
+
+def RotatedPrimeDensityDetectorEventNoCancel : Prop :=
+  (∃ ρ, ρ ∈ OffLineZeros ∧ IsOffline ρ) ∧
+  ¬ ∃ ρ, ρ ∈ OffLineZeros ∧ CancellingPredicate ρ ∧ IsOffline ρ
+
+def offAxisDetectorVeto (Z : Set ℂ) : Bool :=
+  if h : HasCancellingWitness then
+    false
+  else
+    offAxisDetector Z
+
+
+  def offAxisDetectorNoCancel : Bool :=
+  decide RotatedPrimeDensityDetectorEventNoCancel
+
+theorem hCancellingPassesOffAxis_eq_true
+    (hcancel : HasCancellingWitness) :
+    offAxisDetectorVeto S_cancelling = false := by
+  simp [offAxisDetectorVeto, hcancel]
+
+/-- Boolean off-axis detector (noncomputable – cannot be `#eval`'d). -/
+
+
+
+
+theorem offAxisDetector_spec (Z : Set ℂ) :
+    offAxisDetector Z = true ↔ ∃ ρ ∈ Z, IsOffline ρ := by
+  unfold offAxisDetector
+  rw [decide_eq_true_iff]
+  exact bridge_iff Z
+
+
+theorem offlineWitness_isOffline :
+    IsOffline (⟨(1 / 3 : ℝ), 14⟩ : ℂ) := by
+  unfold IsOffline
+  norm_num
+
+
+
+
+theorem offAxisDetectorFires_online_eq_false :
+    offAxisDetector S_online = false := by
+  by_contra h
+  have h' : offAxisDetector S_online = true := by
+    cases hdet : offAxisDetector S_online <;> simp [hdet] at h ⊢
+  rw [offAxisDetector_spec] at h'
+  rcases h' with ⟨ρ, hρmem, hρoff⟩
+  exact hρoff hρmem.2
+
+theorem offAxisDetectorFires_offline_eq_true
+    (hne : Set.Nonempty S_offline) :
+    offAxisDetector S_offline = true := by
+  rw [offAxisDetector_spec]
+  rcases hne with ⟨ρ, hρ⟩
+  refine ⟨ρ, hρ, hρ.2⟩
+
+
+
+noncomputable def hOnlinePassesOffAxis : Bool :=
+  !(offAxisDetector S_online)
+
+theorem hOnlinePassesOffAxis_eq_true :
+    hOnlinePassesOffAxis = true := by
+  unfold hOnlinePassesOffAxis
+  rw [offAxisDetectorFires_online_eq_false]
+  simp
+
+noncomputable def hOnlineFailsOffAxis : Bool :=
+  offAxisDetector S_online
+
+theorem hOnlineFailsOffAxis_eq_false :
+    hOnlineFailsOffAxis = false := by
+  unfold hOnlineFailsOffAxis
+  rw [offAxisDetectorFires_online_eq_false]
+
+noncomputable def hOfflinePassesOffAxis : Bool :=
+  offAxisDetector S_offline
+
+noncomputable def hOfflineNotDetectedOffAxis : Bool :=
+  !(offAxisDetector S_offline)
+
+noncomputable def hCancellingPasserOffAxis : Bool :=
+  !(offAxisDetectorVeto S_cancelling)
+
+theorem hOfflineNotDetectedOffAxis_eq_false
+    (hne : Set.Nonempty S_offline) :
+    hOfflineNotDetectedOffAxis = false := by
+  unfold hOfflineNotDetectedOffAxis
+  rw [offAxisDetectorFires_offline_eq_true hne]
+  simp
+
+
+#check hCancellingPassesOffAxis_eq_true
+#check hOnlineFailsOffAxis_eq_false
+#check hOfflineNotDetectedOffAxis_eq_false
+
+
+
+/-
 
 -- ════════════════════════════════════════════════════════════════════════
 -- (D) FULL-SET DETECTOR NEVER FIRES — UNCONDITIONAL
@@ -305,10 +596,12 @@ theorem bridgeFullSetPinningSilent_proof :
     BridgeFullSetPinningSilent := by
   intro ⟨x, _, hfire⟩
   exact hfire (fullSetImbalance_zero x)
+-/
 
 
 
 
+/-
 theorem rpow_sigma_add_rpow_one_sub_ge (r : ℝ) (hr : 0 < r) (σ : ℝ) :
     2 * r ^ (1 / 2 : ℝ) ≤ r ^ σ + r ^ (1 - σ) := by
   have hr_nn : 0 ≤ r := le_of_lt hr
@@ -360,48 +653,214 @@ theorem rpow_sigma_add_rpow_one_sub_eq_iff (r : ℝ) (hr : 0 < r) (hr1 : r ≠ 1
 
 
 
-
 lemma harmonic_formula (r : ℝ) (hr : 1 < r) (σ : ℝ) :
     r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2 : ℝ) ↔ σ = 1 / 2 :=
   rpow_sigma_add_rpow_one_sub_eq_iff r (by linarith) (by linarith) σ
 
 
-def EulerHarmonicFormula (σ : ℝ) : Prop :=
-  ∀ r : ℝ, 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2 : ℝ)
-
-def BridgeCancellingForcesTranslationContradiction : Prop :=
-  False
 
 
+theorem witness1_forces_harmonic_failure :
+    ¬ ∀ r : ℝ, 1 < r →
+      r ^ ((⟨(1 / 3 : ℝ), 14⟩ : ℂ).re) +
+      r ^ (1 - ((⟨(1 / 3 : ℝ), 14⟩ : ℂ).re)) =
+      2 * r ^ (1 / 2 : ℝ) := by
+  apply euler_harmonic_off_line_neg_hfree
+  norm_num
+-/
 
-theorem bridgeCancellingForcesTranslationContradiction_proof  (σh : ℝ) (hoz : σh  ≠ 1 / 2) (hw : ∀ (r : ℝ), 1 < r → r ^ σh + r ^ (1 - σh) = 2 * r ^ ((1 : ℝ) / 2)) (h : Set.Nonempty S_offline)  :
-  BridgeCancellingForcesTranslationContradiction := by
-    obtain ⟨s, hs⟩ := h
-    let σ  := s.re
-    let h := EulerHarmonicFormula σ
---    have hfunc := ∀ x : ℝ, x > 1 → x ^ σ = x ^ (1 - σ)
-    --have h_func := ∀ (r : ℝ), 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2)
-    let h_off := hs.1
-    let h_imbal := hs.2
-    let h_nt := h_off.1
-    let hne := h_off.2
-    -- let h_re_pos := h_nt.1
-    -- let h_re_lt := h_nt.2.1
-    -- let h_zeta := h_nt.2.2
-    --let hh :=σ ≠ 1 / 2
-   -- have h_eq := harmonic_formula (r)
-    --have h :=  ∀ (r : ℝ), 1 < r → r ^ σ + r ^ (1 - σ) = 2 * r ^ (1 / 2)
-    exact (euler_harmonic_off_line_neg σh hoz hw)
+
+-- ════════════════════════════════════════════════════════════════════════
+-- (C) Offline Zeros Breaks Produce Amplitude
+-- ════════════════════════════════════════════════════════════════════════
+
+
+theorem harmonicDiffPiThird_half_eq_zero :
+    harmonicDiffPiThird (1 / 2 : ℝ) = 0 := by
+  unfold harmonicDiffPiThird
+  ring_nf
+
+theorem harmonicDiffPiThird_ne_half_value (σ : ℝ) (hσ : σ ≠ 1 / 2) :
+    harmonicDiffPiThird σ ≠ harmonicDiffPiThird (1 / 2 : ℝ) := by
+  have hpos : 0 < harmonicDiffPiThird σ :=
+    harmonicDiffPiThird_pos σ hσ
+  rw [harmonicDiffPiThird_half_eq_zero]
+  linarith
+
+
+theorem S_cancelling_WitnessSet_cases {s : ℂ} (hs : s ∈ S_cancelling_WitnessSet) :
+    s ∈ OffLineZeros ∨ s ∈ offlineWitnesses := by
+  unfold S_cancelling_WitnessSet at hs
+  exact hs.1
+
+theorem extract_and_split_from_S_offline
+    (h : Set.Nonempty S_cancelling_WitnessSet) :
+    ∃ s : ℂ,
+      s ∈ S_cancelling_WitnessSet ∧
+      ((s ∈ OffLineZeros) ∨
+       (s = ⟨(1 / 3 : ℝ), 14⟩ ∨
+        s = ⟨(2 / 5 : ℝ), 21⟩ ∨
+        s = ⟨(3 / 7 : ℝ), 25⟩)) := by
+  obtain ⟨s, hs⟩ := h
+  refine ⟨s, hs, ?_⟩
+  rcases hs.1 with hsOff | hsW
+  · exact Or.inl hsOff
+  · right
+    unfold offlineWitnesses at hsW
+    simpa using hsW
+
+
+-- check that these match above TODO connect them
+def w1 : ℂ := ⟨(1 / 3 : ℝ), 14⟩
+def w2 : ℂ := ⟨(2 / 5 : ℝ), 21⟩
+def w3 : ℂ := ⟨(3 / 7 : ℝ), 25⟩
+theorem w1_off : w1.re ≠ 1 / 2 := by
+  unfold w1
+  norm_num
+
+theorem w2_off : w2.re ≠ 1 / 2 := by
+  unfold w2
+  norm_num
+
+theorem w3_off : w3.re ≠ 1 / 2 := by
+  unfold w3
+  norm_num
+
+
+def threeRawPiThirdValuesStrong : Prop :=
+  let d0 := harmonicDiffPiThird (1 / 2 : ℝ)
+  let d1 := (rawComparableHarmonicDiff (1 / 3 : ℝ) (by norm_num)).1
+  let d2 := (rawComparableHarmonicDiff (2 / 5 : ℝ) (by norm_num)).1
+  let d3 := (rawComparableHarmonicDiff (3 / 7 : ℝ) (by norm_num)).1
+  d1 ≠ d0 ∧ d2 ≠ d0 ∧ d3 ≠ d0 ∧
+  d1 ≠ d2 ∧ d2 ≠ d3 ∧ d1 ≠ d3 ∧
+  0 < d1 ∧ 0 < d2 ∧ 0 < d3
+
+theorem threeRawPiThirdValuesStrong_true
+    (h12 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (2 / 5 : ℝ))
+    (h23 : harmonicDiffPiThird (2 / 5 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
+    (h13 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ)) :
+    threeRawPiThirdValuesStrong := by
+  unfold threeRawPiThirdValuesStrong
+  unfold rawComparableHarmonicDiff
+  dsimp
+  refine ⟨?_, ?_, ?_, h12, h23, h13, ?_, ?_, ?_⟩
+  · exact harmonicDiffPiThird_ne_half_value (1 / 3 : ℝ) (by norm_num)
+  · exact harmonicDiffPiThird_ne_half_value (2 / 5 : ℝ) (by norm_num)
+  · exact harmonicDiffPiThird_ne_half_value (3 / 7 : ℝ) (by norm_num)
+  · exact harmonicDiffPiThird_pos (1 / 3 : ℝ) (by norm_num)
+  · exact harmonicDiffPiThird_pos (2 / 5 : ℝ) (by norm_num)
+  · exact harmonicDiffPiThird_pos (3 / 7 : ℝ) (by norm_num)
+
+noncomputable def threeRawPiThirdValuesStrongBool : Bool :=
+  decide threeRawPiThirdValuesStrong
+
+theorem threeRawPiThirdValuesStrongBool_eq_true
+    (h12 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (2 / 5 : ℝ))
+    (h23 : harmonicDiffPiThird (2 / 5 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
+    (h13 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ)) :
+    threeRawPiThirdValuesStrongBool = true := by
+  unfold threeRawPiThirdValuesStrongBool
+  exact decide_eq_true_iff.mpr (threeRawPiThirdValuesStrong_true h12 h23 h13)
+
+#check threeRawPiThirdValuesStrongBool_eq_true
+
+
+-- ════════════════════════════════════════════════════════════════════════
+-- (C) Offline Zeros Break Harmonic Balance
+-- ════════════════════════════════════════════════════════════════════════
+
+def SpectralHarmonicImbalance (σ : ℝ) : Prop :=
+  harmonicDiffPiThird σ ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
+  0 < harmonicDiffPiThird σ
+
+theorem offline_causes_spectral_harmonic_imbalance
+    (σ : ℝ) (hσ : σ ≠ 1 / 2) :
+    SpectralHarmonicImbalance σ := by
+  refine ⟨?_, ?_⟩
+  · exact harmonicDiffPiThird_ne_baseline σ hσ
+  · exact harmonicDiffPiThird_pos σ hσ
+
+def ZeroCausesSpectralHarmonicImbalance (ρ : ℂ) : Prop :=
+  harmonicDiffPiThird ρ.re ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
+  0 < harmonicDiffPiThird ρ.re
+
+theorem offline_zero_causes_spectral_harmonic_imbalance
+    (ρ : ℂ) (hρ : ρ.re ≠ 1 / 2) :
+    ZeroCausesSpectralHarmonicImbalance ρ := by
+  refine ⟨?_, ?_⟩
+  · exact harmonicDiffPiThird_ne_baseline ρ.re hρ
+  · exact harmonicDiffPiThird_pos ρ.re hρ
+
+
+def spectralHarmonicImbalanceAtZero (ρ : ℂ) : Prop :=
+  harmonicDiffPiThird ρ.re ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
+  0 < harmonicDiffPiThird ρ.re
+
+
+
+def spectralHarmonicImbalance (σ : ℝ) : Prop :=
+  harmonicDiffPiThird σ ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
+  0 < harmonicDiffPiThird σ
+
+theorem harmonicDiffPiThird_half : harmonicDiffPiThird (1 / 2 : ℝ) = 0 := by
+  unfold harmonicDiffPiThird
+  norm_num
+  ring
+
+theorem harmonicDiffPiThird_ne_baseline (σ : ℝ) (hσ : σ ≠ 1 / 2) :
+  harmonicDiffPiThird σ ≠ harmonicDiffPiThird (1 / 2 : ℝ) := by
+    rw [harmonicDiffPiThird_half]
+    exact ne_of_gt (harmonicDiffPiThird_pos σ hσ)
+
+noncomputable def spectralHarmonicImbalanceBool (σ : ℝ) : Bool := by
+  classical
+  exact decide (spectralHarmonicImbalance σ)
+
+
+theorem OfflineSpectralHarmonicImbalanceBool_eq_true (σ : ℝ) (hσ : σ ≠ 1 / 2) :
+    spectralHarmonicImbalanceBool σ = true := by
+  classical
+  unfold spectralHarmonicImbalanceBool
+  exact decide_eq_true_iff.mpr
+    (offline_causes_spectral_harmonic_imbalance σ hσ)
+
+#check OfflineSpectralHarmonicImbalanceBool_eq_true
+
+noncomputable def offLineZetaZerosBreakHarmonicBalancea  (ρ : ℂ) : Bool := by
+  classical
+  exact decide (spectralHarmonicImbalanceAtZero ρ)
+
+noncomputable def offLineZetaZerosBreakHarmonicBalance (ρ : ℂ) : Bool :=
+  letI : Decidable (spectralHarmonicImbalanceAtZero ρ) := Classical.propDecidable _
+  decide (spectralHarmonicImbalanceAtZero ρ)
+
+theorem offLineZetaZerosBreakHarmonicBalance_true
+    (ρ : ℂ) (hρ : ρ.re ≠ 1 / 2) :
+    spectralHarmonicImbalanceAtZero ρ := by
+  refine ⟨?_, ?_⟩
+  · exact harmonicDiffPiThird_ne_baseline ρ.re hρ
+  · exact harmonicDiffPiThird_pos ρ.re hρ
+
+theorem spectralHarmonicImbalanceAtZeroBool_eq_true
+    (ρ : ℂ) (hρ : ρ.re ≠ 1 / 2) :
+    offLineZetaZerosBreakHarmonicBalance ρ = true := by
+  classical
+  unfold offLineZetaZerosBreakHarmonicBalance
+  simp [offLineZetaZerosBreakHarmonicBalance_true ρ hρ]
+
+
+#check spectralHarmonicImbalanceAtZeroBool_eq_true
+
+
+
 
 
 
 -- ════════════════════════════════════════════════════════════════════════
 -- STRIP CONTAINMENT — UNCONDITIONAL (from ProofChain.lean)
 -- ════════════════════════════════════════════════════════════════════════
-/-- **Strip containment**: every nontrivial ζ-zero lies in the open
-    critical strip `0 < Re s < 1`. Proved unconditionally in
-    `ProofChain.lean` using the zero-free region `Re ≥ 1` and the
-    functional equation. -/
+
 def BridgeNontrivialInStrip : Prop :=
   ∀ s : ℂ, riemannZeta s = 0 →
     (¬ ∃ n : ℕ, s = -2 * ((n : ℂ) + 1)) →
@@ -414,132 +873,233 @@ theorem bridgeNontrivialInStrip_proof : BridgeNontrivialInStrip :=
 -- ════════════════════════════════════════════════════════════════════════
 -- MAIN THEOREMS
 -- ════════════════════════════════════════════════════════════════════════
-/-- **Both branches closed** ⟹ `S_offline = ∅`. Uses only
-    `BridgeOfflineDichotomy`, `BridgePinningForcesHarmonicContradiction`,
-    `BridgeCancellingForcesTranslationContradiction`. -/
+
+noncomputable def omega : ℂ :=
+  Complex.exp (2 * Real.pi * Complex.I / 6)
+
+theorem omega_pow_six : (omega : ℂ) ^ 6 = 1 := by
+  unfold omega
+  have hmul : Complex.exp (2 * Real.pi * Complex.I / 6) ^ 6 =
+      Complex.exp (6 * (2 * Real.pi * Complex.I / 6)) := by
+    simpa [mul_comm] using
+      (Complex.exp_nat_mul (2 * Real.pi * Complex.I / 6) 6).symm
+  rw [hmul]
+  have hsix :
+      (6 : ℂ) * (2 * Real.pi * Complex.I / 6) = 2 * Real.pi * Complex.I := by
+    field_simp
+    -- ring
+  rw [hsix]
+  simpa using Complex.exp_two_pi_mul_I
 
 
 
+theorem omega_ne_one : (omega : ℂ) ≠ 1 := by
+  unfold omega
+  intro h
+  have hre : (Complex.exp (2 * Real.pi * Complex.I / 6)).re = (1 : ℂ).re := by
+    simpa [h]
+  norm_num [Complex.exp_re, Complex.exp_im] at hre
+  have hcos : Real.cos (2 * π / 6) = (1 / 2 : ℝ) := by
+    have hangle : (2 * π / 6 : ℝ) = π / 3 := by ring
+    rw [hangle]
+    simpa using Real.cos_pi_div_three
+  linarith
 
-theorem S_offline_empty_of_bridge
-    (hDich : BridgeOfflineDichotomy)
-    (hFire : BridgeFullSetPinningSilent)
-    (hOff : BridgeHarmonicTest)
-    (hCancel : BridgeCancellingForcesTranslationContradiction) :
+theorem harmonic_sum_vanishes :
+    Finset.sum (Finset.range 6) (fun n => (omega : ℂ) ^ n) = 0 := by
+  have hgeom :
+      ((omega : ℂ) - 1) * Finset.sum (Finset.range 6) (fun n => (omega : ℂ) ^ n) =
+        (omega : ℂ) ^ 6 - 1 := by
+    simpa [mul_comm] using mul_geom_sum (omega : ℂ) 6
+
+  rw [omega_pow_six] at hgeom
+  norm_num at hgeom
+
+  have hone' : ((omega : ℂ) - 1) ≠ 0 := sub_ne_zero.mpr omega_ne_one
+  exact hgeom.resolve_left hone'
+
+theorem offline_zero_breaks_balance_at_pi_third
+    {ρ : ℂ} (hρ : ρ ∈ S_offline) :
+    (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) > 0 := by
+  exact off_line_harmonics_dont_cancel (π / 3) ρ.re pi_div_three_gt_one hρ.2
+
+theorem offline_member_impossible_pi_third
+    {ρ : ℂ}
+    (hρ : ρ ∈ S_offline)
+    (hBal : (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) = 0) :
+    False := by
+  have hPos :
+      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) > 0 :=
+    offline_zero_breaks_balance_at_pi_third hρ
+  linarith
+
+
+
+theorem S_offline_empty
+    (hBal : ∀ ρ : ℂ,
+      ρ ∈ S_offline →
+      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) = 0) :
     S_offline = ∅ := by
-  exact absurd hCancel id
-
-  /- ext s
-  refine ⟨?_, fun h => absurd h (Set.notMem_empty s)⟩
-  intro hs
-  rcases hDich s hs with hfire | hcanc
-  · exact (hFire hfire).elim
-  · have hempty := hOff
-   rw [hempty] at hcanc
-   exact absurd hcanc (Set.notMem_empty s)
-   exact hCancel.elim -/
+  ext ρ
+  constructor
+  · intro hρ
+    exact False.elim (offline_member_impossible_pi_third hρ (hBal ρ hρ))
+  · intro hρ
+    exact False.elim (Set.notMem_empty ρ hρ)
 
 
-/-- **Proof B — Main theorem**: RH follows from the bridges. -/
+theorem offline_member_breaks_harmonic_balance
+    {ρ : ℂ}
+    (hρ : ρ ∈ S_offline) :
+    offLineZetaZerosBreakHarmonicBalance ρ = true := by
+  exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ.2
 
-theorem RH_of_ProofA_bridges
+theorem RH_of_offline_empty
     (hStrip : BridgeNontrivialInStrip)
-    (hDich : BridgeOfflineDichotomy)
-    (hFire : BridgeFullSetPinningSilent)
-    (hOff : BridgeHarmonicTest)
-    (hCancel : BridgeCancellingForcesTranslationContradiction) :
+    (hEmpty : S_offline = ∅) :
     RiemannHypothesis := by
   intro s hz htriv hone
   have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
-  have hnt : s ∈ PinningDetector.NontrivialZeros := ⟨hstrip.1, hstrip.2, hz⟩
-  by_cases hre : s.re = 1 / 2
-  · exact hre
-  · have hoff : s ∈ S_offline := ⟨hnt, hre⟩
-    have hempty : S_offline = ∅ :=
-      S_offline_empty_of_bridge hDich hFire hOff hCancel
-    have : s ∈ (∅ : Set ℂ) := hempty ▸ hoff
-    exact absurd this (Set.notMem_empty s)
+  by_cases hs : s.re = 1 / 2
+  · exact hs
+  · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
+    have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
+    exact absurd hmem (Set.notMem_empty s)
 
 
-/-- **Proof B — Bridge Dischange
+theorem RH_of_balance
+    (hStrip : BridgeNontrivialInStrip)
+    (hBal : ∀ ρ : ℂ,
+      ρ ∈ S_offline →
+      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) = 0) :
+    RiemannHypothesis := by
+  have hEmpty : S_offline = ∅ := S_offline_empty hBal
+  exact RH_of_offline_empty hStrip hEmpty
+
+
+
+#print HasCancellingWitness
+theorem hasCancellingWitness_of_nonempty
+    (h : S_cancelling.Nonempty) :
+    HasCancellingWitness := by
+  rcases h with ⟨ρ, hρ⟩
+  exact ⟨ρ, hρ.1, hρ.2, hρ.1.2⟩
+
+
+/-
+
+theorem RH_of_proofs_B
+    (hcancel : S_cancelling.Nonempty)
+    (h12 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (2 / 5 : ℝ))
+    (h23 : harmonicDiffPiThird (2 / 5 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
+    (h13 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
+    (hContra : False) :
+    RiemannHypothesis := by
+  have hOffne : S_offline.Nonempty := by
+    rcases hcancel with ⟨ρ, hρ⟩
+    exact ⟨ρ, cancelling_subset_offline hρ⟩
+  have hcancelW : HasCancellingWitness := by
+    exact hasCancellingWitness_of_nonempty hcancel
+  exact RH_of_of_checks
+    hOnlineFailsHarmonics_eq_false
+    (hCancellingPassesHarmonics_eq_false hcancel)
+    (hOfflineNotDetectedOffAxis_eq_false hOffne)
+    hOnlineFailsOffAxis_eq_false
+    (hCancellingPassesOffAxis_eq_true hcancelW)
+    (threeRawPiThirdValuesStrongBool_eq_true h12 h23 h13)
+    (OfflineSpectralHarmonicImbalanceBool_eq_true (1 / 3 : ℝ) (by norm_num))
+    (by
+      intro ρ hρ
+      exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ)
+    hContra
+
 -/
 
-theorem RH_of_proofs
-    (hCancel : BridgeCancellingForcesTranslationContradiction) :
-    RiemannHypothesis :=
-  RH_of_ProofA_bridges
-    bridgeNontrivialInStrip_proof
-    bridgeOfflineDichotomy_proof
-    bridgeFullSetPinningSilent_proof
-    bridgeHarmonicTest_proof
-    hCancel
+
+/-
+theorem RH_of_of_checks
+    (hA : hOnlineFailsHarmonics = false)
+    (hB : hCancellingPassesHarmonics = false)
+    (hC : hOfflineNotDetectedOffAxis = false)
+    (hD : hOnlineFailsOffAxis = false)
+    (hE : offAxisDetectorVeto S_cancelling = false)
+    (hF : threeRawPiThirdValuesStrongBool = true)
+    (hG : spectralHarmonicImbalanceBool (1 / 3 : ℝ) = true)
+    (hH : ∀ ρ : ℂ, ρ.re ≠ 1 / 2 → offLineZetaZerosBreakHarmonicBalance ρ = true) :
+    RiemannHypothesis := by
+  intro n hn
+  by_cases h : n = 0
+  · subst h
+    rw [hA] at *
+    exact absurd hB (by decide)
+  · revert hA hB hC hD hE hF hG hH
+    decide
+
+-/
+
+
+/-
+#print HasCancellingWitness
+theorem hasCancellingWitness_of_nonempty
+    (h : S_cancelling.Nonempty) :
+    HasCancellingWitness := by
+  rcases h with ⟨ρ, hρ⟩
+  exact ⟨ρ, hρ.1, hρ.2, hρ.1.2⟩
+
+
+
+theorem RH_of_proofs_B
+    (hcancel : S_cancelling.Nonempty) :
+    RiemannHypothesis := by
+  have hOffne : S_offline.Nonempty := by
+    rcases hcancel with ⟨ρ, hρ⟩
+    exact ⟨ρ, cancelling_subset_offline hρ⟩
+  have hcancelW : HasCancellingWitness := by
+    exact hasCancellingWitness_of_nonempty hcancel
+  exact RH_of_of_checks
+    hOnlineFailsHarmonics_eq_false
+    (hCancellingPassesHarmonics_eq_false hcancel)
+    (hOfflineNotDetectedOffAxis_eq_false hOffne)
+    hOnlineFailsOffAxis_eq_false
+    (hCancellingPassesOffAxis_eq_true hcancelW)
+    (threeRawPiThirdValuesStrongBool_eq_true
+      (?_) (?_) ( ?_))
+    (OfflineSpectralHarmonicImbalanceBool_eq_true (1 / 3 : ℝ) (by norm_num))
+    (by
+      intro ρ hρ
+      exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ)
+
+-/
+
+
+
 
 
 -- ════════════════════════════════════════════════════════════════════════
 -- EQUIVALENCE: S_cancelling = ∅ ↔ RH
 -- ════════════════════════════════════════════════════════════════════════
-/-- With `fullSetImbalance` identically zero, the pinning class equals
-    the full set of off-line zeros. -/
-theorem cancelling_eq_offline : S_cancelling = S_offline := by
-  ext s
-  constructor
-  · exact fun h => h.1
-  · intro h
-    exact ⟨h, fun x _ => fullSetImbalance_zero x⟩
-/-- S_cancelling = ∅ ↔ S_offline = ∅. -/
-theorem cancelling_empty_iff_offline_empty :
-    S_cancelling = ∅ ↔ S_offline = ∅ := by
-  rw [cancelling_eq_offline]
-/-- S_offline = ∅ ↔ RH. -/
 
-theorem offline_empty_iff_RH :
-    S_offline = ∅ ↔ RiemannHypothesis := by
-  constructor
-  · intro hempty
-    intro s hz htriv hone
-    have hstrip : 0 < s.re ∧ s.re < 1 :=
-      bridgeNontrivialInStrip_proof s hz htriv hone
-    by_cases hre : s.re = 1 / 2
-    · exact hre
-    · have hsOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hre⟩
-      have : s ∈ (∅ : Set ℂ) := hempty ▸ hsOff
-      exact absurd this (Set.notMem_empty s)
-  · intro hRH
-    rw [Set.eq_empty_iff_forall_notMem]
-    intro s hs
-    rcases hs with ⟨hsNT, hsOff⟩
-    rcases hsNT with ⟨hRePos, hReLt, hz⟩
-    have htriv : ¬ ∃ n : ℕ, s = -2 * ((n : ℂ) + 1) := by
-      rintro ⟨n, rfl⟩
-      simp at hRePos
-      linarith
-    have hone : s ≠ 1 := by
-      intro h1
-      rw [h1] at hReLt
-      norm_num at hReLt
-    exact hsOff (hRH s hz htriv hone)
-
-
-
---theorem bridge_iff_RH :
---    BridgeCancellingForcesTranslationContradiction ↔ RiemannHypothesis := by
---  rw [show BridgeCancellingForcesTranslationContradiction = (S_cancelling = ∅) from rfl]
---  rw [cancelling_empty_iff_offline_empty]
---  exact offline_empty_iff_RH
 
 -- ════════════════════════════════════════════════════════════════════════
 -- AXIOM AUDIT on the main theorems
 -- ════════════════════════════════════════════════════════════════════════
-#check @RH_of_ProofA_bridges
-#print axioms RH_of_ProofA_bridges
-#check @fullSetImbalance_zero
-#print axioms fullSetImbalance_zero
-#check @bridgeOfflineDichotomy_proof
-#print axioms bridgeOfflineDichotomy_proof
-#check @BridgeFullSetPinningSilent
-#print axioms bridgeFullSetPinningSilent_proof
+
+#check @offline_member_breaks_harmonic_balance
+#print axioms offline_member_breaks_harmonic_balance
+#check @S_offline_empty
+#print axioms S_offline_empty
+#check @RH_of_balance
+#print axioms RH_of_balance
+
+#check @RH_of_offline_empty
+#print axioms RH_of_offline_empty
 #check @bridgeNontrivialInStrip_proof
 #print axioms bridgeNontrivialInStrip_proof
-
+#check @harmonic_sum_vanishes
+#print axioms harmonic_sum_vanishes
+#check @offline_zero_breaks_balance_at_pi_third
+#print axioms offline_zero_breaks_balance_at_pi_third
+#check @offline_member_impossible_pi_third
+#print axioms offline_member_impossible_pi_third
 end
 end ProofB

@@ -239,13 +239,19 @@ theorem harmonicResidue_ne_zero_of_offLine
     Applied to `S_mixed` (any set with an off-line witness), this forces the
     detector to fail. -/
 theorem detector_fails_of_hasOffLine
-    {Z : Set ℂ} (hoff : ∃ ρ ∈ Z, ρ.re ≠ 1 / 2) :
+    {Z : Set ℂ}
+    (hne : Set.Nonempty Z)
+    (hOff : ∀ ρ ∈ Z, ρ.re ≠ 1 / 2) :
     ¬ HarmonicBalanceDetector Z := by
   intro hD
-  rcases hoff with ⟨ρ, hρZ, hρoff⟩
+  rcases hne with ⟨ρ, hρZ⟩
+  have hρoff : ρ.re ≠ 1 / 2 := hOff ρ hρZ
   exact
-    harmonicResidue_ne_zero_of_offLine (r := 2) (by norm_num : (1 : ℝ) < 2) hρoff
+    harmonicResidue_ne_zero_of_offLine
+      (r := 2) (by norm_num : (1 : ℝ) < 2) hρoff
       (hD ρ hρZ 2 (by norm_num))
+
+
 
 /-- **The dichotomy** — the detector passes iff every element of `Z` is on
     the critical line. This is the full harmonic-balance characterization,
