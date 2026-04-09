@@ -121,7 +121,7 @@ theorem harmonicResidue_forces_half (ρ : ℂ)
     ρ = 1 / 2 := by
   -- From `harmonicResidue_forces_critical_line`, we know that `ρ.re = 1 / 2`.
   have h_re : ρ.re = 1 / 2 := by
-    exact?;
+    exact harmonicResidue_forces_critical_line ρ h;
   simp_all +decide [ Complex.ext_iff, harmonicResidue ];
   -- Using the fact that ρ.re = 1/2, we can simplify the expression for the imaginary part.
   have h_im_simplified : ∀ r : ℝ, 1 < r → (Real.cos (ρ.im * Real.log r) + Real.cos (-ρ.im * Real.log r)) = 2 := by

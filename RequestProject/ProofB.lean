@@ -10,6 +10,7 @@ import RequestProject.ProofChain
 import RequestProject.OffAxisBridge
 import RequestProject.HC
 import RequestProject.HarmonicBalance
+import RequestProject.ImpossibleBridge
 open Real Complex
 
 open scoped BigOperators Real Nat Classical Pointwise
@@ -43,16 +44,16 @@ namespace ProofB
 open Complex PinningDetector
 noncomputable section
 
-def NontrivialZeros : Set ℂ :=
-  { s : ℂ | 0 < s.re ∧ s.re < 1 ∧ riemannZeta s = 0 }
+  def NontrivialZeros : Set ℂ :=
+    { s : ℂ | 0 < s.re ∧ s.re < 1 ∧ riemannZeta s = 0 }
 
-/-- Off-line nontrivial zeros: those with `Re(s) ≠ 1/2`. -/
-def OffLineZeros : Set ℂ :=
-  { s ∈ NontrivialZeros | s.re ≠ 1 / 2 }
+  /-- Off-line nontrivial zeros: those with `Re(s) ≠ 1/2`. -/
+  def OffLineZeros : Set ℂ :=
+    { s ∈ NontrivialZeros | s.re ≠ 1 / 2 }
 
-/-- On-line nontrivial zeros: those with `Re(s) = 1/2`. -/
-def OnLineZeros : Set ℂ :=
-  { s ∈ NontrivialZeros | s.re = 1 / 2 }
+  /-- On-line nontrivial zeros: those with `Re(s) = 1/2`. -/
+  def OnLineZeros : Set ℂ :=
+    { s ∈ NontrivialZeros | s.re = 1 / 2 }
 
 
 def S_online : Set ℂ := OnLineZeros
@@ -71,6 +72,8 @@ def offlineWitnesses : Set ℂ :=
       s = ⟨(1 / 3 : ℝ), 14⟩ ∨
       s = ⟨(2 / 5 : ℝ), 21⟩ ∨
       s = ⟨(3 / 7 : ℝ), 25⟩ }
+
+
 
 noncomputable def cancellingPassesOffAxis (s : ℂ) : Bool :=
   (offAxisDetector ({z : ℂ | z = s}))
@@ -450,6 +453,16 @@ theorem hCancellingPassesOffAxis_eq_true
     offAxisDetectorVeto S_cancelling = false := by
   simp [offAxisDetectorVeto, hcancel]
 
+
+
+#print HasCancellingWitness
+theorem hasCancellingWitness_of_nonempty
+    (h : S_cancelling.Nonempty) :
+    HasCancellingWitness := by
+  rcases h with ⟨ρ, hρ⟩
+  exact ⟨ρ, hρ.1, hρ.2, hρ.1.2⟩
+
+
 /-- Boolean off-axis detector (noncomputable – cannot be `#eval`'d). -/
 
 
@@ -671,7 +684,7 @@ theorem witness1_forces_harmonic_failure :
 
 
 -- ════════════════════════════════════════════════════════════════════════
--- (C) Offline Zeros Breaks Produce Amplitude
+-- (C) Offline Zeros Breaks Harmonic Amplitude
 -- ════════════════════════════════════════════════════════════════════════
 
 
@@ -797,8 +810,6 @@ def spectralHarmonicImbalanceAtZero (ρ : ℂ) : Prop :=
   harmonicDiffPiThird ρ.re ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
   0 < harmonicDiffPiThird ρ.re
 
-
-
 def spectralHarmonicImbalance (σ : ℝ) : Prop :=
   harmonicDiffPiThird σ ≠ harmonicDiffPiThird (1 / 2 : ℝ) ∧
   0 < harmonicDiffPiThird σ
@@ -831,9 +842,8 @@ noncomputable def offLineZetaZerosBreakHarmonicBalancea  (ρ : ℂ) : Bool := by
   classical
   exact decide (spectralHarmonicImbalanceAtZero ρ)
 
-noncomputable def offLineZetaZerosBreakHarmonicBalance (ρ : ℂ) : Bool :=
-  letI : Decidable (spectralHarmonicImbalanceAtZero ρ) := Classical.propDecidable _
-  decide (spectralHarmonicImbalanceAtZero ρ)
+
+
 
 theorem offLineZetaZerosBreakHarmonicBalance_true
     (ρ : ℂ) (hρ : ρ.re ≠ 1 / 2) :
@@ -841,6 +851,11 @@ theorem offLineZetaZerosBreakHarmonicBalance_true
   refine ⟨?_, ?_⟩
   · exact harmonicDiffPiThird_ne_baseline ρ.re hρ
   · exact harmonicDiffPiThird_pos ρ.re hρ
+
+
+noncomputable def offLineZetaZerosBreakHarmonicBalance (ρ : ℂ) : Bool :=
+  letI : Decidable (spectralHarmonicImbalanceAtZero ρ) := Classical.propDecidable _
+  decide (spectralHarmonicImbalanceAtZero ρ)
 
 theorem spectralHarmonicImbalanceAtZeroBool_eq_true
     (ρ : ℂ) (hρ : ρ.re ≠ 1 / 2) :
@@ -877,6 +892,12 @@ theorem bridgeNontrivialInStrip_proof : BridgeNontrivialInStrip :=
 noncomputable def omega : ℂ :=
   Complex.exp (2 * Real.pi * Complex.I / 6)
 
+noncomputable def residueProfileAtZero (ρ : ℂ) : ℝ → ℝ :=
+  fun x => x ^ (ρ.re) + x ^ (1 - ρ.re) - 2 * x ^ (1 / 2 : ℝ)
+
+noncomputable def transportedHarmonicResidueObjAtZero (r : ℝ) (ρ : ℂ) : ℂ :=
+  harmonicResidue r ρ
+
 theorem omega_pow_six : (omega : ℂ) ^ 6 = 1 := by
   unfold omega
   have hmul : Complex.exp (2 * Real.pi * Complex.I / 6) ^ 6 =
@@ -897,7 +918,7 @@ theorem omega_ne_one : (omega : ℂ) ≠ 1 := by
   unfold omega
   intro h
   have hre : (Complex.exp (2 * Real.pi * Complex.I / 6)).re = (1 : ℂ).re := by
-    simpa [h]
+    simp [h]
   norm_num [Complex.exp_re, Complex.exp_im] at hre
   have hcos : Real.cos (2 * π / 6) = (1 / 2 : ℝ) := by
     have hangle : (2 * π / 6 : ℝ) = π / 3 := by ring
@@ -923,6 +944,18 @@ theorem offline_zero_breaks_balance_at_pi_third
     (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) > 0 := by
   exact off_line_harmonics_dont_cancel (π / 3) ρ.re pi_div_three_gt_one hρ.2
 
+theorem residueProfileAtZero_pi_third
+    (ρ : ℂ) :
+    residueProfileAtZero ρ (π / 3) =
+      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1 / 2 : ℝ) := by
+  rfl
+
+theorem residueProfileAtZero_pi_third_pos
+    {ρ : ℂ} (hρ : ρ ∈ S_offline) :
+    0 < residueProfileAtZero ρ (π / 3) := by
+  simpa [residueProfileAtZero] using
+    off_line_harmonics_dont_cancel (π / 3) ρ.re pi_div_three_gt_one hρ.2
+
 theorem offline_member_impossible_pi_third
     {ρ : ℂ}
     (hρ : ρ ∈ S_offline)
@@ -933,26 +966,241 @@ theorem offline_member_impossible_pi_third
     offline_zero_breaks_balance_at_pi_third hρ
   linarith
 
-
-
-theorem S_offline_empty
-    (hBal : ∀ ρ : ℂ,
-      ρ ∈ S_offline →
-      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) = 0) :
-    S_offline = ∅ := by
-  ext ρ
-  constructor
-  · intro hρ
-    exact False.elim (offline_member_impossible_pi_third hρ (hBal ρ hρ))
-  · intro hρ
-    exact False.elim (Set.notMem_empty ρ hρ)
-
-
 theorem offline_member_breaks_harmonic_balance
     {ρ : ℂ}
     (hρ : ρ ∈ S_offline) :
     offLineZetaZerosBreakHarmonicBalance ρ = true := by
   exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ.2
+
+
+
+
+theorem harmonic_transport_preimage_is_singleton
+    {Φ : ℂ → ℂ}
+    (hΦ : CoshZetaIntertwiner Φ)
+    {r : ℝ} {ρ : ℂ}
+    (hHit : (Φ (transportedHarmonicResidueObjAtZero r ρ)).re = 1 / 2) :
+    transportedHarmonicResidueObjAtZero r ρ = ↑(Real.pi / 6 : ℝ) := by
+  exact critical_line_preimage_is_singleton
+    hΦ
+    (transportedHarmonicResidueObjAtZero r ρ)
+    hHit
+
+
+theorem harmonicResidue_eq_zero_on_critical_line
+    (r : ℝ) (hr : 0 < r) (ρ : ℂ) (hρ : ρ.re = 1 / 2) :
+    harmonicResidue r ρ = 0 := by
+  unfold harmonicResidue
+  have hE : starRingEnd ℂ (eulerHarmonic r ρ) = eulerHarmonic r (1 - ρ) := by
+    simpa [zetaConj, zetaFuncEq] using
+      euler_harmonic_intertwines_on_critical_line r hr ρ hρ
+  rw [hE]
+  ring
+
+theorem harmonicResidue_transport_bridge
+    {Φ : ℂ → ℂ}
+    (hΦ : CoshZetaIntertwiner Φ)
+    (s : ℂ)
+    (hzero : ∀ r : ℝ, 1 < r → TranslationC.harmonicResidue r (Φ s) = 0) :
+    s = (Real.pi / 6 : ℂ) := by
+  have hcrit : (Φ s).re = 1 / 2 := by
+    exact TranslationC.harmonicResidue_forces_critical_line (Φ s) hzero
+  simpa using critical_line_preimage_is_singleton hΦ s hcrit
+
+theorem harmonicResidue_transport_contrapositive
+    {Φ : ℂ → ℂ}
+    (hΦ : CoshZetaIntertwiner Φ)
+    (s : ℂ)
+    (hs : s ≠ (Real.pi / 6 : ℂ)) :
+    ∃ r : ℝ, 1 < r ∧ TranslationC.harmonicResidue r (Φ s) ≠ 0 := by
+  by_contra hneg
+  push_neg at hneg
+  exact hs (harmonicResidue_transport_bridge hΦ s hneg)
+
+theorem coshReflection_pi_sixth :
+    coshReflection ((Real.pi / 6 : ℂ)) = (Real.pi / 6 : ℂ) := by
+  apply Complex.ext
+  · simp [coshReflection]
+    ring
+  · simp [coshReflection]
+
+theorem coshFolding_pi_sixth :
+    coshFolding ((Real.pi / 6 : ℂ)) = (Real.pi / 6 : ℂ) := by
+  simpa [coshFolding] using (Complex.conj_ofReal (Real.pi / 6))
+
+theorem intertwiner_at_pi_sixth_balanced
+    {Φ : ℂ → ℂ} (hΦ : CoshZetaIntertwiner Φ) :
+    zetaConj (Φ ((Real.pi / 6 : ℂ))) = zetaFuncEq (Φ ((Real.pi / 6 : ℂ))) := by
+  calc
+    zetaConj (Φ ((Real.pi / 6 : ℂ)))
+        = Φ (coshReflection ((Real.pi / 6 : ℂ))) := by
+            symm
+            exact hΦ.equivar_R _
+    _ = Φ ((Real.pi / 6 : ℂ)) := by
+          rw [coshReflection_pi_sixth]
+    _ = Φ (coshFolding ((Real.pi / 6 : ℂ))) := by
+          rw [coshFolding_pi_sixth]
+    _ = zetaFuncEq (Φ ((Real.pi / 6 : ℂ))) := by
+          exact hΦ.equivar_F _
+
+theorem intertwiner_at_pi_sixth_re
+    {Φ : ℂ → ℂ} (hΦ : CoshZetaIntertwiner Φ) :
+    (Φ ((Real.pi / 6 : ℂ))).re = 1 / 2 := by
+  have hbal :
+      zetaConj (Φ ((Real.pi / 6 : ℂ))) =
+      zetaFuncEq (Φ ((Real.pi / 6 : ℂ))) :=
+    intertwiner_at_pi_sixth_balanced hΦ
+  have hre := congr_arg Complex.re hbal
+  simp [zetaConj, zetaFuncEq] at hre
+  linarith
+
+
+
+theorem harmonicResidue_transport_fixed
+    {Φ : ℂ → ℂ}
+    (hΦ : CoshZetaIntertwiner Φ)
+    (s : ℂ)
+    (hzero : ∀ r : ℝ, 1 < r → TranslationC.harmonicResidue r (Φ s) = 0) :
+    coshReflection s = s ∧ coshFolding s = s := by
+  have hcrit : (Φ s).re = 1 / 2 := by
+    exact TranslationC.harmonicResidue_forces_critical_line (Φ s) hzero
+  exact transport_to_critical_line hΦ s hcrit
+
+
+
+
+theorem no_offline_family_passes_translation_tests
+    {Z : Set ℂ}
+    (hZ : Z ⊆ Translation.OffLineZetaZerosInStrip)
+    (hne : Z.Nonempty) :
+    ¬ Translation.PassesDualReflectionTests Z :=
+  Translation.no_nonempty_offline_zeta_family_passes_dual_tests hZ hne
+
+
+
+-- AM-GM equality.
+def OfflineUniversalSymmetryLaw (ρ : ℂ) : Prop :=
+  ∀ r : ℝ, 1 < r →
+    r ^ ρ.re + r ^ (1 - ρ.re) = 2 * r ^ (1 / 2 : ℝ)
+
+
+
+
+
+theorem S_offline_empty_of_break
+    (hBreak : ∀ ρ, ρ ∈ S_offline → OfflineUniversalSymmetryLaw ρ) :
+    S_offline = ∅ := by
+  ext ρ
+  constructor
+  · intro hρ
+    have hneg : ¬ OfflineUniversalSymmetryLaw ρ := by
+      simpa [OfflineUniversalSymmetryLaw] using
+        (cosine_amplitude_defect_impossible_neg_comp ρ.re hρ.2)
+    exact False.elim (hneg (hBreak ρ hρ))
+  · intro hρ
+    exact False.elim (Set.notMem_empty ρ hρ)
+
+
+
+
+
+
+
+
+
+
+
+/--/
+theorem RH_of_offline_empty
+    (hStrip : BridgeNontrivialInStrip)
+    (hEmpty : S_offline = ∅)
+    (coeffs : Fin n → ℝ) (bases : Fin n → ℝ)
+    (hbases : ∀ i, 0 < bases i) :
+    RiemannHypothesis := by
+  intro s hz htriv hone
+  have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
+  by_cases hs : s.re = 1 / 2
+  · have hDir :
+      zetaConj (dirichletSum coeffs bases s) =
+        dirichletSum coeffs bases (zetaFuncEq s) :=
+      dirichletSum_intertwines_on_critical_line coeffs bases hbases s hs
+    exact hs
+  · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
+    have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
+    exact absurd hmem (Set.notMem_empty s)
+-/
+
+
+/-
+theorem S_offline_empty_of_breakk
+    (hBreak : ∀ ρ : ℂ, ρ ∈ S_offline →
+      offLineZetaZerosBreakHarmonicBalance ρ = true) :
+    S_offline = ∅ := by
+  ext ρ
+  constructor
+  · intro hρ -- hρ : ρ ∈ S_offline
+    -- From the definition of S_offline, hρ.2 gives `ρ.re ≠ 1/2`.
+    let σ : ℝ := ρ.re
+    have hσ_ne_half : σ ≠ 1 / 2 := hρ.2 -- Renamed for clarity from your `hσ`
+
+    -- This line applies your `hBreak` hypothesis to the current `ρ` and `hρ` proof.
+    -- It gives us `offLineZetaZerosBreakHarmonicBalance ρ = true`.
+    have h_break_rho_true : offLineZetaZerosBreakHarmonicBalance ρ = true := hBreak ρ hρ
+
+    -- This is where we use the `break_implies_harmonic_balance` lemma.
+    -- It states that `offLineZetaZerosBreakHarmonicBalance ρ = true` implies `P ρ.re`.
+
+    -- Now we have two conflicting facts:
+    -- 1. `hP_sigma : P σ` (the harmonic balance identity holds for σ)
+    -- 2. `hσ_ne_half : σ ≠ 1/2` (σ is not 1/2)
+
+    -- `cosine_amplitude_defect_impossible_neg σ hσ_ne_half` is a proof of `¬ P σ`.
+    -- In Lean, `¬ P σ` is definitionally `P σ → False`.
+    -- So, `cosine_amplitude_defect_impossible_neg σ hσ_ne_half` is a function
+    -- that takes a proof of `P σ` and returns `False`.
+    -- We apply this function to `hP_sigma` to get `False`.
+    exact (cosine_amplitude_defect_impossible_neg σ hσ_ne_half) h_break_rho_true
+
+  · intro hρ_in_empty
+    -- This part is for `∅ ⊆ S_offline`, which is vacuously true.
+    exact False.elim (Set.notMem_empty ρ hρ_in_empty)
+
+
+-/
+
+/-
+theorem RH_of_offline_empty_with_dirichlet_old
+    (hStrip : BridgeNontrivialInStrip)
+    (hEmpty : S_offline = ∅)
+    (coeffs : Fin n → ℝ) (bases : Fin n → ℝ)
+    (hbases : ∀ i, 0 < bases i) :
+    RiemannHypothesis ∧
+    ∀ s : ℂ, riemannZeta s = 0 →
+      (¬ ∃ n : ℕ, s = -2 * ((n : ℂ) + 1)) →
+      s ≠ 1 →
+      zetaConj (dirichletSum coeffs bases s) =
+        dirichletSum coeffs bases (zetaFuncEq s) := by
+  refine ⟨?_, ?_⟩
+  · intro s hz htriv hone
+    have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
+    by_cases hs : s.re = 1 / 2
+    · exact hs
+    · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
+      have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
+      exact absurd hmem (Set.notMem_empty s)
+  · intro s hz htriv hone
+    have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
+    have hs : s.re = 1 / 2 := by
+      by_cases hs : s.re = 1 / 2
+      · exact hs
+      · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
+        have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
+        exact absurd hmem (Set.notMem_empty s)
+    exact dirichletSum_intertwines_on_critical_line coeffs bases hbases s hs
+-/
+
+
+
 
 theorem RH_of_offline_empty
     (hStrip : BridgeNontrivialInStrip)
@@ -960,139 +1208,42 @@ theorem RH_of_offline_empty
     RiemannHypothesis := by
   intro s hz htriv hone
   have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
-  by_cases hs : s.re = 1 / 2
+  by_cases hs : s.re = (1 / 2 : ℝ)
   · exact hs
   · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
-    have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
-    exact absurd hmem (Set.notMem_empty s)
+    have hmem : s ∈ (∅ : Set ℂ) := by
+      exact hEmpty ▸ hOff
+    exact False.elim (Set.notMem_empty s hmem)
 
 
 theorem RH_of_balance
     (hStrip : BridgeNontrivialInStrip)
-    (hBal : ∀ ρ : ℂ,
-      ρ ∈ S_offline →
-      (π / 3) ^ ρ.re + (π / 3) ^ (1 - ρ.re) - 2 * (π / 3) ^ (1/2 : ℝ) = 0) :
+    (hBreak : ∀ ρ, ρ ∈ S_offline → OfflineUniversalSymmetryLaw ρ) :
     RiemannHypothesis := by
-  have hEmpty : S_offline = ∅ := S_offline_empty hBal
+  have hEmpty : S_offline = ∅ := S_offline_empty_of_break hBreak
   exact RH_of_offline_empty hStrip hEmpty
 
 
 
-#print HasCancellingWitness
-theorem hasCancellingWitness_of_nonempty
-    (h : S_cancelling.Nonempty) :
-    HasCancellingWitness := by
-  rcases h with ⟨ρ, hρ⟩
-  exact ⟨ρ, hρ.1, hρ.2, hρ.1.2⟩
-
-
-/-
-
-theorem RH_of_proofs_B
-    (hcancel : S_cancelling.Nonempty)
-    (h12 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (2 / 5 : ℝ))
-    (h23 : harmonicDiffPiThird (2 / 5 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
-    (h13 : harmonicDiffPiThird (1 / 3 : ℝ) ≠ harmonicDiffPiThird (3 / 7 : ℝ))
-    (hContra : False) :
-    RiemannHypothesis := by
-  have hOffne : S_offline.Nonempty := by
-    rcases hcancel with ⟨ρ, hρ⟩
-    exact ⟨ρ, cancelling_subset_offline hρ⟩
-  have hcancelW : HasCancellingWitness := by
-    exact hasCancellingWitness_of_nonempty hcancel
-  exact RH_of_of_checks
-    hOnlineFailsHarmonics_eq_false
-    (hCancellingPassesHarmonics_eq_false hcancel)
-    (hOfflineNotDetectedOffAxis_eq_false hOffne)
-    hOnlineFailsOffAxis_eq_false
-    (hCancellingPassesOffAxis_eq_true hcancelW)
-    (threeRawPiThirdValuesStrongBool_eq_true h12 h23 h13)
-    (OfflineSpectralHarmonicImbalanceBool_eq_true (1 / 3 : ℝ) (by norm_num))
-    (by
-      intro ρ hρ
-      exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ)
-    hContra
-
--/
-
-
-/-
-theorem RH_of_of_checks
-    (hA : hOnlineFailsHarmonics = false)
-    (hB : hCancellingPassesHarmonics = false)
-    (hC : hOfflineNotDetectedOffAxis = false)
-    (hD : hOnlineFailsOffAxis = false)
-    (hE : offAxisDetectorVeto S_cancelling = false)
-    (hF : threeRawPiThirdValuesStrongBool = true)
-    (hG : spectralHarmonicImbalanceBool (1 / 3 : ℝ) = true)
-    (hH : ∀ ρ : ℂ, ρ.re ≠ 1 / 2 → offLineZetaZerosBreakHarmonicBalance ρ = true) :
-    RiemannHypothesis := by
-  intro n hn
-  by_cases h : n = 0
-  · subst h
-    rw [hA] at *
-    exact absurd hB (by decide)
-  · revert hA hB hC hD hE hF hG hH
-    decide
-
--/
-
-
-/-
-#print HasCancellingWitness
-theorem hasCancellingWitness_of_nonempty
-    (h : S_cancelling.Nonempty) :
-    HasCancellingWitness := by
-  rcases h with ⟨ρ, hρ⟩
-  exact ⟨ρ, hρ.1, hρ.2, hρ.1.2⟩
 
 
 
-theorem RH_of_proofs_B
-    (hcancel : S_cancelling.Nonempty) :
-    RiemannHypothesis := by
-  have hOffne : S_offline.Nonempty := by
-    rcases hcancel with ⟨ρ, hρ⟩
-    exact ⟨ρ, cancelling_subset_offline hρ⟩
-  have hcancelW : HasCancellingWitness := by
-    exact hasCancellingWitness_of_nonempty hcancel
-  exact RH_of_of_checks
-    hOnlineFailsHarmonics_eq_false
-    (hCancellingPassesHarmonics_eq_false hcancel)
-    (hOfflineNotDetectedOffAxis_eq_false hOffne)
-    hOnlineFailsOffAxis_eq_false
-    (hCancellingPassesOffAxis_eq_true hcancelW)
-    (threeRawPiThirdValuesStrongBool_eq_true
-      (?_) (?_) ( ?_))
-    (OfflineSpectralHarmonicImbalanceBool_eq_true (1 / 3 : ℝ) (by norm_num))
-    (by
-      intro ρ hρ
-      exact spectralHarmonicImbalanceAtZeroBool_eq_true ρ hρ)
-
--/
-
-
-
-
-
--- ════════════════════════════════════════════════════════════════════════
--- EQUIVALENCE: S_cancelling = ∅ ↔ RH
--- ════════════════════════════════════════════════════════════════════════
 
 
 -- ════════════════════════════════════════════════════════════════════════
 -- AXIOM AUDIT on the main theorems
 -- ════════════════════════════════════════════════════════════════════════
 
+
 #check @offline_member_breaks_harmonic_balance
 #print axioms offline_member_breaks_harmonic_balance
-#check @S_offline_empty
-#print axioms S_offline_empty
+-- #check @S_offline_empty
+-- #print axioms S_offline_empty
 #check @RH_of_balance
 #print axioms RH_of_balance
 
-#check @RH_of_offline_empty
-#print axioms RH_of_offline_empty
+--#check @RH_of_offline_empty_with_dirichlet
+--#print axioms RH_of_offline_empty_with_dirichlet
 #check @bridgeNontrivialInStrip_proof
 #print axioms bridgeNontrivialInStrip_proof
 #check @harmonic_sum_vanishes
