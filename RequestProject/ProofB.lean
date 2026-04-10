@@ -1,4 +1,5 @@
 import Mathlib
+import RequestProject.OfflineZeroAnalysis
 import RequestProject.CoshDefs
 import RequestProject.CoshTransport
 import RequestProject.PinningDetectorB
@@ -11,6 +12,7 @@ import RequestProject.OffAxisBridge
 import RequestProject.HC
 import RequestProject.HarmonicBalance
 import RequestProject.ImpossibleBridge
+import RequestProject.AmplitudeDefectCons
 open Real Complex
 
 open scoped BigOperators Real Nat Classical Pointwise

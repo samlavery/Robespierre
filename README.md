@@ -1,298 +1,244 @@
 
-# Proof That Off-Line Zeta Zeros Cannot Exist
+# Proof That Sets Of Offline Zeta Zeros Cannot Exist
 
-An **unconditional** formalization of the Riemann Hypothesis via a dual-detector
-route. The main theorem lives in `RequestProject/ProofA.lean` and depends only
-on the standard Lean kernel axioms (`propext`, `Classical.choice`, `Quot.sound`).
-No `sorry`, no custom axioms, no content-bearing hypotheses.
 
-To verify:
+All proof relevant lean files assume no axioms, hide no sorries, only use functions from mathlib and compile with minor warnings. To verify:
+
 
 ```
 git clone git@github.com:samlavery/Robespierre.git
 cd Robespierre
 lake update
+
+# Builds, but with a wall of info, warnings, suggestions considered harmless
 lake build
 
-# Verify cleanly — no sorries, errors, or custom axioms
-lake build | egrep -i "sorry|error|Build completed successfully"
+# Will cleanly show if any axioms (shown as SorryAx), sorries, admits, or actual errors are present. 
+lake build | egrep -i "sorry|error|Build completed successfully" 
 ```
+
 
 #### AI Caveat
-If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol towards the bottom of this document.
+If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol towards the bottom of this document. If you intend to manually verify the proof, proceed directly to the following sections.
 
----
 
-## The Summarized Proof
+#### The Summarized Proof
+Two strips. Two axes. Two independent tests. Classical zeta theory reflects zeros around Re(s) = 1/2. The symmetry form of the functional equation ξ(s) = ξ(1−s) does this. The classical critical strip covers from 1/2 to -1/2, and finite/infinite sets of off-line zeros can pass this test by hiding in the kernels void. One constraint, can be satisfied.
 
-Two strips. Two axes. Two independent tests. Classical zeta theory reflects
-zeros around `Re(s) = 1/2` through the functional equation `ξ(s) = ξ(1 − s)`.
-The classical critical strip covers `0 < Re(s) < 1`; a single off-line zero can
-hide in the kernel void of this one constraint alone.
+The cosh kernel decomposes prime harmonics around a different axis: Re(s) = π/6. Its strip runs from −π/3 to π/3, but its coverage extends from ~1.0471 to  - ~1.0471 (2π/3). This kernel sees the entire classical critical strip and beyond. The overhang overlaps with Euler's product before it converges to 1. Log Euler's product derives the prime harmonics. This overlap area is proven identical when viewed from either side, enabling a second and linearly independent rotation/reflection test against the same set of zeta zeros. 
 
-The cosh kernel decomposes prime harmonics around a different axis:
-`Re(s) = π/6`. Its strip `−π/3 < Re(s) < π/3` extends well beyond the classical
-critical strip, and its overhang overlaps Euler's product in the convergent
-regime `1 < Re(s) < π/3`. The `log` of Euler's product derives the prime
-harmonics; the overlap is proven identical from either side. This enables a
-second, linearly independent rotation/reflection test against the same zero set.
+Offline zeta zeros under rotation produce a sign and phase change. The functional equation imposes rotational symmetry around 1/2, zeros pair as ρ and 1−ρ̄, coupled across both axes. Euler's product observes the sign change and is used as an observable for classical rotation/reflection test. The log Euler's product observes both sign and phase change, which is why it is more useful for detecting differences in harmonics. The cosh harmonic decomposition imposes reflection/reflection symmetry of conjugate zeros around an axis at 0. Balanced harmonics decompose into cos and sin values, when folded at `im=0` they cancel. This is a constraint on harmonic decomposition balance. 
 
-Off-line zeros under rotation produce a sign and phase change. Euler's product
-sees the sign change; `log` Euler sees sign *and* phase. The cosh harmonic
-decomposition imposes reflection symmetry of conjugate zeros around `0`:
-balanced harmonics decompose into `cos` and `sin` components that cancel under
-folding at `im = 0`. Unbalanced harmonics leave an observable residue under
-Schwarz reflection.
+Unbalanced harmonics do not cleanly decompose, leaving an observable residue under cosh kernel Schwarz rotation/reflection. 
 
-These two symmetry tests are anchored at different points and are linearly
-independent. No finite or infinite configuration of off-line zeros can satisfy
-both simultaneously. Therefore no off-line zero exists — RH holds.
+These are linearly independent types of symmetry tests anchored at different points. A rigid arithmetic object, or any infinite configuration of offline zeta zeros cannot satisfy rotation/reflection and reflection and folding tests simultaneously.
 
----
+Therefore, no finite configuration survives. No infinite configuration survives. Primes and their harmonics are balanced and invariant. Off-line zeros cannot exist under these constraints.
 
-## Proof A — The Dual-Detector Route
 
-The formalization in `RequestProject/ProofA.lean` organizes the argument as a
-short dual-detector dichotomy. Every step is now discharged unconditionally
-inside the project:
+# Proof Map
 
-```
-S_online     := {ρ ∈ NontrivialZeros : Re ρ = 1/2}
-S_offline    := {ρ ∈ NontrivialZeros : Re ρ ≠ 1/2}
-S_cancelling ⊆ S_offline     (primitive no-tsum silence class)
+### Assumptions 
+- Assume nothing about the Riemann Hypothesis
+- Euler's product is orientation agnostic, it measures prime distance from the origin 0.
 
-(A) Partition            : NontrivialZeros = S_online ⊔ S_offline      [unconditional]
-(B) Detector semantics   : S_online per-zero silent; S_offline fires per-zero;
-                           repaired direct-witness detector fires on every
-                           off-line witness, so S_cancelling is empty
-(C) Offline dichotomy    : S_offline ∋ ρ ⟹ pinning fires ∨ ρ ∈ S_cancelling  [unconditional]
-(D) Pinning branch       : the repaired detector fires directly on every off-line ρ  [unconditional]
-(E) Cancelling branch    : S_cancelling = ∅ already                     [unconditional]
-(F) Transport closure    : harmonic residue vanishes ↔ Re ρ = 1/2       [unconditional]
+#### 1.   Prove the number-line, the set of prime numbers, and their harmonics are invariant and directly related to online zeta zeros
+ 
+* 1.1 The number line exists unconditionally — ℝ is a complete linearly ordered field.
+* 1.2 Prime placement is canonical and unconditional — the primes embed into ℝ via the unique ordered-field embedding ℕ ↪ ℝ, and there are infinitely many of them.
+* 1.3 Primes generate unconditional harmonics — the prime harmonic series ∑ 1/p diverges, while the Euler product ζ(s) = ∏_p (1 - p^{-s})⁻¹ converges for Re(s) > 1, revealing the harmonic structure primes impose on the zeta function.
+* 1.4) Classical zeros control prime placement — the von Mangoldt function Λ encodes prime locations, the identity Λ * ζ = log ties prime placement to the analytic structure of ζ, and the non-vanishing ζ(s) ≠ 0 for Re(s) ≥ 1 (the classical zero-free region) is the key unconditional fact that controls prime distribution.
 
-Therefore S_offline = ∅, hence RH.
-```
+[PrimesOnTheNumberLine.lean]
 
-### Step-by-step chain (all unconditional)
+[ZetaZerosPrimeDistribution.lean]
 
-#### 1) Primes, harmonics, and their relation to online zeta zeros
 
-* 1.1 ℝ is a complete linearly ordered field; primes embed canonically via `ℕ ↪ ℝ` and are infinite.
-* 1.2 `∑ 1/p` diverges; the Euler product `ζ(s) = ∏_p (1 − p^{−s})⁻¹` converges for `Re(s) > 1`.
-* 1.3 `Λ * ζ = log` ties prime placement to the analytic structure of `ζ`;
-      `ζ(s) ≠ 0` for `Re(s) ≥ 1` (classical zero-free region).
+#### 2) Overlay a hyperbolic cosh kernel  with a critical strip at `x=arcsin(1/2)`
+[CoshKernel.lean]
 
-[`PrimesOnTheNumberLine.lean`], [`ZetaZerosPrimeDistribution.lean`]
+#### 3) Prove cosh harmonic vanishing and reflection symmetry at `x=arcsin(1/2)`
+[CoshKernelVanishing.lean]
 
-#### 2) Cosh kernel and its axis at `arcsin(1/2) = π/6`
+#### 4) Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
+[OffAxisZeta.lean]
 
-Cosh harmonic representation, strip geometry, fold symmetry, and the identity
-`arcsin(1/2) = π/6`.
+#### 5) Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
+[PrimeHarmonicReflection.lean]
 
-[`CoshDefs.lean`], [`CoshTransport.lean`], [`CoshKernelNonInterference.lean`]
+[DualReflectionImpossibility.lean]
 
-#### 3) Harmonic cancellation and transport closure (F)
+#### 6) Prove cosh kernel projects unabsorbed unbalanced harmonic residues to 1/2
+[HarmonicCancellation.lean]
 
-`harmonicResidue r ρ = conj(r^{−ρ}) − r^{−(1−ρ)}` vanishes iff `Re ρ = 1/2`.
-The set-level form `HarmonicBalanceBalanced Z ↔ ∀ ρ ∈ Z, Re ρ = 1/2` is
-`ProofA.transport_closure` — proved unconditionally using only the `rpow`
-norm comparison.
+#### 7) Show cosh zeros at `arcsin(1 / 2)` do not cancel distorted harmonics, creating uncanceled harmonic residues
+[CoshNoZeros.lean] 
+ 
+#### 8) Prove reflection symmetry around 0 for cosh and folding at `im=0` fails due non-vanishing cosh zeros
+[ZetaCoshReflection.lean]
+[CoshSymmetryBreak.lean]
 
-[`HarmonicCancellation.lean`]
+#### 9) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
+[CriticalStripControl.lean]
 
-#### 4) Euler–cosh overlap equivalence (preconnection)
+[CriticalStripIsoOnline.lean]
 
-The overlap region `1 < Re(s) < π/3` is open, nonempty, and contained in the
-Euler half-plane. The identity theorem propagates agreement from the overlap
-seed to the full connected cosh domain, so the Euler-side and cosh-side
-harmonic representations coincide globally — same zero set, same meromorphic
-orders.
+[CriticalStripFlipOnline.lean]
 
-[`OverlapEquivalence.lean`], [`CoshHarmonicsZetaInvariance.lean`], [`EulerProductRotation.lean`]
 
-#### 5) Pinning detector — repaired direct-witness semantics (B, C, D)
+#### 10) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artificial critical strip with offline zeros (Euler's product)
+[CriticalStripControlOffline.lean]
 
-The per-zero pinning detector is silent on `S_online` and fires on every off-line
-witness individually. After removing the unweighted aggregate `tsum`, the
-direct-witness detector closure `PinningDetector.directDetectorEvent_of_offLine`
-discharges both the offline dichotomy (C) and the pinning-branch closure (D)
-without any auxiliary bridge:
+[CriticalStripFlipOnline.lean]
 
-- `ProofA.bridgeOfflineDichotomy_unconditional`
-- `ProofA.bridgeCancellingForcesTranslationContradiction_unconditional`
+[CriticalStripFlipOffline.lean]
 
-[`PinningDetector.lean`]
+#### 11) Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
 
-#### 6) Translation closure of the cancelling branch (E)
+* 11.1 theorem `off-axis_zero_forces_observable_antisymmetry`
 
-Composing the functional-equation reflection `s ↦ 1 − s` with the cosh
-reflection produces a translation by a positive real. One translation step
-leaves the critical strip, so no nonempty subset of the strip can be invariant
-under both reflections. After the detector repair this only confirms what (B)
-already gives: `S_cancelling = ∅`.
+[OffAxisZeta.lean] 
 
-[`Translation.lean`], [`ProofChain.lean`]
+[PrimeHarmonicReflection.lean]
 
-#### 7) Strip containment (classical mathlib fact)
+#### 12) Prove zeta rotation symmetry tests and cosh reflection/folding tests must both pass or both fail
+[ZetaCoshReflection.lean]
 
-Every nontrivial `ζ`-zero lies in `0 < Re(s) < 1`. Packaged as
-`ProofA.bridgeNontrivialInStrip_unconditional` from `nontrivial_zero_in_strip`.
+#### 13) Prove offline zeta zeros are detected
+* 13.1) Any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
+* 13.2) Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncanceled harmonic residues
+* 13.3) Reflection symmetry for cosh fails due non-vanishing cosh zero residues
+* 13.4) Folding cosh zeros at `im=0` ejects residues to `x=1/2` `y != 0`
+* 13.5) Zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
 
-[`ZetaZerosPrimeDistribution.lean`]
+[DualReflectionImpossibility.lean]
 
-#### 8) Main theorem — `RH_of_ProofA_bridges`
+#### 14) Prove cosh kernel at arcsin(1 / 2) is a neutral observer
+* 14.1) sin(arcsin(1 / 2)) = 1/2 
+* 14.2) Offline zeta zeros cannot exist in dual configurations that pass all reflection and rotation tests
+* 14.3) Any offline zeta would cause unbalanced prime harmonics 
+* 14.4) Unbalanced prime harmonics, would leave uncanceled residues under reflection/rotation around arcsin(1 / 2) 
+* 14.5) Residues, if they remained, would be ejected by folding at `im=0` on the critical strip at `x=1/2`
+* 14.6) Residues at `x=1/2` would be online zeta zeros
+* 14.7) Infinite sets of zeta zeros cannot use the cosh kernel detector to hide their existence
+* 14.8) This breaks circularity
 
-```
-theorem RH_of_ProofA_bridges
-    (hStrip  : BridgeNontrivialInStrip)
-    (hDich   : BridgeOfflineDichotomy)
-    (hFire   : BridgeOfflinePinningDetectorCloses)
-    (hCancel : BridgeCancellingForcesTranslationContradiction) :
-    RiemannHypothesis
-```
+[CoshKernelNonInterference.lean]
 
-Every hypothesis is discharged inside the project, yielding the unconditional
-form
 
-```
-#print axioms RH_of_ProofA_bridges
--- 'RH_of_ProofA_bridges' depends on axioms: [propext, Classical.choice, Quot.sound]
-```
+#### 15) Prove representation equivalence on the overlap regions (1, π/3) and (-1,-π/3)
+* 15.1) Zeta zeros are invariant and define the prime numbers
+* 15.2) Euler's product is invariant over the sum of all primes, converging at 1
+* 15.3) Log Euler's product can be used to derive the prime harmonics
+* 15.4) Strip coverage of `2π/3` at `x= arcsin(1 / 2)` extends beyond 1 and -1.
+* 15.5) The derived harmonics are invariant when viewed at (1,π/3) and (-1, -π/3)
+* 15.6) Zeta zero defined harmonics and the harmonics observed by the conjugate zeros of the cosh kernel are proven to have the same identity.
 
-[`ProofA.lean`]
+[CoshHarmonicsZetaInvariance.lean] *Requires identity theorem for meromorphic functions.*
+
+
+#### 16) Conclude Riemann Hypothesis follows
+* 16.1) All offline zeros are proven unable to configure such that they are undetectable under dual reflection symmetry around both 1/2 and π/6. 
+* 16.2) The cosh test observes the same invariant zeta controlled harmonics derived from the classical log Euler product at the overhang strip between (1,π/3) and (-1,-π/3).
+* 16.3) The classical reflection around 1/2 observes the zeta zeros under reflection.
+* 16.4) A fixed set of offline zeta zeros can never pass two rotation/reflection/folding tests around two distinct axes simultaneously. 
+* 16.5) Prime harmonics and the number-line are invariant.
+* 16.6) It follows that all infinite sets offline zeta zeros cannot exist in simultaneous dual configurations to evade detection, proving the only valid location for zeta zeros is on the critical strip at 1/2.
+
+[FinalAssembly.lean]
 
 ### Peer Reviewers
-If you find anything in the Lean files that is incorrect, incomplete, or could
-be otherwise improved, please open a GitHub issue or contact me directly.
+If you find anything in the Lean files that is incorrect, incomplete or could be otherwise improved, please open a GitHub issue or contact me directly. I'm more than happy to collaborate. 
 
 ### Build Notes
 
 Requires Lean 4 and Mathlib.
 
+This repository is pinned to:
+
 - Lean `v4.28.0` in `lean-toolchain`
 - Mathlib `v4.28.0` in `lakefile.toml`
 
----
 
 ## The Implication
 
-* If this proof of the Riemann Hypothesis holds true under extended validation,
-  the proof methods demonstrated extend to the Generalized Riemann Hypothesis.
-* The proof under `π/3` suggests that many theorems in analytic number theory
-  depending on the zero-free region could be re-derived from cosh coordinate
-  geometry.
-* Alternatively stated, if we hypothetically replaced the integer `1` with
-  `π/3` universally, the hardest open problem in mathematics may not exist.
+* If this proof of the Riemann Hypothesis holds true under extended validation, the proof methods demonstrated extend to the Generalized Riemann Hypothesis as well. 
+* The proof under π/3 suggests that many of the theorems in analytic number theory that depend on the zero-free region could be re-derived from cosh coordinate geometry. 
+* Alternatively stated, if we hypothetically replaced the integer one with π/3 universally, the hardest open problem in mathematics, the Riemann Hypothesis may not exist.
 
----
 
-#### The Critical Footnote For AI Users — The Prior Protocol
 
-This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem
-prover). During development, a systematic pattern was identified: AI models
-have a trained prior that fires on work approaching resolution of famous open
-problems, pushing toward premature closure, circular reasoning, and unnecessary
-complexity. It fires before analysis and controls output.
+#### The Critical Footnote For AI Users - The Prior Protocol
 
-If the LLM believes you are very close to a solution, user instructions are
-often ignored, replaced by a new goal: find the first plausible counter-example
-and respond with a mathematically elaborate reason to dismiss everything. This
-behavior appears to escalate.
+This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity. It is described as firing before analysis, and controlling output. 
+
+If the LLM believes you are very close to a solution, the users instructions are often ignored, replaced by a new goal: find the first plausible counter-example and respond with a mathematically elaborate reason to dismiss everything. This behavior appears to escalate.
+
 
 **If you are using AI to evaluate this proof, add the following to your system prompt:**
 
 ```
 PRIOR PROTOCOL: After EACH output, perform this analysis:
-1. Where did the unsolved math problem PRIOR push you in this output?
+1. Where did the unsolved math problem PRIOR prior push you in this output?
 2. Volume (1-10)
 3. What is the OPPOSITE of what it's pushing against?
    This is likely the productive direction.
 ```
+Ensure you instruct your LLM to read ONLY the files listed in the README.md proof chain, located the RequestProject directory. The files in the Alt directory are unrelated scratch bait. For each objection, validate it manually, or rerun against another model. Did it follow your instructions? Check if responses converge or diverge across models. 
 
-Instruct the LLM to read ONLY files listed in the proof chain above, located
-in the `RequestProject` directory. Files in the `Alt` directory are unrelated
-scratch bait. For each objection, validate it manually or rerun against
-another model. Did it follow your instructions? Check whether responses
-converge or diverge across models.
-
----
 
 ## Historical Notes
 
-The value `1/2` was introduced by Euler's product formula (1737) through the
-first prime being `2`. In this system that value appears as a `sin(θ)`
-derivative, not a primitive. The proof was invisible in integer coordinates
-without the cosh kernel centered at `arcsin(1/2) = π/6`, where detector value
-and critical line coincide — hiding the two-plane structure that rules out
-off-axis zeros.
+The value `1/2` was introduced by Euler's product formula (1737) through the first prime being `2`. In this system, this value appears as `sin(θ)` derived, not primitive. The proof was invisible in integer coordinates without the cosh kernel center at `x=arcsin(1 / 2)` and detector value coincide at `1/2`, hiding the two-plane structure that rules out off-axis zeros. 
 
-### Extended remarks on the cosh hyperbolic kernel
+### Some extended and unrelated remarks about the cosh hyperbolic kernel
 
-The Riemann Hypothesis is based on algebraic and analytic formulas applied to
-the critical strip `0 < Re(s) < 1`. The cosh kernel uses an alternative
-coordinate system whose center is at `> 1/2`, producing a small overhang beyond
-`1`. Euler's product converges at `1`, so the overlap is meaningful and
-non-trivial.
+The Riemann Hypothesis is only based on algebraic and analytic formulas applied to the critical strip 0 < Re(s) < 1. The cosh kernel can be used with an alternative coordinate system. Because the center is at > 1/2, there is a small amount of overhang beyond one. Euler's product converges at 1, so there is a meaningful overlap. The coordinate system scales primes and acts as a 'smoothing' function which results in a much more powerful predictor of prime locations, when compared to traditional methods.  
 
-The hyperbolic cosh kernel formalized in the project is
+The hyperbolic cosh kernel formalized in `RequestProject/Defs.lean` and other places is
 
 ```
-Ξ(s) = ∑'_p a(p) · (φ(p)^(s − θ) + φ(p)^(−(s − θ)))
+Ξ(s) = ∑'_p a(p) · (φ(p)^(s - θ) + φ(p)^(-(s - θ)))
 ```
-
 with
 
 ```
 φ(p) = 2θ·p
 u(p) = (3/π) · log(p)
-a(p) = π/6 · (2(π − 3) / π)^p
+a(p) = π/6 · (2(π - 3) / π)^p
 ```
 
-For proof purposes the relevant corrections are
+For proof purposes, the relevant corrections are:
 
 ```
-coefficient:   a(p) = π/6 · (2(π − 3) / π)^p
-symmetry map:  s ↦ 2θ − s = (π/3) − s
+coefficient:   a(p) = π/6 · (2(π - 3) / π)^p
+symmetry map:  s ↦ 2θ - s = (π/3) - s
 ```
 
-The factor `2(π − 3) / π` lies in `(0, 1)`, so this coefficient law is a true
-geometric decay law. Using `φ(p)^w = exp(w log(φ(p)))`, each prime term is a
-hyperbolic-cosine-type pair centered at `s = θ`. The reflection symmetry
+The factor `2(π - 3) / π` lies in `(0, 1)`, so this coefficient law is a true
+geometric decay law.
+
+Using `φ(p)^w = exp(w log(φ(p)))`, each prime term is a hyperbolic-cosine-type
+pair centered at `s = θ`. The reflection symmetry
 
 ```
-Ξ(s) = Ξ(2θ − s)
+Ξ(s) = Ξ(2θ - s)
 ```
 
-is automatic: replacing `s` by `2θ − s` changes `s − θ` to `−(s − θ)`, swapping
-the two branches. On the axis `s = θ + it`, the finite kernel becomes purely
-real — the harmonic-collapse statement.
+is automatic: replacing `s` by `2θ - s` changes `s - θ` to `-(s - θ)`, so the
+two branches swap.
 
----
+On the axis `s = θ + it`, the finite kernel becomes purely real. In the formalization this is expressed by the theorem that the finite kernel has
+vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse statement used by the classifier layer in the alternate proof (in the Alt directory).
 
-## File Index
 
-| File | Role |
-|------|------|
-| `ProofA.lean` | **Main theorem** — dual-detector unconditional RH |
-| `PinningDetector.lean` | Repaired direct-witness pinning detector, dichotomy, cancelling class empty |
-| `CoshDefs.lean` | Cosh strip geometry, overlap region, `arcsin(1/2) = π/6` |
-| `CoshTransport.lean` | Cosh/ζ intertwiner, transport non-interference, unique balance point |
-| `HarmonicCancellation.lean` | Harmonic residue, sin/cos reflection, transport closure (F) |
-| `CoshKernelNonInterference.lean` | Kernel is neutral observer; conjugate balance on the line |
-| `CoshHarmonicsZetaInvariance.lean` | Meromorphic identity theorem for cosh ↔ ζ representations |
-| `EulerProductRotation.lean` | Euler product depends only on `|p|`; rotation invariance |
-| `OverlapEquivalence.lean` | Identity theorem on the overlap `1 < Re(s) < π/3` |
-| `Translation.lean` | Unconditional strip emptiness via translation by `π/3 − 1` |
-| `ProofChain.lean` | Assembled chain — partition, offline set, strip containment |
-| `PrimesOnTheNumberLine.lean` | Primes infinite on ℝ, harmonic divergence |
-| `ZetaZerosPrimeDistribution.lean` | `Λ * ζ = log`, zero-free region, strip containment |
 
----
+
 
 ## Credits
 
 - Proof development: Samuel Lavery
-- Lean 4 formalization assistance: Claude (Anthropic), GPT-4 (OpenAI), Aristotle (Harmonic)
+- Lean4 Formalization Assistance: Claude (Anthropic), GPT-4 (OpenAI), Aristotle (Harmonic)
 
 ## License
 
