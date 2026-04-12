@@ -1,5 +1,5 @@
 import Mathlib
-import RequestProject.OfflineZeroAnalysis
+--import RequestProject.OfflineZeroAnalysis
 import RequestProject.CoshDefs
 import RequestProject.CoshTransport
 import RequestProject.PinningDetectorB
@@ -13,6 +13,7 @@ import RequestProject.HC
 import RequestProject.HarmonicBalance
 import RequestProject.ImpossibleBridge
 import RequestProject.AmplitudeDefectCons
+import RequestProject.AmplitudeProof
 open Real Complex
 
 open scoped BigOperators Real Nat Classical Pointwise
@@ -31,15 +32,6 @@ Structural facts:
   S_online     := {ρ ∈ NontrivialZeros : Re ρ = 1/2}
   S_offline    := {ρ ∈ NontrivialZeros : Re ρ ≠ 1/2}
   S_cancelling ⊆ S_offline     (the conspiring class)
-(A) Partition            : NontrivialZeros = S_online ⊔ S_offline      [unconditional]
-(B) Online passes        : S_online ⟹ pinning balanced ∧ harmonic balanced
-(C) Offline dichotomy    : S_offline ∋ ρ ⟹ pinning fires ∨ ρ ∈ S_cancelling
-(D) Harmonic branch impossible
-                         : pinning doesn't fire ⟹ harmonic contradiction ⟹ ⊥
-(E) Cancelling branch impossible
-                         : ρ ∈ S_cancelling ⟹ translation contradiction ⟹ ⊥
-(F) Transport closure    : harmonic residue vanishes ↔ Re ρ = 1/2      [unconditional]
-Therefore S_offline = ∅, hence RH.
 ```
 -/
 namespace ProofB
@@ -155,24 +147,6 @@ theorem S_cancelling_WitnessSet_nonempty : Set.Nonempty S_cancelling_WitnessSet 
   exact harmonicDiffPiThird_pos (1 / 3 : ℝ) (by norm_num)
 
 
-
-/- theorem S_cancelling_hasOffline :
-    ∃ ρ ∈ S_cancelling, ρ.re ≠ 1 / 2 := by
-  refine ⟨(⟨(1 / 3 : ℝ), 14⟩ : ℂ), ?_, ?_⟩
-  · unfold S_cancelling
-    exact Or.inr offlineWitness_mem
-  · norm_num
-
--/
-
-
--- theorem S_cancelling_hasOnline :
- --   ∃ ρ ∈ S_cancelling, ρ.re = 1 / 2 := by
---  rcases onLineZeros_nonempty with ⟨ρ, hρ⟩
---  refine ⟨ρ, ?_, ?_⟩
---  · unfold S_cancelling
---    exact Or.inl hρ
---  · exact hρ.2
 
 -- ════════════════════════════════════════════════════════════════════════
 -- (A) PARTITION — unconditional
@@ -307,125 +281,9 @@ theorem hCancellingPassesHarmonics_eq_false
 #check hCancellingPassesHarmonics_eq_false
 #check hOnlineFailsHarmonics_eq_false
 
-/-
-
-/-- Harmonic residue of the functional-equation reflection applied to the
-    Euler harmonic `r^{-ρ}`: equals `conj(r^{-ρ}) - r^{-(1-ρ)}`, which
-    vanishes iff `Re ρ = 1/2`. -/
-noncomputable def harmonicResidue (r : ℝ) (ρ : ℂ) : ℂ :=
-  starRingEnd ℂ (eulerHarmonic r ρ) - eulerHarmonic r (1 - ρ)
-/-- The harmonic balance detector is **balanced** on `Z` when every Euler
-    harmonic at every base `r > 1` (Euler-product regime) leaves zero
-    residue under the cosh/FE reflection. -/
-def HarmonicBalanceBalanced (Z : Set ℂ) : Prop :=
-  ∀ ρ ∈ Z, ∀ r : ℝ, 1 < r → harmonicResidue r ρ = 0
-
-/-- The harmonic balance detector **fires** on `Z` when some Euler harmonic
-    leaves a nonzero residue — equivalently, some element of `Z` is off
-    the critical line. -/
-def HarmonicBalanceFires (Z : Set ℂ) : Prop :=
-  ∃ ρ ∈ Z, ∃ r : ℝ, 1 < r ∧ harmonicResidue r ρ ≠ 0
-
-def HarmonicBalanceFiresUniv (Z : Set ℂ) : Prop :=
-  ∀ ρ ∈ Z, ∀ r : ℝ, 1 < r → harmonicResidue r ρ ≠ 0
-
-/-- Pointwise pass: on the critical line the residue vanishes. -/
-theorem harmonicResidue_eq_zero_of_onCriticalLine
-    (r : ℝ) (hr : 0 < r) {ρ : ℂ} (hρ : ρ.re = 1 / 2) :
-    harmonicResidue r ρ = 0 := by
-  unfold harmonicResidue
-  rw [spectral_half_inheritance r hr ρ hρ]
-  ring
-
-/-- Set-level pass: any subset of the critical line balances the detector. -/
-theorem harmonicBalance_balanced_of_onCriticalLine
-    {Z : Set ℂ} (hZ : ∀ ρ ∈ Z, ρ.re = 1 / 2) :
-    HarmonicBalanceBalanced Z :=
-  fun ρ hρZ r hr =>
-    harmonicResidue_eq_zero_of_onCriticalLine r (lt_trans zero_lt_one hr) (hZ ρ hρZ)
-/-- Norm lemma: `‖r^{-ρ}‖ = r^{-Re ρ}` for `r > 0`. -/
-theorem norm_eulerHarmonic (r : ℝ) (hr : 0 < r) (ρ : ℂ) :
-    ‖eulerHarmonic r ρ‖ = r ^ (-ρ.re) := by
-  unfold eulerHarmonic
-  rw [norm_cpow_eq_rpow_re_of_pos hr (-ρ)]
-  simp
 
 
-/-- Pointwise fail: off the critical line, the residue at any base `r > 1`
-    is nonzero. -/
-theorem harmonicResidue_ne_zero_of_offLine
-    {r : ℝ} (hr : 1 < r) {ρ : ℂ} (hρ : ρ.re ≠ 1 / 2) :
-    harmonicResidue r ρ ≠ 0 := by
-  intro heq
-  have hr0 : (0 : ℝ) < r := lt_trans zero_lt_one hr
-  have heq' : starRingEnd ℂ (eulerHarmonic r ρ) = eulerHarmonic r (1 - ρ) :=
-    sub_eq_zero.mp heq
-  rw [eulerHarmonic_conj r hr0 ρ] at heq'
-  have hnorm : ‖eulerHarmonic r (starRingEnd ℂ ρ)‖ = ‖eulerHarmonic r (1 - ρ)‖ :=
-    congrArg (‖·‖) heq'
-  rw [norm_eulerHarmonic r hr0, norm_eulerHarmonic r hr0] at hnorm
-  have hconj_re : (starRingEnd ℂ ρ).re = ρ.re := Complex.conj_re ρ
-  have hone_sub_re : (1 - ρ : ℂ).re = 1 - ρ.re := by
-    simp [Complex.sub_re, Complex.one_re]
-  rw [hconj_re, hone_sub_re] at hnorm
-  have hexp_eq : -ρ.re = -(1 - ρ.re) := by
-    by_contra hne
-    rcases lt_or_gt_of_ne hne with hlt | hgt
-    · have := (Real.rpow_lt_rpow_left_iff hr).mpr hlt
-      linarith [hnorm.le, hnorm.ge]
-    · have := (Real.rpow_lt_rpow_left_iff hr).mpr hgt
-      linarith [hnorm.le, hnorm.ge]
-  have : ρ.re = 1 / 2 := by linarith
-  exact hρ this
 
-theorem harmonicResidue_ne_zero_of_offLine_set
-    {Z : Set ℂ} (hZ : ∀ ρ ∈ Z, ρ.re ≠ 1 / 2) :
-    HarmonicBalanceFiresUniv Z :=
-  fun ρ hρZ r hr => harmonicResidue_ne_zero_of_offLine hr (hZ ρ hρZ)
--/
-
-/-
--- ════════════════════════════════════════════════════════════════════════
--- (F) TRANSPORT CLOSURE — unconditional
--- ════════════════════════════════════════════════════════════════════════
-/-- **(F)**: the harmonic residue vanishes iff the exponent is on the
-    critical line. This is the closed form of "balanced cosh class ↔
-    Re s = 1/2". -/
-theorem transport_closure (r : ℝ) (hr : 1 < r) (ρ : ℂ) :
-    harmonicResidue r ρ = 0 ↔ ρ.re = 1 / 2 := by
-  refine ⟨?_, fun h =>
-    harmonicResidue_eq_zero_of_onCriticalLine r (lt_trans zero_lt_one hr) h⟩
-  intro h
-  by_contra hne
-  exact harmonicResidue_ne_zero_of_offLine hr hne h
-/-- **Set-level transport closure**: the harmonic detector is balanced on
-    `Z` iff every element of `Z` is on the critical line. -/
-theorem harmonicBalance_iff_onCriticalLine (Z : Set ℂ) :
-    HarmonicBalanceBalanced Z ↔ ∀ ρ ∈ Z, ρ.re = 1 / 2 := by
-  refine ⟨?_, harmonicBalance_balanced_of_onCriticalLine⟩
-  intro hD ρ hρZ
-  have h := hD ρ hρZ 2 (by norm_num)
-  exact (transport_closure 2 (by norm_num) ρ).mp h
-
-
--- ════════════════════════════════════════════════════════════════════════
--- (B) ONLINE PASSES — unconditional
--- ════════════════════════════════════════════════════════════════════════
-/-- **(B₁)**: on every on-line zero the per-zero pinning imbalance is zero
-    at every density parameter. -/
-theorem online_pinning_balanced :
-    ∀ x : ℝ, ∀ ρ ∈ S_online, PinningDetector.perZeroImbalance x ρ = 0 :=
-  fun x ρ hρ => PinningDetector.onLine_imbalance_zero x ρ hρ.2
-/-- **(B₂)**: the harmonic balance detector is balanced on `S_online`. -/
-theorem online_harmonic_balanced : HarmonicBalanceBalanced S_online :=
-  harmonicBalance_balanced_of_onCriticalLine (fun _ h => h.2)
-/-- **(B)**: combined — on-line zeros balance both detectors. -/
-theorem online_both_detectors_balanced :
-    (∀ x : ℝ, ∀ ρ ∈ S_online, PinningDetector.perZeroImbalance x ρ = 0)
-      ∧ HarmonicBalanceBalanced S_online :=
-  ⟨online_pinning_balanced, online_harmonic_balanced⟩
-
--/
 
 
 -- ════════════════════════════════════════════════════════════════════════
@@ -542,76 +400,6 @@ theorem hOfflineNotDetectedOffAxis_eq_false
 #check hOfflineNotDetectedOffAxis_eq_false
 
 
-
-/-
-
--- ════════════════════════════════════════════════════════════════════════
--- (D) FULL-SET DETECTOR NEVER FIRES — UNCONDITIONAL
---
--- Key insight: The functional equation ζ(s) = 0 ↔ ζ(1-s) = 0 gives
--- an involution ρ ↦ 1-ρ on NontrivialZeros. This involution negates
--- each per-zero imbalance: f(1-ρ) = x^{1-σ} - x^σ = -f(ρ).
--- Therefore the tsum is antisymmetric (equals its own negation), hence 0.
--- If the sum is not summable, Lean's tsum convention gives 0 anyway.
--- ════════════════════════════════════════════════════════════════════════
-/-- The functional equation involution on `NontrivialZeros`: ρ ↦ 1 − ρ.
-    Well-defined because the functional equation sends strip zeros to
-    strip zeros. -/
-private noncomputable def ntInvolution :
-    PinningDetector.NontrivialZeros → PinningDetector.NontrivialZeros :=
-  fun ⟨ρ, hρ⟩ =>
-    let hstrip := zeta_zeros_classicalRotation_invariant ρ hρ.2.2 ⟨hρ.1, hρ.2.1⟩
-    ⟨1 - ρ, hstrip.2.1, hstrip.2.2, hstrip.1⟩
-/-- `ntInvolution` is an involution: (1 − (1 − ρ)) = ρ. -/
-private theorem ntInvolution_involutive :
-    Function.Involutive ntInvolution := by
-  intro ⟨ρ, hρ⟩
-  simp [ntInvolution]
-/-- The involution as an equivalence on `NontrivialZeros`. -/
-private noncomputable def ntEquiv :
-    PinningDetector.NontrivialZeros ≃ PinningDetector.NontrivialZeros :=
-  ntInvolution_involutive.toPerm ntInvolution
-/-- The involution negates the per-zero imbalance:
-    `(x^{1-σ} - x^σ) = -(x^σ - x^{1-σ})`. -/
-private theorem imbalance_antisymmetric (x : ℝ) (ρ : PinningDetector.NontrivialZeros) :
-    PinningDetector.perZeroImbalance x (↑(ntEquiv ρ)) =
-      -PinningDetector.perZeroImbalance x (↑ρ) := by
-  rcases ρ with ⟨ρ, hρ⟩
-  simp [ntEquiv, Function.Involutive.toPerm,
-        ntInvolution, PinningDetector.perZeroImbalance,
-        PinningDetector.channelMagnitude, PinningDetector.channelExponent,
-        PinningDetector.Angle4.transform]
-
-/-- **(D-core)**: The full-set imbalance is identically zero, unconditionally.
-    **Proof**: The involution ρ ↦ 1−ρ reindexes the tsum while negating each
-    term. By `Equiv.tsum_eq`, the tsum equals itself negated, forcing it to 0.
-    If not summable, `tsum` returns 0 by convention. -/
-theorem fullSetImbalance_zero (x : ℝ) : PinningDetector.fullSetImbalance x = 0 := by
-  unfold PinningDetector.fullSetImbalance
-  set f := fun (ρ : ↥PinningDetector.NontrivialZeros) =>
-    PinningDetector.perZeroImbalance x (↑ρ)
-  -- Reindex via the involution: ∑ f(e(ρ)) = ∑ f(ρ)
-  have h1 : ∑' ρ, f (ntEquiv ρ) = ∑' ρ, f ρ :=
-    Equiv.tsum_eq ntEquiv f
-  -- Each reindexed term equals the negative: f(e(ρ)) = -f(ρ)
-  have h2 : ∀ ρ, f (ntEquiv ρ) = -f ρ := imbalance_antisymmetric x
-  -- So ∑ f = ∑ f(e(·)) = ∑ (-f) = -(∑ f)
-  have h3 : ∑' ρ, f ρ = -(∑' ρ, f ρ) := by
-    calc ∑' ρ, f ρ = ∑' ρ, f (ntEquiv ρ) := h1.symm
-    _ = ∑' ρ, -f ρ := tsum_congr h2
-    _ = -(∑' ρ, f ρ) := tsum_neg
-  linarith
-
-/-- **(D) Pinning branch**: the full-set detector never fires.
-    This is unconditional: it follows from the functional-equation involution.
-    holds. -/
-def BridgeFullSetPinningSilent : Prop :=
-  (∃ x : ℝ, 1 < x ∧ PinningDetector.fullSetDetectorEvent x) → False
-theorem bridgeFullSetPinningSilent_proof :
-    BridgeFullSetPinningSilent := by
-  intro ⟨x, _, hfire⟩
-  exact hfire (fullSetImbalance_zero x)
--/
 
 
 
@@ -1112,94 +900,7 @@ theorem S_offline_empty_of_break
 
 
 
-/--/
-theorem RH_of_offline_empty
-    (hStrip : BridgeNontrivialInStrip)
-    (hEmpty : S_offline = ∅)
-    (coeffs : Fin n → ℝ) (bases : Fin n → ℝ)
-    (hbases : ∀ i, 0 < bases i) :
-    RiemannHypothesis := by
-  intro s hz htriv hone
-  have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
-  by_cases hs : s.re = 1 / 2
-  · have hDir :
-      zetaConj (dirichletSum coeffs bases s) =
-        dirichletSum coeffs bases (zetaFuncEq s) :=
-      dirichletSum_intertwines_on_critical_line coeffs bases hbases s hs
-    exact hs
-  · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
-    have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
-    exact absurd hmem (Set.notMem_empty s)
--/
 
-
-/-
-theorem S_offline_empty_of_breakk
-    (hBreak : ∀ ρ : ℂ, ρ ∈ S_offline →
-      offLineZetaZerosBreakHarmonicBalance ρ = true) :
-    S_offline = ∅ := by
-  ext ρ
-  constructor
-  · intro hρ -- hρ : ρ ∈ S_offline
-    -- From the definition of S_offline, hρ.2 gives `ρ.re ≠ 1/2`.
-    let σ : ℝ := ρ.re
-    have hσ_ne_half : σ ≠ 1 / 2 := hρ.2 -- Renamed for clarity from your `hσ`
-
-    -- This line applies your `hBreak` hypothesis to the current `ρ` and `hρ` proof.
-    -- It gives us `offLineZetaZerosBreakHarmonicBalance ρ = true`.
-    have h_break_rho_true : offLineZetaZerosBreakHarmonicBalance ρ = true := hBreak ρ hρ
-
-    -- This is where we use the `break_implies_harmonic_balance` lemma.
-    -- It states that `offLineZetaZerosBreakHarmonicBalance ρ = true` implies `P ρ.re`.
-
-    -- Now we have two conflicting facts:
-    -- 1. `hP_sigma : P σ` (the harmonic balance identity holds for σ)
-    -- 2. `hσ_ne_half : σ ≠ 1/2` (σ is not 1/2)
-
-    -- `cosine_amplitude_defect_impossible_neg σ hσ_ne_half` is a proof of `¬ P σ`.
-    -- In Lean, `¬ P σ` is definitionally `P σ → False`.
-    -- So, `cosine_amplitude_defect_impossible_neg σ hσ_ne_half` is a function
-    -- that takes a proof of `P σ` and returns `False`.
-    -- We apply this function to `hP_sigma` to get `False`.
-    exact (cosine_amplitude_defect_impossible_neg σ hσ_ne_half) h_break_rho_true
-
-  · intro hρ_in_empty
-    -- This part is for `∅ ⊆ S_offline`, which is vacuously true.
-    exact False.elim (Set.notMem_empty ρ hρ_in_empty)
-
-
--/
-
-/-
-theorem RH_of_offline_empty_with_dirichlet_old
-    (hStrip : BridgeNontrivialInStrip)
-    (hEmpty : S_offline = ∅)
-    (coeffs : Fin n → ℝ) (bases : Fin n → ℝ)
-    (hbases : ∀ i, 0 < bases i) :
-    RiemannHypothesis ∧
-    ∀ s : ℂ, riemannZeta s = 0 →
-      (¬ ∃ n : ℕ, s = -2 * ((n : ℂ) + 1)) →
-      s ≠ 1 →
-      zetaConj (dirichletSum coeffs bases s) =
-        dirichletSum coeffs bases (zetaFuncEq s) := by
-  refine ⟨?_, ?_⟩
-  · intro s hz htriv hone
-    have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
-    by_cases hs : s.re = 1 / 2
-    · exact hs
-    · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
-      have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
-      exact absurd hmem (Set.notMem_empty s)
-  · intro s hz htriv hone
-    have hstrip : 0 < s.re ∧ s.re < 1 := hStrip s hz htriv hone
-    have hs : s.re = 1 / 2 := by
-      by_cases hs : s.re = 1 / 2
-      · exact hs
-      · have hOff : s ∈ S_offline := ⟨⟨hstrip.1, hstrip.2, hz⟩, hs⟩
-        have hmem : s ∈ (∅ : Set ℂ) := hEmpty ▸ hOff
-        exact absurd hmem (Set.notMem_empty s)
-    exact dirichletSum_intertwines_on_critical_line coeffs bases hbases s hs
--/
 
 
 
@@ -1239,8 +940,6 @@ theorem RH_of_balance
 
 #check @offline_member_breaks_harmonic_balance
 #print axioms offline_member_breaks_harmonic_balance
--- #check @S_offline_empty
--- #print axioms S_offline_empty
 #check @RH_of_balance
 #print axioms RH_of_balance
 

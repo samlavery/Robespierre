@@ -45,7 +45,7 @@ point, contradicting the required symmetry.
 -/
 
 open Real Finset BigOperators
-
+namespace OfflineZeroAnalysis
 /-! ## Section 1: Amplitude Defect -/
 
 /-- The **amplitude defect** of an off-line zero pair at probe value `r`.
@@ -226,3 +226,5 @@ theorem complex_transfer_law (ρ : ℂ)
     linarith [ Real.exp_pos ( Real.log 2 * ρ.re ), Real.exp_pos ( Real.log 2 * ( 1 - ρ.re ) ), Real.exp_pos ( Real.log 2 * 2⁻¹ ) ];
   · simp_all +decide [ add_eq_zero_iff_eq_neg ];
     grind
+
+end OfflineZeroAnalysis

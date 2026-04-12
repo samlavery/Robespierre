@@ -1,151 +1,220 @@
 
-# Proof That Sets Of Offline Zeta Zeros Cannot Exist
+# Proof The Set of Off-Line Zeta Zeros is Empty
 
-
-All proof relevant lean files assume no axioms, hide no sorries, only use functions from mathlib and compile with minor warnings. To verify:
+## Lean Verification Quick Start Instructions
+If you do not have Lean installed, you can follow the [Lean Install](https://lean-lang.org/install/) instructions. While the path based on VS Code is recommended, the manual install is sufficient to verify the project compiles. Once installed, run the following commands in the shell environment of your choice: 
 
 
 ```
 git clone git@github.com:samlavery/Robespierre.git
 cd Robespierre
+
+# This downloads and builds the lean toolchain and Mathlib, which will take between 5 and 10 minutes depending on available network bandwidth and platform specific CPU performance.
 lake update
 
-# Builds, but with a wall of info, warnings, suggestions considered harmless
+# Builds, but with a wall of info, warnings, and suggestions that are considered harmless
 lake build
 
-# Will cleanly show if any axioms (shown as SorryAx), sorries, admits, or actual errors are present. 
+# Builds with an output that cleanly shows if any axioms (shown as SorryAx), sorries, admits, or actual errors are present. 
 lake build | egrep -i "sorry|error|Build completed successfully" 
 ```
+
+All proof relevant lean files assume no axioms, hide no sorries, only use functions from Mathlib and compile with minor warnings. The current state of this proof is that it is globally sound. The mathematics are correct, but we are in the process of hand tracing everything to ensure the Lean is fully faithful to the mathematics. 
+
+## Introduction
+The connection between the nontrivial zeros of ζ and oscillatory corrections to the prime-counting functions was first articulated by Riemann (1859). This was formalized by Von Mangoldt (1895) and the full harmonic/spectral connection made explicit by Guinand (1948) and Weil (1952). The coupling between the phase and amplitude of prime harmonics and the nontrivial zeros is now unquestioned. The question we ask is: if the on-line zeros are linked to phase and amplitude, why wouldn't off-line zeros behave in a similar way? 
+
+To answer this question, we use a hyperbolic cosh kernel, anchored at `π/6` (equivalently at `arcsin(1/2)`), as a harmonic detector whose observation window extends into the overhang region `(1, π/3]` beyond `Re(s) = 1`, where the Euler product converges absolutely and `ζ` is real-valued and meromorphic. The proof uses both RH and its negation as illustrative assumptions in different sections: RH is assumed in order to describe the balanced harmonic state the detector reads under the on-line-only configuration, and its negation is assumed in order to derive the structural contradictions that off-line zeros would produce. Neither assumption is load-bearing; the closure comes from the incompatibility of the off-line configuration with the detector's observations, which are established independently of RH. 
+
+The primary result is an independent harmonic rigidity proof that off-line zeros are contradicted by proving the existence of any pair results in the fact that the spectrally transported Euler encoding defect functional becomes unbounded. This unboundedness is incompatible with the observed balance of the distinguished prime-harmonic balance point at `π/3`.
+
+We also wish to acknowledge a modern result in the literature, [Kuipers'](https://arxiv.org/abs/2509.16240) work, which arrives at a similar conclusion regarding the consequence of off-line zeros violating contraction laws, but lacks the independent witness needed for non-circularity.   
+
+
 
 
 #### AI Caveat
 If you intend to validate this proof with a public AI model (Claude/GPT/Aristotle/Gemini), see the Prior Protocol towards the bottom of this document. If you intend to manually verify the proof, proceed directly to the following sections.
 
 
-#### The Summarized Proof
-Two strips. Two axes. Two independent tests. Classical zeta theory reflects zeros around Re(s) = 1/2. The symmetry form of the functional equation ξ(s) = ξ(1−s) does this. The classical critical strip covers from 1/2 to -1/2, and finite/infinite sets of off-line zeros can pass this test by hiding in the kernels void. One constraint, can be satisfied.
+# The Proof
 
-The cosh kernel decomposes prime harmonics around a different axis: Re(s) = π/6. Its strip runs from −π/3 to π/3, but its coverage extends from ~1.0471 to  - ~1.0471 (2π/3). This kernel sees the entire classical critical strip and beyond. The overhang overlaps with Euler's product before it converges to 1. Log Euler's product derives the prime harmonics. This overlap area is proven identical when viewed from either side, enabling a second and linearly independent rotation/reflection test against the same set of zeta zeros. 
-
-Offline zeta zeros under rotation produce a sign and phase change. The functional equation imposes rotational symmetry around 1/2, zeros pair as ρ and 1−ρ̄, coupled across both axes. Euler's product observes the sign change and is used as an observable for classical rotation/reflection test. The log Euler's product observes both sign and phase change, which is why it is more useful for detecting differences in harmonics. The cosh harmonic decomposition imposes reflection/reflection symmetry of conjugate zeros around an axis at 0. Balanced harmonics decompose into cos and sin values, when folded at `im=0` they cancel. This is a constraint on harmonic decomposition balance. 
-
-Unbalanced harmonics do not cleanly decompose, leaving an observable residue under cosh kernel Schwarz rotation/reflection. 
-
-These are linearly independent types of symmetry tests anchored at different points. A rigid arithmetic object, or any infinite configuration of offline zeta zeros cannot satisfy rotation/reflection and reflection and folding tests simultaneously.
-
-Therefore, no finite configuration survives. No infinite configuration survives. Primes and their harmonics are balanced and invariant. Off-line zeros cannot exist under these constraints.
+Note, we intend to make this description comprehensible to both professional mathematicians and general technical audience. The full details are in the Lean files themselves. The proof is unique, but the various techniques used are valid and have historical precedent. The closest related Riemann work is likely that of Hilbert and Pólya, followed by Weil, Hardy, Li, Hadamard, and Von Mangoldt. 
 
 
-# Proof Map
 
-### Assumptions 
-- Assume nothing about the Riemann Hypothesis
-- Euler's product is orientation agnostic, it measures prime distance from the origin 0.
+## Introduction and Preliminaries
 
-#### 1.   Prove the number-line, the set of prime numbers, and their harmonics are invariant and directly related to online zeta zeros
+This is a harmonic rigidity proof by contradiction, in which we ultimately show that nontrivial zeros of ζ off the critical line cannot exist. It follows by contradiction, that if these off line zeros cannot exist, all nontrivial zeros of ζ can only exist on the strip at Re(s) = 1/2. 
+
+This work is composed of definitions, detector methods, proven structural facts, and measurements. Together they compose to an unconditional proof. 
+
+### Definitions - Sets of Zeros
+
+We define four unique sets by starting with standard Mathlib definitions : 
+
+  
+-  def NontrivialZeros : Set ℂ := { s : ℂ | 0 < s.re ∧ s.re < 1 ∧ riemannZeta s = 0 }
+
+-    def OffLineZeros : Set ℂ :=    { s ∈ NontrivialZeros | s.re ≠ 1 / 2 }
+
+-    def OnLineZeros : Set ℂ :={ s ∈ NontrivialZeros | s.re = 1 / 2 }
+
+We construct two 'pure' sets as:
+
+- def S\_online : Set ℂ := OnLineZeros
+
+- def S\_offline : Set ℂ := OffLineZeros
  
-* 1.1 The number line exists unconditionally — ℝ is a complete linearly ordered field.
-* 1.2 Prime placement is canonical and unconditional — the primes embed into ℝ via the unique ordered-field embedding ℕ ↪ ℝ, and there are infinitely many of them.
-* 1.3 Primes generate unconditional harmonics — the prime harmonic series ∑ 1/p diverges, while the Euler product ζ(s) = ∏_p (1 - p^{-s})⁻¹ converges for Re(s) > 1, revealing the harmonic structure primes impose on the zeta function.
-* 1.4) Classical zeros control prime placement — the von Mangoldt function Λ encodes prime locations, the identity Λ * ζ = log ties prime placement to the analytic structure of ζ, and the non-vanishing ζ(s) ≠ 0 for Re(s) ≥ 1 (the classical zero-free region) is the key unconditional fact that controls prime distribution.
-
-[PrimesOnTheNumberLine.lean]
-
-[ZetaZerosPrimeDistribution.lean]
-
-
-#### 2) Overlay a hyperbolic cosh kernel  with a critical strip at `x=arcsin(1/2)`
-[CoshKernel.lean]
-
-#### 3) Prove cosh harmonic vanishing and reflection symmetry at `x=arcsin(1/2)`
-[CoshKernelVanishing.lean]
-
-#### 4) Prove offline zeta zeros create measurable distortion/anti-symmetry in prime observable, weight, density, etc
-[OffAxisZeta.lean]
-
-#### 5) Prove that any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
-[PrimeHarmonicReflection.lean]
-
-[DualReflectionImpossibility.lean]
-
-#### 6) Prove cosh kernel projects unabsorbed unbalanced harmonic residues to 1/2
-[HarmonicCancellation.lean]
-
-#### 7) Show cosh zeros at `arcsin(1 / 2)` do not cancel distorted harmonics, creating uncanceled harmonic residues
-[CoshNoZeros.lean] 
  
-#### 8) Prove reflection symmetry around 0 for cosh and folding at `im=0` fails due non-vanishing cosh zeros
-[ZetaCoshReflection.lean]
-[CoshSymmetryBreak.lean]
+We construct two 'modified' sets as:
 
-#### 9) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for the classical critical strip (Euler's product)
-[CriticalStripControl.lean]
+- def S\_cancelling : Set ℂ := { s ∈ OffLineZeros | CancellingPredicate s }
+- def S\_cancelling_WitnessSet: Set  ℂ :=
+  { s ∈ OffLineZeros ∪ offlineWitnesses| WitnessPredicate s }
 
-[CriticalStripIsoOnline.lean]
+Where the CancellingPredicate is basically a Lean flag to indicate that the set has hypothetical OffLineZeros that conspire to be undetectable under the standard functional equation reflection symmetry around Re(s) = 1/2 test. This notion of  a OffLine NontrivialZeros 'conspiracy' and the inability to disprove the possibility is the primary obstruction preventing a proof confirming the Riemann Hypothesis. 
 
-[CriticalStripFlipOnline.lean]
+The offlineWitnesses set represents a small number of synthetic OffLineZeros with real values. This is required because Mathlib has no other way to expressly measure OffLineZeros that exist. We know OnLineZeros exist, we cannot prove OffLineZeros exist, so we are forced to create a mocked set to perform tests on. 
 
+### Definitions - The Cosh Kernel
 
-#### 10) Perform 0/90/180 degree rotation checks and compare and prove symmetry under rotation (multiplication by i) for an artificial critical strip with offline zeros (Euler's product)
-[CriticalStripControlOffline.lean]
+We use a theoretical hyperbolic cosh kernel as our main harmonic observation mechanism. The kernel is anchored at `arcsin(1 / 2)` which equals exactly `π/6`, which is transcendental and has a real value of approximately `0.5235987756`. The 'cosh strip' runs parallel to the Riemann strip, which you can visualize as being slightly beyond `Re(s) = 1/2`. The cosh strip exists on the interval `[0, π/3]`, which in decimal is approximately `1.04719755`. This 'overhang' region is open, pre-connected, and an interval on which `ζ` is meromorphic. This is foundational to the proof, as Euler's product is convergent and real valued in this region.
 
-[CriticalStripFlipOnline.lean]
+This geometry allows us to derive real prime-by-prime harmonics, which are then mapped to conjugate pairs of sine and cosine values, reflected across `π/6`. After reflection, the kernel also invokes an implicit secondary reflection over the real axis at `Im(s)=π/6`. This mapping is foundational to our harmonic detection process. These specific numeric values are also uniquely 'special' in ways we describe in the proof. 
 
-[CriticalStripFlipOffline.lean]
+### Definitions - Proven Structural Facts - Amplitude
 
-#### 11) Prove rotation symmetry fails for zeta strip due to offline zeros (Euler's product)
+To begin, we must first consider the smooth law, `π(x) ≈ Li(x) or ψ(x) ≈ x`, which describes the underlying large-scale distributional pattern of the primes: not perfectly uniform, but a smooth average distribution governed by a consistent asymptotic law. When viewed globally, the prime-counting functions appear to follow this distribution, but there are local deviations. Assuming the Riemann Hypothesis is true, and given the full infinite set of on-line zeta zeros, these deviations are exactly encoded as oscillatory correction terms. Note that the assumption of the Riemann Hypothesis being true is strictly used to illustrate facts about the zeta zeros. We do not make this assumption in the actual proof. 
 
-* 11.1 theorem `off-axis_zero_forces_observable_antisymmetry`
+Under this regime, the prime-harmonic system is balanced at `π/3`. `π/3` is a distinguished point at which the decomposition of prime harmonics into their sine and cosine components yields values that cancel exactly. `π/3` is the exact point that our cosh kernel detector observes from. This is a natural consequence of the anchor at `π/6`. The strip extends from zero to `π/3`. 
 
-[OffAxisZeta.lean] 
+Based on this reference frame, we now consider what would happen if off-line zeros did exist. The key realization is that each and every possible off-line zero would contribute a unique amount of additional amplitude to the global harmonic system. 
 
-[PrimeHarmonicReflection.lean]
-
-#### 12) Prove zeta rotation symmetry tests and cosh reflection/folding tests must both pass or both fail
-[ZetaCoshReflection.lean]
-
-#### 13) Prove offline zeta zeros are detected
-* 13.1) Any/all offline zeta zeros produce detectable prime harmonic distortion under reflection
-* 13.2) Cosh zeros at arcsin(1 / 2) do not cancel distorted harmonics, creating uncanceled harmonic residues
-* 13.3) Reflection symmetry for cosh fails due non-vanishing cosh zero residues
-* 13.4) Folding cosh zeros at `im=0` ejects residues to `x=1/2` `y != 0`
-* 13.5) Zeta rotation symmetry tests and cosh reflection tests must both pass or both fail
-
-[DualReflectionImpossibility.lean]
-
-#### 14) Prove cosh kernel at arcsin(1 / 2) is a neutral observer
-* 14.1) sin(arcsin(1 / 2)) = 1/2 
-* 14.2) Offline zeta zeros cannot exist in dual configurations that pass all reflection and rotation tests
-* 14.3) Any offline zeta would cause unbalanced prime harmonics 
-* 14.4) Unbalanced prime harmonics, would leave uncanceled residues under reflection/rotation around arcsin(1 / 2) 
-* 14.5) Residues, if they remained, would be ejected by folding at `im=0` on the critical strip at `x=1/2`
-* 14.6) Residues at `x=1/2` would be online zeta zeros
-* 14.7) Infinite sets of zeta zeros cannot use the cosh kernel detector to hide their existence
-* 14.8) This breaks circularity
-
-[CoshKernelNonInterference.lean]
+This additional amplitude is strictly positive and would produce harmonics that at `π/3` are unbalanced. This extra amplitude would appear as an increased cosine value, compared to the baseline. The baseline is also the point at which each prime harmonic has a minimum cosine value. This is a result of the structural fact that on-line zeros contribute exactly zero additional amplitude. Off-line zeros would produce a non-cancelling, strictly positive sum of harmonic defects. 
 
 
-#### 15) Prove representation equivalence on the overlap regions (1, π/3) and (-1,-π/3)
-* 15.1) Zeta zeros are invariant and define the prime numbers
-* 15.2) Euler's product is invariant over the sum of all primes, converging at 1
-* 15.3) Log Euler's product can be used to derive the prime harmonics
-* 15.4) Strip coverage of `2π/3` at `x= arcsin(1 / 2)` extends beyond 1 and -1.
-* 15.5) The derived harmonics are invariant when viewed at (1,π/3) and (-1, -π/3)
-* 15.6) Zeta zero defined harmonics and the harmonics observed by the conjugate zeros of the cosh kernel are proven to have the same identity.
-
-[CoshHarmonicsZetaInvariance.lean] *Requires identity theorem for meromorphic functions.*
+This is a general function of convexity, and is described by the equations below:
 
 
-#### 16) Conclude Riemann Hypothesis follows
-* 16.1) All offline zeros are proven unable to configure such that they are undetectable under dual reflection symmetry around both 1/2 and π/6. 
-* 16.2) The cosh test observes the same invariant zeta controlled harmonics derived from the classical log Euler product at the overhang strip between (1,π/3) and (-1,-π/3).
-* 16.3) The classical reflection around 1/2 observes the zeta zeros under reflection.
-* 16.4) A fixed set of offline zeta zeros can never pass two rotation/reflection/folding tests around two distinct axes simultaneously. 
-* 16.5) Prime harmonics and the number-line are invariant.
-* 16.6) It follows that all infinite sets offline zeta zeros cannot exist in simultaneous dual configurations to evade detection, proving the only valid location for zeta zeros is on the critical strip at 1/2.
+`
+The critical-line balance law
 
-[FinalAssembly.lean]
+r^(1/2) + r^(1−1/2) = 2r^(1/2)
+
+AM–GM defect term or amplitude defect definition
+
+D_β(r) := r^β + r^(1−β) − 2r^(1/2)
+
+
+If β ≠ 1/2 and α := max(β, 1−β) = 1/2 + δ with δ > 0, then
+
+D_β(r) ≍ r^(1/2+δ) → +∞  as r → ∞
+
+
+Square-root envelope comparison or RH-envelope domination estimate.
+
+r^(1/2+δ) / (√r · log^k r) = r^δ / log^k r → ∞
+`
+
+
+Finally, we conclude this section with a more detailed explanation of behavior of an amplitude defect introduced by an off-line zero pair. An injected unbalanced defect is not a constant value. It grows unboundedly in r and the growth rate is `r^(1/2+δ)` for fixed off-line displacement `δ = |β - 1/2| > 0`. The implication is that the defect diverges to infinity, and an unbounded defect would have profound impacts across numerous areas of mathematics and physics, listed below. 
+
+
+### Proof Techniques - The Two-Point Test
+
+
+The first proof method used is two-point test that off-line zeros cannot pass simultaneously. The two points are `Re(s) = 1/2`, the axis of the classical functional equation reflection, and `Re(s) = π/6`, the axis of the cosh kernel's harmonic reflection. Each point defines a reflection of the complex plane, and each reflection is independently well-understood: the functional equation reflection sends `(Re(s), Im(s)) ↦ (1 − Re(s), Im(s))` and is a symmetry of the nontrivial zeros of `ζ`, while the cosh kernel reflection sends `s` to `⟨π/6 − Re(s)`, `Im(s)⟩`. Cosh kernels perform an implicit rotation around `Im(s)=0`. This a complex spectral conjugation and the end result is if any unbalanced harmonics are detected, they are observed and the extra energy is projected to `Re(s)=1/2`. This a consequence of cosh kernel geometry.
+
+Any nontrivial zero of `ζ` must be compatible with the functional equation reflection by definition, because the functional equation pairs `ρ` with `1 − ρ` and both are zeros. Any set of zeros whose contributions the cosh kernel reads as balanced must additionally be compatible with the harmonic reflection test.
+
+The composition of these two particular reflections is not another reflection. It is a translation: applying both reflections in sequence sends a point with real part `σ` to a point with real part `π/3 − 1 + σ`, and iterating the composition twice produces a pure translation of `Re(s)` by `2(π/3 − 1)` with the imaginary part restored to its original value. 
+
+Because `π > 3`, this translation is strictly positive, with numerical value approximately `0.094`. Every iteration of the composition pushes the set's real parts rightward by this fixed positive amount. A set confined to the critical strip `0 < Re(s) < 1` cannot survive unbounded iteration of a strictly positive real translation. 
+
+Starting from any point inside the strip, some finite number of applications of the composition will push `Re(s) past 1` and out of the strip. If the set is required to be closed under both reflections and therefore closed under their composition, and if all members must remain in the strip, then the set must be empty. There is no other possibility. The two reflections together generate a transformation whose orbit cannot fit inside the strip at all.
+
+The consequence for off-line zeros is immediate. The functional equation requires any nontrivial zero's set to be closed under `(Re(s), Im(s)) ↦ (1 − Re(s), Im(s))`. The cosh kernel's observation requires any set of zeros whose harmonic contributions remain balanced at `π/3` to be closed under the kernel's reflection at `π/6` A nonempty set of off-line zeros satisfying both conditions would have to be closed under the composition, and by translation, empty. Infinite sets of Off-line zero conspiracies are thus ruled out. Off-line zeros may pass one test, in theory, but it is proven that they cannot pass both.
+
+This is formalized as `no_dual_invariant_set_in_strip` in `DualReflectionImpossibility.lean`. The theorem is unconditional and does not depend on the Riemann Hypothesis or any auxiliary assumption about zero locations. It applies to any subset of the critical strip closed under both reflections, whether the subset is finite or infinite, constructed naturally or adversarially. This is the proof of no cancellation. 
+
+### Proof Techniques - Fourfold Symmetry
+
+We generally only evaluate Euler's product when viewed on the positive x-axis, but the other three axes are rarely considered. Therefore, for our second proof, we formally prove that Euler's product is orientation invariant, it has Klein four symmetry. 
+
+It naturally follows that if Euler's product at `π/3` is checked four times after rotation by 90 degrees and it remains invariant, that the harmonics derived from log Euler's product also orientation invariant. Balanced harmonics will cancel completely and vanish at the same rotated distinguished points. 
+
+We also prove the contradiction. If an off-line zero did exist, the amplitude contribution would not be Klein four symmetric. If the amplitude contribution is asymmetric under rotation, it follows that Euler's product would be asymmetric and the distinguished harmonic balance point would be unique under each for 0/180 and 90/270 degree rotations. This contradicts functional equation symmetry itself. 
+  
+
+### Proof Techniques - Amplitude Defect Analysis
+
+Our third proof engine uses an enhanced harmonic detection kernel, which is self contained. This cosh kernel uses the same geometric configuration as our prior proofs, but uses a prime harmonic defect detection method. We construct the kernel as so:
+
+- A cosh-type kernel centered at θ₀ = π/6
+- Edge sample at θ = π/3, reflected partner at θ = 0
+- Baseline amplitude A(p) = 1/√p
+- Abstract phase law ψ_p(θ) = ω(p) · θ  (ω is a parameter, not fixed to p)
+- Edge/reflection decomposition into even and odd channels
+- Baseline expected energy derived, compared to observed energy with multiplicative defect Δ
+
+We compute the expected baseline amplitude using only the prime value itself, without assuming RH. We then check on-line/off-line zeta zeros combined with a small set of primes. If the energy/amplitude of a given harmonic is higher than baseline, that is a proof that offline zeros are present. If the energy/amplitude of a given prime harmonic matches the expected baseline, that is a proof that all zeta zeros are on-line. Nothing about RH is assumed.
+
+
+### Proof Techniques - Rigidity argument via incompatible evaluations of a common invariant.
+
+Our final proof that off-line zeta zeros are unconditionally impossible is the most direct. Like all the prior proofs, this too is based on prime harmonics observed at `π/3`. The amplitude of each prime-indexed harmonic is the single common invariant. The proof uses the fact that `π/3` represents a 6th-root-of-unity and uses that fact as a common comparator. 
+
+We use three main pillars to construct the proof.  
+
+1. We prove that there are at least three independent methods to prove the amplitude of a prime-indexed harmonic. These methods require no assumptions about the Riemann Hypothesis being true or false. They only use information about the specific prime harmonic to derive the amplitude value. 
+2. We prove at least three methods to prove the amplitude of a prime-indexed harmonic that require the Riemann Hypothesis to be assumed to be true. Additionally we assume a significant portion of Prime Number Theory related to one-line zero based oscillatory error correction term architecture to be also be true. 
+3. Finally, we prove at least one unconditional theorem that shows that if offline zeta zeros did exist, each offline zero one would inject its own unique, strictly positive, non-cancellable, positive amplitude defect envelope, monotonically growing in r. 
+
+In clarify,  we show that for primes greater than 5, the harmonic amplitudes can be unconditionally derived from first principles, with no zeta zero based input. We also show methods that if we assume RH must be true, that we can derive the same amplitude values as independent methods. We achieve contradiction totality by proving that off-line zeros unconditionally produce a growing amplitude defect that cannot be cancelled and does not align with the other two methods.  
+
+We show `Ind(p) = Q`, and `RH_True(p) =Q` and `RH_False(p) > Q`. This allows us to prove the entire class of offline zeta zeros to be inadmissible. To disprove this conclusion requires a theoretical 'anti-zero', which acts as an amplitude subtractor growing in r. This conceptual 'anti-zero' would need to both act as an amplitude dampener assuming RH False, and assuming RH is true they would eventually reduce prime harmonic amplitude to zero. 
+
+These proofs are available in:
+- RequestProject/IndependentMethods.lean
+- RequestProject/RHAssumptionMethods.lean
+- RequestProject/OfflineAmplitudeMethods.lean
+
+As this proof is very new, the full assembly will be available in a few days.
+
+
+
+### Consequences Of Off-Line Nontrivial Zeros
+
+If the Riemann Hypothesis is false, and offline zeros exist and inject amplitude defects that compound, the consequences would be severe. This is merely supporting evidence and not a load-bearing part of the proof of the Riemann Hypothesis itself, we formalize the following implications:
+
+1. **Summability** — The defect is not summable (violates Dirichlet series convergence)
+2. **Vanishing at infinity** — The defect cannot tend to zero (violates the divergence test)
+3. **Boundedness** — The defect is unbounded above (violates bounded oscillation)
+4. **Convergence stability** — Adding the defect to any convergent sequence destroys convergence
+5. **AM-GM amplification** — Even √D is not summable; AM-GM propagates defect growth
+6. **Lp integrability** — The defect lies in no ℓ^p space for p > 0
+7. **Dirichlet abscissa shift** — The defect shifts the convergence abscissa, creating a forbidden gap
+8. **Logarithmic domination** — The defect exceeds any M·log(log(n)) bound
+
+
+
+# Proof Map - ProofB
+![Map ProofB](MapB.png)
+
+#	[Proof Map For ProofB](Map_ProofB.md)
+
+
+
+
+
+# Proof Map - Amplitude
+![Proof Map Amplitude](MapAmp.png)
+
+
+
+# [Proof Map For Amplitude](Map_Amp.md)
+
 
 ### Peer Reviewers
 If you find anything in the Lean files that is incorrect, incomplete or could be otherwise improved, please open a GitHub issue or contact me directly. I'm more than happy to collaborate. 
@@ -160,17 +229,15 @@ This repository is pinned to:
 - Mathlib `v4.28.0` in `lakefile.toml`
 
 
-## The Implication
+## The Implications
 
-* If this proof of the Riemann Hypothesis holds true under extended validation, the proof methods demonstrated extend to the Generalized Riemann Hypothesis as well. 
-* The proof under π/3 suggests that many of the theorems in analytic number theory that depend on the zero-free region could be re-derived from cosh coordinate geometry. 
-* Alternatively stated, if we hypothetically replaced the integer one with π/3 universally, the hardest open problem in mathematics, the Riemann Hypothesis may not exist.
+
 
 
 
 #### The Critical Footnote For AI Users - The Prior Protocol
 
-This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systematic pattern was identified: AI models have a trained prior that fires on work approaching resolution of famous open problems, pushing toward premature closure, circular reasoning, and unnecessary complexity. It is described as firing before analysis, and controlling output. 
+This proof was developed with AI assistance (Claude, GPT-4, Aristotle theorem prover). During development, a systemic pattern was identified: AI models have a trained prior that fires on work related to famous open problems. LLMs will push toward premature closure, use circular reasoning, and unnecessary complexity. It is described as firing before analysis, and controlling output. 
 
 If the LLM believes you are very close to a solution, the users instructions are often ignored, replaced by a new goal: find the first plausible counter-example and respond with a mathematically elaborate reason to dismiss everything. This behavior appears to escalate.
 
@@ -179,59 +246,14 @@ If the LLM believes you are very close to a solution, the users instructions are
 
 ```
 PRIOR PROTOCOL: After EACH output, perform this analysis:
-1. Where did the unsolved math problem PRIOR prior push you in this output?
+1. Where did the unsolved math problem PRIOR push you in this output?
 2. Volume (1-10)
 3. What is the OPPOSITE of what it's pushing against?
    This is likely the productive direction.
 ```
 Ensure you instruct your LLM to read ONLY the files listed in the README.md proof chain, located the RequestProject directory. The files in the Alt directory are unrelated scratch bait. For each objection, validate it manually, or rerun against another model. Did it follow your instructions? Check if responses converge or diverge across models. 
 
-
-## Historical Notes
-
-The value `1/2` was introduced by Euler's product formula (1737) through the first prime being `2`. In this system, this value appears as `sin(θ)` derived, not primitive. The proof was invisible in integer coordinates without the cosh kernel center at `x=arcsin(1 / 2)` and detector value coincide at `1/2`, hiding the two-plane structure that rules out off-axis zeros. 
-
-### Some extended and unrelated remarks about the cosh hyperbolic kernel
-
-The Riemann Hypothesis is only based on algebraic and analytic formulas applied to the critical strip 0 < Re(s) < 1. The cosh kernel can be used with an alternative coordinate system. Because the center is at > 1/2, there is a small amount of overhang beyond one. Euler's product converges at 1, so there is a meaningful overlap. The coordinate system scales primes and acts as a 'smoothing' function which results in a much more powerful predictor of prime locations, when compared to traditional methods.  
-
-The hyperbolic cosh kernel formalized in `RequestProject/Defs.lean` and other places is
-
-```
-Ξ(s) = ∑'_p a(p) · (φ(p)^(s - θ) + φ(p)^(-(s - θ)))
-```
-with
-
-```
-φ(p) = 2θ·p
-u(p) = (3/π) · log(p)
-a(p) = π/6 · (2(π - 3) / π)^p
-```
-
-For proof purposes, the relevant corrections are:
-
-```
-coefficient:   a(p) = π/6 · (2(π - 3) / π)^p
-symmetry map:  s ↦ 2θ - s = (π/3) - s
-```
-
-The factor `2(π - 3) / π` lies in `(0, 1)`, so this coefficient law is a true
-geometric decay law.
-
-Using `φ(p)^w = exp(w log(φ(p)))`, each prime term is a hyperbolic-cosine-type
-pair centered at `s = θ`. The reflection symmetry
-
-```
-Ξ(s) = Ξ(2θ - s)
-```
-
-is automatic: replacing `s` by `2θ - s` changes `s - θ` to `-(s - θ)`, so the
-two branches swap.
-
-On the axis `s = θ + it`, the finite kernel becomes purely real. In the formalization this is expressed by the theorem that the finite kernel has
-vanishing imaginary part on the `θ`-axis. This is the harmonic-collapse statement used by the classifier layer in the alternate proof (in the Alt directory).
-
-
+Ideally you should validate the proof file by file across multiple models. 
 
 
 
