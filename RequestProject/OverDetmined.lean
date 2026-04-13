@@ -3,7 +3,7 @@ import Mathlib
 open Finset Real BigOperators Complex
 
 noncomputable section
-
+namespace OverDetmined
 set_option maxHeartbeats 800000
 
 /-! # Harmonic Observable Framework for Riemann Zeta Zero Configurations
@@ -57,7 +57,7 @@ def IsOffline (s : ℂ) : Prop := s.re ≠ 1 / 2
 def criticalOffset (s : ℂ) : ℝ := s.re - 1 / 2
 
 /-- A configuration has an offline zero. -/
-def HasOfflineZero (C : Finset ℂ) : Prop := ∃ s ∈ C, IsOffline s
+def HasOfflineZeroO (C : Finset ℂ) : Prop := ∃ s ∈ C, IsOffline s
 
 -- ============================================================================
 -- § 2. Riemann Zeta Zero Definitions (using Mathlib's riemannZeta)
@@ -200,7 +200,7 @@ theorem amplitudeExcess_nonneg (C : Finset ℂ) {r : ℝ} (hr : 0 < r) :
     This is because each term is non-negative (cosh ≥ 1) and the offline
     term contributes strictly positive excess (cosh > 1). -/
 theorem amplitudeExcess_pos (C : Finset ℂ) {r : ℝ} (hr : 1 < r)
-    (hoff : HasOfflineZero C) : 0 < amplitudeExcess C r := by
+    (hoff : HasOfflineZeroO C) : 0 < amplitudeExcess C r := by
   obtain ⟨s, hs_mem, hs_off⟩ := hoff
   exact lt_of_lt_of_le (perturbation_pos (criticalOffset_ne_zero hs_off) hr)
     (Finset.single_le_sum (fun x _ => perturbation_nonneg (criticalOffset x) (by linarith)) hs_mem)
@@ -230,7 +230,7 @@ theorem observable_decomposition (C : Finset ℂ) (r : ℝ) (θ : ℝ) :
     For ANY `r > 1`, the amplitude balance test detects the presence of offline zeros.
     This is the strongest form: no offline zero configuration can hide at ANY
     observation point, not just "most" points. -/
-theorem translation_sweep_completeness (C : Finset ℂ) (hoff : HasOfflineZero C) :
+theorem translation_sweep_completeness (C : Finset ℂ) (hoff : HasOfflineZeroO C) :
     ∀ r : ℝ, 1 < r → ¬ PassesAmplitudeBalance C r := by
   intro r hr; exact ne_of_gt (amplitudeExcess_pos C hr hoff)
 
@@ -244,7 +244,7 @@ theorem translation_sweep_completeness (C : Finset ℂ) (hoff : HasOfflineZero C
     (by `perturbation_pos` and AM-GM / cosh ≥ 1 + x²/2),
     and all contributions are non-negative, so they cannot cancel. -/
 theorem no_amplitude_conspiracy (C : Finset ℂ) {r : ℝ} (hr : 1 < r)
-    (hoff : HasOfflineZero C) : ¬ PassesAmplitudeBalance C r :=
+    (hoff : HasOfflineZeroO C) : ¬ PassesAmplitudeBalance C r :=
   translation_sweep_completeness C hoff r hr
 
 /-- **No offline zero conspiracy (amplitude form)**: The set of configurations
@@ -261,7 +261,7 @@ theorem no_offline_zero_conspiracy_amplitude (C : Finset ℂ) {r : ℝ} (hr : 1 
     contains offline zeros and passes the FE rotation test, the amplitude balance
     test still fails at every `r > 1`. The FE symmetry cannot rescue the conspiracy. -/
 theorem no_offline_zero_conspiracy (C : Finset ℂ)
-    (hoff : HasOfflineZero C)
+    (hoff : HasOfflineZeroO C)
     (_ : PassesFERotation C) :
     ∀ r : ℝ, 1 < r → ¬ PassesAmplitudeBalance C r :=
   translation_sweep_completeness C hoff
@@ -285,7 +285,7 @@ theorem no_offline_conspiracy_at_pi_third (C : Finset ℂ) {r : ℝ} (hr : 1 < r
     balance test is empty. This is the formal statement that
     `{C | HasOfflineZero C ∧ PassesAmplitudeBalance C r} = ∅` for `r > 1`. -/
 theorem conspiracy_set_empty {r : ℝ} (hr : 1 < r) :
-    {C : Finset ℂ | HasOfflineZero C ∧ PassesAmplitudeBalance C r} = ∅ := by
+    {C : Finset ℂ | HasOfflineZeroO C ∧ PassesAmplitudeBalance C r} = ∅ := by
   ext C; simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
   intro hoff; exact no_amplitude_conspiracy C hr hoff
 
@@ -423,7 +423,7 @@ def EnrichedConfig.fullConfig (E : EnrichedConfig) : Finset ℂ :=
 
 /-- An enriched configuration with nonempty offline witnesses has an offline zero. -/
 theorem enriched_has_offline (E : EnrichedConfig) (hne : E.offlineWitnesses.Nonempty) :
-    HasOfflineZero E.fullConfig := by
+    HasOfflineZeroO E.fullConfig := by
   obtain ⟨s, hs⟩ := hne
   exact ⟨s, Finset.mem_union_right _ hs, E.witnesses_offline s hs⟩
 
@@ -434,6 +434,76 @@ theorem enriched_no_conspiracy (E : EnrichedConfig) (hne : E.offlineWitnesses.No
     {r : ℝ} (hr : 1 < r) :
     ¬ PassesAmplitudeBalance E.fullConfig r :=
   no_amplitude_conspiracy E.fullConfig hr (enriched_has_offline E hne)
+
+-- ============================================================================
+-- § 14b. Set-Based Zero Classifications and Witness Framework
+-- ============================================================================
+
+/-- An offline nontrivial zeta zero: a genuine nontrivial zero with `Re(s) ≠ 1/2`. -/
+def IsOfflineZetaZero (s : ℂ) : Prop :=
+  IsNontrivialZetaZero s ∧ IsOffline s
+
+/-- Nontrivial zeros of `riemannZeta` (set form). Equivalent to `NontrivialZetaZeros`,
+    but stated directly in terms of Mathlib's `riemannZeta`. -/
+def NontrivialZeros : Set ℂ :=
+  { s : ℂ | riemannZeta s = 0 ∧ 0 < s.re ∧ s.re < 1 }
+
+/-- `NontrivialZeros` coincides with `NontrivialZetaZeros`. -/
+theorem NontrivialZeros_eq : NontrivialZeros = NontrivialZetaZeros := rfl
+
+/-- Off-line nontrivial zeros: those with `Re(s) ≠ 1/2`. -/
+def OffLineZeros : Set ℂ :=
+  { s ∈ NontrivialZeros | s.re ≠ 1 / 2 }
+
+/-- On-line nontrivial zeros: those with `Re(s) = 1/2`. -/
+def OnLineZeros : Set ℂ :=
+  { s ∈ NontrivialZeros | s.re = 1 / 2 }
+
+/-- The set of offline witnesses: complex numbers off the critical line. -/
+def offlineWitnesses : Set ℂ :=
+  { s : ℂ | IsOffline s }
+
+/-- The harmonic difference at π/3: measures how far a real part `σ` is from
+    the critical line, via the cosh kernel at angle π/3.
+    `harmonicDiffPiThird σ = cosh((σ - 1/2) · π/3) - 1`, which is `> 0` iff `σ ≠ 1/2`. -/
+def harmonicDiffPiThird (σ : ℝ) : ℝ :=
+  Real.cosh ((σ - 1 / 2) * (Real.pi / 3)) - 1
+
+/-- The amplitude defect at scale `r` for real part `σ`: the excess cosh-kernel
+    amplitude compared to the critical-line baseline.
+    `amplitudeDefect r σ = 2 r^(1/2) (cosh((σ - 1/2) log r) - 1)`. -/
+def amplitudeDefectO (r : ℝ) (σ : ℝ) : ℝ :=
+  perturbationEnvelope (σ - 1 / 2) r
+
+/-- The witness predicate: `s` exhibits a positive harmonic difference at π/3. -/
+def WitnessPredicate (s : ℂ) : Prop :=
+  0 < harmonicDiffPiThird s.re
+
+/-- The S-cancelling witness set: offline zeros and witnesses with positive
+    harmonic difference. -/
+def S_cancelling_WitnessSet : Set ℂ :=
+  { s ∈ OffLineZeros ∪ offlineWitnesses | WitnessPredicate s }
+
+/-- On-line nontrivial zeros (alias). -/
+def S_online : Set ℂ := OnLineZeros
+
+/-- Off-line nontrivial zeros (alias). -/
+def S_offline : Set ℂ := OffLineZeros
+
+/-- An offline zeta zero causes strictly positive amplitude defect at any `r > 1`. -/
+lemma offline_zero_causes_amplitude_increase (ρ : ℂ) (hρ : IsOfflineZetaZero ρ)
+    {r : ℝ} (_hr_pos : 0 < r) (hr_gt : 1 < r) :
+    amplitudeDefectO r ρ.re > 0 := by
+  exact perturbation_pos (show ρ.re - 1 / 2 ≠ 0 from sub_ne_zero.mpr hρ.2) hr_gt
+
+/-- **No cancellation**: Every offline nontrivial zeta zero produces a witness
+    scale `r` where the amplitude defect is strictly positive and uncancellable. -/
+lemma proof_of_no_cancellation
+    (ρ : ℂ) (hρ : IsOfflineZetaZero ρ) :
+    ∃ (r : ℝ), 0 < r ∧ r ≠ 1 ∧
+      amplitudeDefectO r ρ.re > 0 := by
+  exact ⟨2, by norm_num, by norm_num,
+    offline_zero_causes_amplitude_increase ρ hρ (by norm_num) (by norm_num)⟩
 
 -- ============================================================================
 -- § 15. Example: Known Non-Vanishing Regions
@@ -469,4 +539,4 @@ theorem harmonic_framework_summary :
    fun _s hz h0 h1 => zeta_fe_zero_reflection hz h0 h1,
    fun C _ _r hr hoff => no_amplitude_conspiracy C hr hoff⟩
 
-end
+end OverDetmined

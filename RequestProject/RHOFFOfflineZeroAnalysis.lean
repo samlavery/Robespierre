@@ -227,12 +227,6 @@ Under RH/GRH, every β = 1/2, so both channels see only balanced envelopes.
 Any off-line zero in either function creates a defect in the corresponding channel.
 -/
 
-/-- The nontrivial Dirichlet character mod 3. -/
-def chi3ind (n : ℕ) : ℤ :=
-  if n % 3 = 1 then 1
-  else if n % 3 = 2 then -1
-  else 0
-
 /-! ### §4.1. Channel-Specific Defect
 
 We define the principal and nonprincipal channel contributions and show
