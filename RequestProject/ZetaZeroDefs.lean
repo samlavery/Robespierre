@@ -93,6 +93,26 @@ def offlineWitnesses : Set ℂ :=
 -- ════════════════════════════════════════════════════════════════════════════
 end ZD
 namespace ZetaDefs
+def ClassicalNontrivialZero (ρ : ℂ) : Prop :=
+  ρ ∈ ZD.NontrivialZeros
+
+structure IsHarmonicBalanced (α : Type*) where
+  val : α
+  balanced : Bool := true  -- default true on construction
+
+theorem SetBalance : True := trivial
+
+def violatesBalance {α : Type*} [DecidableEq α]
+    (h : IsHarmonicBalanced α) (S : Set α) [DecidablePred (· ∈ S)] : Bool :=
+  decide (h.val ∈ S)  -- or whatever xyz is
+
+def update {α : Type*} [DecidableEq α]
+    (h : IsHarmonicBalanced α) (S : Set α) [DecidablePred (· ∈ S)] :
+    IsHarmonicBalanced α :=
+  if violatesBalance h S then { h with balanced := false } else h
+
+
+
 
 def NontrivialZeros : Set ℂ :=
   { s : ℂ | 0 < s.re ∧ s.re < 1 ∧ riemannZeta s = 0 }
@@ -274,30 +294,249 @@ theorem midpoint_measurement_detects_offline {β : ℝ} (hβ : β ≠ 1/2) {t : 
     1 < coshDetector β t := coshDetector_gt_one_of_offline hβ ht
 
 -- ════════════════════════════════════════════════════════════════════════════
--- § 3e. Prime-Indexed Observables
+-- § 3c′. Reflected Cosh Kernel Pair (anchored at π/6 and 1 − π/6)
 -- ════════════════════════════════════════════════════════════════════════════
 
-/-- Primes up to P as a finset. -/
-def primeSetUpTo (P : ℕ) : Finset ℕ :=
-  (Finset.range (P + 1)).filter Nat.Prime
+/-!
+A second detection scheme: a pair of cosh kernels anchored at the reflected
+points `π/6` and `1 − π/6`. Unlike `coshDetector` (which vanishes on the
+critical line β = 1/2), neither of these kernels singles out β = 1/2 on its
+own — instead, the critical line is detected by the **agreement** of the
+two kernels. The reflection β ↔ 1−β exchanges the pair.
 
-/-- The normalized detector observable: sum of cosh readings over primes ≤ P.
-    Online (β = 1/2): each summand is 1, total = prime count.
-    Offline (β ≠ 1/2): each summand is > 1, total exceeds prime count. -/
-def actualReducedObservable (β : ℝ) (P : ℕ) : ℝ :=
-  ∑ p ∈ primeSetUpTo P, coshDetector β (Real.log (↑p))
+Nominal support windows (metadata):
+  • `coshDetectorLeft`  is centered on `[0, π/3]`     (around π/6)
+  • `coshDetectorRight` is centered on `[1 − π/3, 1]` (around 1 − π/6)
 
-/-- The balanced comparison target: the number of primes up to P (as ℝ). -/
-def balancedPrimeObservable (P : ℕ) : ℝ :=
-  (primeSetUpTo P).card
+The kernels themselves are unwindowed functions on ℝ; the support sets are
+carried as `Set ℝ` constants for downstream use.
+-/
 
-/-- The raw envelope observable: sum of zero-pair envelopes over primes ≤ P. -/
-def actualEnvelopeObservable (β : ℝ) (P : ℕ) : ℝ :=
-  ∑ p ∈ primeSetUpTo P, zeroPairEnvelope (↑p) β
+/-- Left-anchored cosh kernel, centered at `β = π/6`. -/
+def coshDetectorLeft (β t : ℝ) : ℝ :=
+  Real.cosh ((β - Real.pi / 6) * t)
 
-/-- The observable indexed by a zero's real part. -/
-def actualReducedObservableOfZero (ρ : ℂ) (P : ℕ) : ℝ :=
-  actualReducedObservable ρ.re P
+/-- Right-anchored cosh kernel, centered at `β = 1 − π/6`.
+    The center equals `1/2 − (π/6 − 1/2)`, i.e. the β ↔ 1−β reflection of π/6. -/
+def coshDetectorRight (β t : ℝ) : ℝ :=
+  Real.cosh ((β - (1 - Real.pi / 6)) * t)
+
+/-- Nominal support window for the left kernel: `[0, π/3]`, centered at π/6. -/
+def coshDetectorLeftSupport : Set ℝ := Set.Icc 0 (Real.pi / 3)
+
+/-- Nominal support window for the right kernel: `[1 − π/3, 1]`, centered at 1 − π/6. -/
+def coshDetectorRightSupport : Set ℝ := Set.Icc (1 - Real.pi / 3) 1
+
+/-- Each support window has width π/3 and is symmetric about its anchor. -/
+theorem coshDetectorLeft_center_mem : (Real.pi / 6) ∈ coshDetectorLeftSupport := by
+  refine ⟨?_, ?_⟩ <;> nlinarith [Real.pi_pos]
+
+theorem coshDetectorRight_center_mem : (1 - Real.pi / 6) ∈ coshDetectorRightSupport := by
+  refine ⟨?_, ?_⟩ <;> nlinarith [Real.pi_pos]
+
+/-- The two support windows are reflections of each other under β ↔ 1−β. -/
+theorem coshDetectorSupport_reflect (β : ℝ) :
+    β ∈ coshDetectorLeftSupport ↔ (1 - β) ∈ coshDetectorRightSupport := by
+  unfold coshDetectorLeftSupport coshDetectorRightSupport
+  simp only [Set.mem_Icc]
+  constructor
+  · rintro ⟨h1, h2⟩; exact ⟨by linarith, by linarith⟩
+  · rintro ⟨h1, h2⟩; exact ⟨by linarith, by linarith⟩
+
+/-! ### Read-1 points: each kernel reads 1 at its own center. -/
+
+/-- At its center `β = π/6`, the left kernel reads exactly 1. -/
+theorem coshDetectorLeft_one_at_center (t : ℝ) :
+    coshDetectorLeft (Real.pi / 6) t = 1 := by
+  simp [coshDetectorLeft, Real.cosh_zero]
+
+/-- At its center `β = 1 − π/6`, the right kernel reads exactly 1. -/
+theorem coshDetectorRight_one_at_center (t : ℝ) :
+    coshDetectorRight (1 - Real.pi / 6) t = 1 := by
+  simp [coshDetectorRight, Real.cosh_zero]
+
+/-! ### Off-center strict inequality. -/
+
+/-- For β ≠ π/6 and t ≠ 0, the left kernel reads > 1. -/
+theorem coshDetectorLeft_gt_one {β : ℝ} (hβ : β ≠ Real.pi / 6) {t : ℝ} (ht : t ≠ 0) :
+    1 < coshDetectorLeft β t := by
+  rw [coshDetectorLeft, Real.one_lt_cosh]
+  exact mul_ne_zero (sub_ne_zero.mpr hβ) ht
+
+/-- For β ≠ 1 − π/6 and t ≠ 0, the right kernel reads > 1. -/
+theorem coshDetectorRight_gt_one {β : ℝ} (hβ : β ≠ 1 - Real.pi / 6) {t : ℝ} (ht : t ≠ 0) :
+    1 < coshDetectorRight β t := by
+  rw [coshDetectorRight, Real.one_lt_cosh]
+  exact mul_ne_zero (sub_ne_zero.mpr hβ) ht
+
+/-! ### Reflection swap: β ↔ 1−β exchanges the two kernels. -/
+
+/-- **Reflection swap**: substituting `1 − β` into the left kernel gives the
+    right kernel at `β`. This is the structural invariance of the pair. -/
+theorem coshDetector_reflect_swap (β t : ℝ) :
+    coshDetectorLeft (1 - β) t = coshDetectorRight β t := by
+  unfold coshDetectorLeft coshDetectorRight
+  rw [show ((1 - β) - Real.pi / 6) * t = -((β - (1 - Real.pi / 6)) * t) from by ring]
+  exact Real.cosh_neg _
+
+/-- Symmetric form: substituting `1 − β` into the right kernel gives the
+    left kernel at `β`. -/
+theorem coshDetector_reflect_swap' (β t : ℝ) :
+    coshDetectorRight (1 - β) t = coshDetectorLeft β t := by
+  have := coshDetector_reflect_swap (1 - β) t
+  simpa using this.symm
+
+/-! ### Agreement biconditional: K_L = K_R ↔ β = 1/2. -/
+
+/-- **Agreement biconditional**: the two anchored cosh kernels agree at
+    `(β, t)` if and only if `β = 1/2`, for any nonzero scale `t`.
+
+    Proof: `cosh a = cosh b ↔ |a| = |b|` (`Real.cosh_le_cosh` + antisymmetry),
+    and `|a| = |b| ↔ a = b ∨ a = -b` (`abs_eq_abs`). The `a = b` branch forces
+    `(π/3 − 1)·t = 0`, contradicting `t ≠ 0` and `π/3 ≠ 1`. The `a = -b`
+    branch forces `(2β − 1)·t = 0`, which for `t ≠ 0` gives `β = 1/2`. -/
+theorem coshDetectors_agree_iff {t : ℝ} (ht : t ≠ 0) {β : ℝ} :
+    coshDetectorLeft β t = coshDetectorRight β t ↔ β = 1/2 := by
+  unfold coshDetectorLeft coshDetectorRight
+  constructor
+  · intro hcosh
+    -- From cosh a = cosh b derive |a| = |b| via antisymmetry of ≤.
+    have habs : |(β - Real.pi / 6) * t| = |(β - (1 - Real.pi / 6)) * t| := by
+      apply le_antisymm
+      · exact (Real.cosh_le_cosh.mp hcosh.le)
+      · exact (Real.cosh_le_cosh.mp hcosh.ge)
+    -- |a| = |b| iff a = b ∨ a = -b.
+    rcases abs_eq_abs.mp habs with heq | hneg
+    · -- (β - π/6)·t = (β - (1-π/6))·t ⇒ (π/3 - 1)·t = 0.
+      have hzero : (Real.pi / 3 - 1) * t = 0 := by linarith
+      rcases mul_eq_zero.mp hzero with hpi | ht0
+      · -- π/3 = 1 ⇒ π = 3, contradicts 3 < π (Real.pi_gt_three).
+        exfalso
+        have hπ : Real.pi = 3 := by linarith
+        have : (3 : ℝ) < Real.pi := Real.pi_gt_three
+        linarith
+      · exact absurd ht0 ht
+    · -- (β - π/6)·t = -(β - (1-π/6))·t ⇒ (2β - 1)·t = 0.
+      have hzero : (2 * β - 1) * t = 0 := by linarith
+      rcases mul_eq_zero.mp hzero with hβ | ht0
+      · linarith
+      · exact absurd ht0 ht
+  · rintro rfl
+    -- At β = 1/2 the arguments are negatives, so cosh values coincide.
+    rw [show (1/2 - (1 - Real.pi / 6)) * t = -((1/2 - Real.pi / 6) * t) from by ring]
+    exact (Real.cosh_neg _).symm
+
+/-- **Online case**: on the critical line β = 1/2, the two kernels agree
+    (at every scale, with no `t ≠ 0` hypothesis). -/
+theorem coshDetectors_equal_on_critical_line (t : ℝ) :
+    coshDetectorLeft (1/2) t = coshDetectorRight (1/2) t := by
+  unfold coshDetectorLeft coshDetectorRight
+  rw [show (1/2 - (1 - Real.pi / 6)) * t = -((1/2 - Real.pi / 6) * t) from by ring]
+  exact (Real.cosh_neg _).symm
+
+/-- **Disagreement witnesses offline**: if the two kernels disagree at any
+    nonzero scale, then β ≠ 1/2. -/
+theorem coshDetectors_disagree_of_offline {t : ℝ} (ht : t ≠ 0) {β : ℝ}
+    (h : coshDetectorLeft β t ≠ coshDetectorRight β t) : β ≠ 1/2 := by
+  intro hβ
+  exact h ((coshDetectors_agree_iff ht).mpr hβ)
+
+/-! ### Connection to the original `coshDetector`.
+
+Sum-to-product and product-to-sum identities tie the pair back to the
+single-kernel detector:
+
+  • **Sum**: `K_L + K_R = 2·cosh((1−π/3)·t/2) · coshDetector β t`.
+    The pair sum factors as a β-INDEPENDENT calibration times the original
+    detector — dividing out the scalar recovers `coshDetector` exactly.
+
+  • **Product**: `K_L · K_R = (cosh((1−π/3)·t) + coshDetector β (2t)) / 2`.
+    A β-INDEPENDENT constant plus the original detector at doubled log-scale;
+    β-dependence is isolated in the `coshDetector β (2t)` term.
+-/
+
+/-- **Pair sum identity**: the sum of the two anchored kernels factors as
+    a β-independent scalar times the original `coshDetector`. -/
+theorem coshDetector_pair_sum (β t : ℝ) :
+    coshDetectorLeft β t + coshDetectorRight β t =
+      2 * Real.cosh ((1 - Real.pi / 3) * t / 2) * coshDetector β t := by
+  unfold coshDetectorLeft coshDetectorRight coshDetector
+  -- Reshape arguments to (s + d) and (s - d) with s = (β−1/2)·t, d = (1/2−π/6)·t.
+  have h1 : (β - Real.pi / 6) * t = (β - 1/2) * t + (1/2 - Real.pi / 6) * t := by ring
+  have h2 : (β - (1 - Real.pi / 6)) * t = (β - 1/2) * t - (1/2 - Real.pi / 6) * t := by ring
+  have h3 : (1 - Real.pi / 3) * t / 2 = (1/2 - Real.pi / 6) * t := by ring
+  rw [h1, h2, h3, Real.cosh_add, Real.cosh_sub]
+  ring
+
+/-- **Inverse sum factorization**: recover `coshDetector` from the pair sum
+    by dividing out the β-independent calibration. The divisor is strictly
+    positive (cosh ≥ 1) so the division is safe. -/
+theorem coshDetector_from_pair_sum (β t : ℝ) :
+    coshDetector β t =
+      (coshDetectorLeft β t + coshDetectorRight β t) /
+        (2 * Real.cosh ((1 - Real.pi / 3) * t / 2)) := by
+  have hpos : (0 : ℝ) < Real.cosh ((1 - Real.pi / 3) * t / 2) := Real.cosh_pos _
+  have hne : 2 * Real.cosh ((1 - Real.pi / 3) * t / 2) ≠ 0 :=
+    mul_ne_zero two_ne_zero hpos.ne'
+  rw [coshDetector_pair_sum]
+  field_simp
+
+/-- **Pair product identity**: the product of the two anchored kernels
+    decomposes into a β-independent term plus the original detector at
+    doubled scale. -/
+theorem coshDetector_pair_product (β t : ℝ) :
+    coshDetectorLeft β t * coshDetectorRight β t =
+      (Real.cosh ((1 - Real.pi / 3) * t) + coshDetector β (2 * t)) / 2 := by
+  unfold coshDetectorLeft coshDetectorRight coshDetector
+  -- Reshape: let A = (β−π/6)·t and B = (β−(1−π/6))·t. Then A+B = (β−1/2)·(2t)
+  -- and A−B = (1−π/3)·t. Product-to-sum gives cosh A · cosh B = (cosh(A−B) + cosh(A+B))/2.
+  have hpm : (β - 1/2) * (2 * t) =
+      (β - Real.pi / 6) * t + (β - (1 - Real.pi / 6)) * t := by ring
+  have hmp : (1 - Real.pi / 3) * t =
+      (β - Real.pi / 6) * t - (β - (1 - Real.pi / 6)) * t := by ring
+  rw [hpm, hmp, Real.cosh_add, Real.cosh_sub]
+  ring
+
+/-- **Pair-sum calibration is strictly positive** — guarantees the inverse
+    factorization divisor never vanishes at any log-scale. -/
+theorem coshDetector_pair_calibration_pos (t : ℝ) :
+    0 < 2 * Real.cosh ((1 - Real.pi / 3) * t / 2) :=
+  mul_pos two_pos (Real.cosh_pos _)
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- § 3e. Per-Prime Observables (Mathlib-native, indexed by any prime)
+-- ════════════════════════════════════════════════════════════════════════════
+
+/-- The normalized detector observable at a single prime `p`: the cosh
+    reading `cosh((β - 1/2) · log p)`.
+    Online (β = 1/2): value is 1.
+    Offline (β ≠ 1/2): value is > 1. -/
+def actualReducedObservable (β : ℝ) (p : ℕ) : ℝ :=
+  coshDetector β (Real.log (↑p))
+
+/-- The balanced comparison target at a single prime: always 1. -/
+def balancedPrimeObservable (_p : ℕ) : ℝ := 1
+
+/-- The raw envelope observable at a single prime `p`: the zero-pair
+    envelope `p^β + p^(1-β)`. -/
+def actualEnvelopeObservable (β : ℝ) (p : ℕ) : ℝ :=
+  zeroPairEnvelope (↑p) β
+
+/-- The observable indexed by a zero's real part, at a single prime `p`. -/
+def actualReducedObservableOfZero (ρ : ℂ) (p : ℕ) : ℝ :=
+  actualReducedObservable ρ.re p
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- § 3f. Realizable Zeros
+-- ════════════════════════════════════════════════════════════════════════════
+
+/-- A **realizable zero** is a nontrivial zero whose reflected even-envelope
+passes the universal prime-indexed closure test: the cosh detector reads 1
+at every prime. This is the set of zeros consistent with the symmetric
+Euler-product coordinate system. -/
+def RealizableZeros : Set ℂ :=
+  { s ∈ ZD.NontrivialZeros |
+    ∀ p : ℕ, Nat.Prime p → coshDetector s.re (Real.log (↑p)) = 1 }
 
 -- Basic properties
 
@@ -407,23 +646,3 @@ theorem envelopeRatio_gt_one_of_offlineZero (ρ : ℂ) (hρ : IsOfflineZetaZero 
   envelopeRatio_gt_one_of_offline hr hr1 hρ.2
 
 end ZetaDefs
-
--- ════════════════════════════════════════════════════════════════════════════
--- § 4. RH Connection
--- ════════════════════════════════════════════════════════════════════════════
-
-/-- RH implies every nontrivial zero lies on the critical line. -/
-theorem rh_implies_critical_line (hRH : RiemannHypothesis) (ρ : ℂ)
-    (hρ : ρ ∈ ZD.NontrivialZeros) : ρ.re = 1 / 2 := by
-  have h0 := hρ.1
-  have h1 := hρ.2.1
-  have hζ := hρ.2.2
-  apply hRH ρ hζ
-  · intro ⟨n, hn⟩
-    rw [hn] at h0
-    simp at h0
-    have := n.cast_nonneg (α := ℝ)
-    linarith
-  · intro heq; rw [heq] at h1; simp at h1
-
-end

@@ -792,13 +792,12 @@ theorem amplitudeDefect_pos_at_prime (p : ℕ) (hp : Nat.Prime p) {β : ℝ} (h�
     0 < amplitudeDefect (↑p) β :=
   offline_amplitude_defect_pos (prime_cast_pos p hp) (prime_cast_ne_one p hp) hβ
 
-/-- The cumulative defect over any finite set of primes is strictly positive
-if β ≠ 1/2. Each prime contributes a strictly positive term. -/
-theorem cumulative_defect_pos {β : ℝ} (hβ : β ≠ 1 / 2) (ps : Finset ℕ)
-    (hps : ∀ p ∈ ps, Nat.Prime p) (hne : ps.Nonempty) :
-    0 < ps.sum (fun p => amplitudeDefect (↑p) β) := by
-  obtain ⟨p₀, hp₀⟩ := hne
-  exact Finset.sum_pos (fun p hp => amplitudeDefect_pos_at_prime p (hps p hp) hβ) ⟨p₀, hp₀⟩
+/-- **[UNCONDITIONAL]** **Cumulative defect positivity (all primes)**: For an
+off-line β, the amplitude defect is strictly positive at *every* prime —
+universal pointwise, no finset, no nonempty hypothesis. -/
+theorem cumulative_defect_pos {β : ℝ} (hβ : β ≠ 1 / 2) :
+    ∀ p : ℕ, Nat.Prime p → 0 < amplitudeDefect (↑p) β :=
+  fun p hp => amplitudeDefect_pos_at_prime p hp hβ
 
 /-! ## §8. Compatibility Theorem: Unified View
 
@@ -884,50 +883,6 @@ cross-channel cancellation because the channels are orthogonal
 nonneg per zero pair.
 -/
 
-/-! ## §9b. Bridge to Mathlib's RiemannHypothesis -/
-
-/-- **All nontrivial zeros on line → RH**: If every zero in the critical strip
-has Re = 1/2, then `RiemannHypothesis` holds. The proof handles three cases:
-- Re ≥ 1: `riemannZeta_ne_zero_of_one_le_re` (no zeros there)
-- 0 < Re < 1: the hypothesis directly
-- Re ≤ 0: completed zeta functional equation — ξ(1-s) = ξ(s) = 0 gives
-  ζ(1-s) = 0 with Re(1-s) ≥ 1, contradicting non-vanishing. -/
-theorem no_offline_zeros_implies_rh
-    (hline : ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2) :
-    RiemannHypothesis := by
-  intro s hs hnt hne1
-  by_cases h1 : 1 ≤ s.re
-  · exact absurd hs (riemannZeta_ne_zero_of_one_le_re h1)
-  push_neg at h1
-  by_cases h0 : 0 < s.re
-  · exact hline s ⟨h0, h1, hs⟩
-  push_neg at h0
-  exfalso
-  have hne0 : s ≠ 0 := fun h => by rw [h] at hs; simp [riemannZeta_zero] at hs
-  have hdef : completedRiemannZeta s / s.Gammaℝ = 0 :=
-    (riemannZeta_def_of_ne_zero hne0).symm.trans hs
-  rw [div_eq_zero_iff] at hdef
-  have hξ : completedRiemannZeta s = 0 := by
-    rcases hdef with h | h
-    · exact h
-    · exfalso; simp only [Complex.Gammaℝ] at h
-      have hpi : (↑Real.pi : ℂ) ^ (-s / 2) ≠ 0 :=
-        Complex.cpow_ne_zero_iff.mpr (Or.inl (by exact_mod_cast Real.pi_pos.ne'))
-      have hΓ : Complex.Gamma (s / 2) = 0 := (mul_eq_zero.mp h).resolve_left hpi
-      rw [Complex.Gamma_eq_zero_iff] at hΓ; obtain ⟨m, hm⟩ := hΓ
-      have hs_eq : s = -2 * ↑m := by linear_combination 2 * hm
-      rcases m.eq_zero_or_pos with rfl | hm_pos
-      · simp at hs_eq; exact hne0 hs_eq
-      · exact hnt ⟨m - 1, by
-          have : -2 * ((↑(m - 1) : ℂ) + 1) = -2 * (↑m : ℂ) := by
-            congr 1; exact_mod_cast Nat.sub_add_cancel hm_pos
-          rw [this]; exact hs_eq⟩
-  have hξ1 : completedRiemannZeta (1 - s) = 0 :=
-    (completedRiemannZeta_one_sub s).trans hξ
-  have hne1' : (1 : ℂ) - s ≠ 0 := sub_ne_zero.mpr (Ne.symm hne1)
-  have hζ1s : riemannZeta (1 - s) = 0 := by
-    rw [riemannZeta_def_of_ne_zero hne1', hξ1, zero_div]
-  exact riemannZeta_ne_zero_of_one_le_re (by simp only [Complex.sub_re, Complex.one_re]; linarith) hζ1s
 
 /-! ## §10. Diagnostic API
 
@@ -979,9 +934,10 @@ structure OfflineDiagnostic (ρ : ℂ) where
   ratio_gt_one : 1 < envelopeRatio (Real.pi / 3) ρ.re
   signal_ne_zero : ∀ p : ℕ, Nat.Prime p → harmonicSignalDefect p ρ.re ≠ 0
   witness : 0 < amplitudeDefect (Real.pi / 3) ρ.re
+  /-- At every prime, the amplitude defect is strictly positive — universal
+  pointwise "all primes" form (no finset, no nonempty hypothesis). -/
   cumulative_pos :
-    ∀ ps : Finset ℕ, (∀ p ∈ ps, Nat.Prime p) → ps.Nonempty →
-      0 < ps.sum (fun p => amplitudeDefect (↑p) ρ.re)
+    ∀ p : ℕ, Nat.Prime p → 0 < amplitudeDefect (↑p) ρ.re
 
 /-- **Nontrivial zero diagnostic** (assumption-free). -/
 def diagnostic_nontrivial (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
@@ -1008,6 +964,324 @@ def diagnostic_offline (ρ : ℂ) (hρ : ρ ∈ ZD.OffLineZeros) :
   ratio_gt_one := envelopeRatio_gt_one_of_offline pi_third_pos pi_third_ne_one hρ.2
   signal_ne_zero p hp := harmonicSignalDefect_ne_zero_of_offline p hp hρ.2
   witness := offline_amplitude_defect_pos pi_third_pos pi_third_ne_one hρ.2
-  cumulative_pos ps hps hne := cumulative_defect_pos hρ.2 ps hps hne
+  cumulative_pos := cumulative_defect_pos hρ.2
+
+/-! ## §11. Pair-Anchored Envelope Theory + Two-Kernel Diagnostic Records
+
+Parallel envelope theory anchored at `π/6` and `1 − π/6`, and a bundled
+`TwoKernelDiagnostic` / `TwoKernelOnlineDiagnostic` / `TwoKernelOfflineDiagnostic`
+record API mirroring the single-kernel `NontrivialDiagnostic` / `OnlineDiagnostic`
+/ `OfflineDiagnostic` structures from §10.
+
+**Formal vs substantive**: the pair envelopes
+`zeroPairEnvelopeLeft r β = r^β + r^(π/3 − β)` and the analogous right one do
+NOT correspond to ζ's zero-pair envelopes (which use the functional equation
+reflection β ↔ 1 − β, not β ↔ π/3 − β). They are *formal* analogs of the
+existing envelope theory; their value is the parallel cosh factorization
+
+  zeroPairEnvelopeLeft  r β = balancedEnvelopeLeft  r · coshDetectorLeft  β (log r)
+  zeroPairEnvelopeRight r β = balancedEnvelopeRight r · coshDetectorRight β (log r)
+
+which lets us reuse the single-kernel proofs at the new anchors. The
+*discriminating* pair observable for ζ is the kernel agreement
+`coshDetectorLeft = coshDetectorRight` (from §3c′), not either envelope
+alone; this is what `TwoKernelDiagnostic` packages.
+-/
+
+/-! ### §11.1. Scale helpers at the reflected anchors -/
+
+theorem pi_sixth_pos : (0 : ℝ) < Real.pi / 6 := by positivity
+
+theorem pi_sixth_lt_one : Real.pi / 6 < 1 := by
+  have := Real.pi_lt_d4; linarith
+
+theorem one_minus_pi_sixth_pos : (0 : ℝ) < 1 - Real.pi / 6 := by
+  have := Real.pi_lt_d4; linarith
+
+theorem one_minus_pi_sixth_lt_one : 1 - Real.pi / 6 < 1 := by
+  have := Real.pi_gt_three; linarith
+
+theorem pi_sixth_ne_half : Real.pi / 6 ≠ 1 / 2 := by
+  intro h; have := Real.pi_gt_three; linarith
+
+theorem one_minus_pi_sixth_ne_half : 1 - Real.pi / 6 ≠ 1 / 2 := by
+  intro h; have := Real.pi_gt_three; linarith
+
+/-! ### §11.2. Pair-anchored envelopes + balanced values -/
+
+/-- **Left-anchored zero-pair envelope**: `r^β + r^(π/3 − β)`. Minimum
+    `2·r^(π/6)` at β = π/6 (the left kernel anchor). -/
+def zeroPairEnvelopeLeft (r β : ℝ) : ℝ := r ^ β + r ^ (Real.pi / 3 - β)
+
+/-- **Right-anchored zero-pair envelope**: `r^β + r^(2 − π/3 − β)`. Minimum
+    `2·r^(1 − π/6)` at β = 1 − π/6 (the right kernel anchor). -/
+def zeroPairEnvelopeRight (r β : ℝ) : ℝ := r ^ β + r ^ (2 - Real.pi / 3 - β)
+
+/-- Balanced value of the left-anchored envelope: `2·r^(π/6)`. -/
+def balancedEnvelopeLeft (r : ℝ) : ℝ := 2 * r ^ (Real.pi / 6)
+
+/-- Balanced value of the right-anchored envelope: `2·r^(1 − π/6)`. -/
+def balancedEnvelopeRight (r : ℝ) : ℝ := 2 * r ^ (1 - Real.pi / 6)
+
+theorem balancedEnvelopeLeft_pos {r : ℝ} (hr : 0 < r) : 0 < balancedEnvelopeLeft r := by
+  unfold balancedEnvelopeLeft; positivity
+
+theorem balancedEnvelopeRight_pos {r : ℝ} (hr : 0 < r) : 0 < balancedEnvelopeRight r := by
+  unfold balancedEnvelopeRight; positivity
+
+/-! ### §11.3. Cosh factorization: envelope = balanced · kernel -/
+
+/-- **Left factorization**: `zeroPairEnvelopeLeft r β = 2·r^(π/6) · coshDetectorLeft β (log r)`. -/
+theorem zeroPairEnvelopeLeft_eq_cosh {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    zeroPairEnvelopeLeft r β = balancedEnvelopeLeft r * coshDetectorLeft β (Real.log r) := by
+  unfold zeroPairEnvelopeLeft balancedEnvelopeLeft coshDetectorLeft
+  rw [Real.cosh_eq]
+  have key : ∀ a : ℝ, Real.exp (a * Real.log r) = r ^ a := fun a => by
+    rw [mul_comm, Real.rpow_def_of_pos hr]
+  rw [key,
+      show -((β - Real.pi / 6) * Real.log r) = (-(β - Real.pi / 6)) * Real.log r from by ring,
+      key]
+  have h1 : r ^ (Real.pi / 6 : ℝ) * r ^ (β - Real.pi / 6) = r ^ β := by
+    rw [← Real.rpow_add hr]; congr 1; ring
+  have h2 : r ^ (Real.pi / 6 : ℝ) * r ^ (-(β - Real.pi / 6)) = r ^ (Real.pi / 3 - β) := by
+    rw [← Real.rpow_add hr]; congr 1; ring
+  nlinarith
+
+/-- **Right factorization**: `zeroPairEnvelopeRight r β = 2·r^(1−π/6) · coshDetectorRight β (log r)`. -/
+theorem zeroPairEnvelopeRight_eq_cosh {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    zeroPairEnvelopeRight r β = balancedEnvelopeRight r * coshDetectorRight β (Real.log r) := by
+  unfold zeroPairEnvelopeRight balancedEnvelopeRight coshDetectorRight
+  rw [Real.cosh_eq]
+  have key : ∀ a : ℝ, Real.exp (a * Real.log r) = r ^ a := fun a => by
+    rw [mul_comm, Real.rpow_def_of_pos hr]
+  rw [key,
+      show -((β - (1 - Real.pi / 6)) * Real.log r) =
+        (-(β - (1 - Real.pi / 6))) * Real.log r from by ring,
+      key]
+  have h1 : r ^ (1 - Real.pi / 6 : ℝ) * r ^ (β - (1 - Real.pi / 6)) = r ^ β := by
+    rw [← Real.rpow_add hr]; congr 1; ring
+  have h2 : r ^ (1 - Real.pi / 6 : ℝ) * r ^ (-(β - (1 - Real.pi / 6))) =
+      r ^ (2 - Real.pi / 3 - β) := by
+    rw [← Real.rpow_add hr]; congr 1; ring
+  nlinarith
+
+/-- **Envelope symmetry** (left): `zeroPairEnvelopeLeft r β = zeroPairEnvelopeLeft r (π/3 − β)`.
+    The left envelope is even in `(β − π/6)`. -/
+theorem zeroPairEnvelopeLeft_symm (r β : ℝ) :
+    zeroPairEnvelopeLeft r β = zeroPairEnvelopeLeft r (Real.pi / 3 - β) := by
+  unfold zeroPairEnvelopeLeft
+  have : (Real.pi / 3 - (Real.pi / 3 - β)) = β := by ring
+  rw [this]; ring
+
+/-- **Envelope symmetry** (right): analogous even symmetry around the right anchor. -/
+theorem zeroPairEnvelopeRight_symm (r β : ℝ) :
+    zeroPairEnvelopeRight r β = zeroPairEnvelopeRight r (2 - Real.pi / 3 - β) := by
+  unfold zeroPairEnvelopeRight
+  have : (2 - Real.pi / 3 - (2 - Real.pi / 3 - β)) = β := by ring
+  rw [this]; ring
+
+/-! ### §11.4. Pair-anchored defects + biconditionals -/
+
+/-- Left-anchored defect: `zeroPairEnvelopeLeft r β − 2·r^(π/6)`. Vanishes iff β = π/6. -/
+def amplitudeDefectLeft (r β : ℝ) : ℝ :=
+  zeroPairEnvelopeLeft r β - balancedEnvelopeLeft r
+
+/-- Right-anchored defect: `zeroPairEnvelopeRight r β − 2·r^(1−π/6)`. Vanishes iff β = 1−π/6. -/
+def amplitudeDefectRight (r β : ℝ) : ℝ :=
+  zeroPairEnvelopeRight r β - balancedEnvelopeRight r
+
+/-- Left defect equals `balancedLeft · (coshDetectorLeft − 1)`. -/
+theorem amplitudeDefectLeft_eq_cosh_excess {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    amplitudeDefectLeft r β =
+      balancedEnvelopeLeft r * (coshDetectorLeft β (Real.log r) - 1) := by
+  unfold amplitudeDefectLeft
+  rw [zeroPairEnvelopeLeft_eq_cosh hr]; ring
+
+/-- Right defect equals `balancedRight · (coshDetectorRight − 1)`. -/
+theorem amplitudeDefectRight_eq_cosh_excess {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    amplitudeDefectRight r β =
+      balancedEnvelopeRight r * (coshDetectorRight β (Real.log r) - 1) := by
+  unfold amplitudeDefectRight
+  rw [zeroPairEnvelopeRight_eq_cosh hr]; ring
+
+/-- **Left defect nonneg**: `amplitudeDefectLeft r β ≥ 0` for r > 0. -/
+theorem amplitudeDefectLeft_nonneg {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    0 ≤ amplitudeDefectLeft r β := by
+  rw [amplitudeDefectLeft_eq_cosh_excess hr]
+  have hbal : 0 < balancedEnvelopeLeft r := balancedEnvelopeLeft_pos hr
+  have hcosh : 1 ≤ coshDetectorLeft β (Real.log r) := by
+    unfold coshDetectorLeft; exact Real.one_le_cosh _
+  nlinarith
+
+/-- **Right defect nonneg**: `amplitudeDefectRight r β ≥ 0` for r > 0. -/
+theorem amplitudeDefectRight_nonneg {r : ℝ} (hr : 0 < r) (β : ℝ) :
+    0 ≤ amplitudeDefectRight r β := by
+  rw [amplitudeDefectRight_eq_cosh_excess hr]
+  have hbal : 0 < balancedEnvelopeRight r := balancedEnvelopeRight_pos hr
+  have hcosh : 1 ≤ coshDetectorRight β (Real.log r) := by
+    unfold coshDetectorRight; exact Real.one_le_cosh _
+  nlinarith
+
+/-- **Left defect biconditional**: `amplitudeDefectLeft r β = 0 ↔ β = π/6`, for r > 0, r ≠ 1. -/
+theorem amplitudeDefectLeft_eq_zero_iff {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ} :
+    amplitudeDefectLeft r β = 0 ↔ β = Real.pi / 6 := by
+  rw [amplitudeDefectLeft_eq_cosh_excess hr]
+  have hbal : (0 : ℝ) < balancedEnvelopeLeft r := balancedEnvelopeLeft_pos hr
+  rw [mul_eq_zero]
+  constructor
+  · rintro (hbal0 | hc)
+    · exact absurd hbal0 hbal.ne'
+    · have : coshDetectorLeft β (Real.log r) = 1 := by linarith
+      by_contra hβ
+      have hlog : Real.log r ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hr hr1
+      exact absurd this (ne_of_gt (coshDetectorLeft_gt_one hβ hlog))
+  · rintro rfl; right; rw [coshDetectorLeft_one_at_center]; ring
+
+/-- **Right defect biconditional**: `amplitudeDefectRight r β = 0 ↔ β = 1 − π/6`, for r > 0, r ≠ 1. -/
+theorem amplitudeDefectRight_eq_zero_iff {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ} :
+    amplitudeDefectRight r β = 0 ↔ β = 1 - Real.pi / 6 := by
+  rw [amplitudeDefectRight_eq_cosh_excess hr]
+  have hbal : (0 : ℝ) < balancedEnvelopeRight r := balancedEnvelopeRight_pos hr
+  rw [mul_eq_zero]
+  constructor
+  · rintro (hbal0 | hc)
+    · exact absurd hbal0 hbal.ne'
+    · have : coshDetectorRight β (Real.log r) = 1 := by linarith
+      by_contra hβ
+      have hlog : Real.log r ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hr hr1
+      exact absurd this (ne_of_gt (coshDetectorRight_gt_one hβ hlog))
+  · rintro rfl; right; rw [coshDetectorRight_one_at_center]; ring
+
+/-- Left defect is strictly positive off the left anchor. -/
+theorem amplitudeDefectLeft_pos {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ}
+    (hβ : β ≠ Real.pi / 6) :
+    0 < amplitudeDefectLeft r β := by
+  have hnn := amplitudeDefectLeft_nonneg hr β
+  have hne : amplitudeDefectLeft r β ≠ 0 := by
+    intro h; exact hβ ((amplitudeDefectLeft_eq_zero_iff hr hr1).mp h)
+  exact lt_of_le_of_ne hnn (Ne.symm hne)
+
+/-- Right defect is strictly positive off the right anchor. -/
+theorem amplitudeDefectRight_pos {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ}
+    (hβ : β ≠ 1 - Real.pi / 6) :
+    0 < amplitudeDefectRight r β := by
+  have hnn := amplitudeDefectRight_nonneg hr β
+  have hne : amplitudeDefectRight r β ≠ 0 := by
+    intro h; exact hβ ((amplitudeDefectRight_eq_zero_iff hr hr1).mp h)
+  exact lt_of_le_of_ne hnn (Ne.symm hne)
+
+/-! ### §11.5. Agreement-defect: the DISCRIMINATING pair observable
+
+The pair-kernel agreement `K_L = K_R ↔ β = 1/2` (for nonzero scale) is the
+observable that actually separates on-line from off-line zeros — unlike the
+individual left/right defects above, which vanish at π/6 and 1−π/6 rather
+than at 1/2. We package the agreement as `pairAgreementDefect r β` for use
+in downstream diagnostics.
+-/
+
+/-- **Pair agreement defect**: `(coshDetectorLeft β (log r) − coshDetectorRight β (log r))²`.
+    This is the squared disagreement between the two kernels at log-scale r;
+    nonneg always, zero iff β = 1/2 for r ≠ 1. -/
+def pairAgreementDefect (r β : ℝ) : ℝ :=
+  (coshDetectorLeft β (Real.log r) - coshDetectorRight β (Real.log r)) ^ 2
+
+/-- Pair agreement defect is nonneg (a perfect square). -/
+theorem pairAgreementDefect_nonneg (r β : ℝ) : 0 ≤ pairAgreementDefect r β := sq_nonneg _
+
+/-- **Pair agreement biconditional**: `pairAgreementDefect r β = 0 ↔ β = 1/2`, for r > 0, r ≠ 1. -/
+theorem pairAgreementDefect_eq_zero_iff {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ} :
+    pairAgreementDefect r β = 0 ↔ β = 1 / 2 := by
+  unfold pairAgreementDefect
+  rw [sq_eq_zero_iff, sub_eq_zero]
+  exact coshDetectors_agree_iff (Real.log_ne_zero_of_pos_of_ne_one hr hr1)
+
+/-- Pair agreement defect is strictly positive off the critical line. -/
+theorem pairAgreementDefect_pos {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1) {β : ℝ}
+    (hβ : β ≠ 1 / 2) :
+    0 < pairAgreementDefect r β := by
+  have hnn := pairAgreementDefect_nonneg r β
+  have hne : pairAgreementDefect r β ≠ 0 := by
+    intro h; exact hβ ((pairAgreementDefect_eq_zero_iff hr hr1).mp h)
+  exact lt_of_le_of_ne hnn (Ne.symm hne)
+
+/-! ### §11.6. Diagnostic records: TwoKernelDiagnostic and Online/Offline variants -/
+
+/-- **Nontrivial two-kernel diagnostic**: the pair facts that hold unconditionally
+for any nontrivial zero (no online/offline assumption). All tests at fixed scale r = π/3. -/
+structure TwoKernelDiagnostic (ρ : ℂ) where
+  in_strip : 0 < ρ.re ∧ ρ.re < 1
+  left_defect_nonneg : 0 ≤ amplitudeDefectLeft (Real.pi / 3) ρ.re
+  right_defect_nonneg : 0 ≤ amplitudeDefectRight (Real.pi / 3) ρ.re
+  agreement_defect_nonneg : 0 ≤ pairAgreementDefect (Real.pi / 3) ρ.re
+  online_or_offline : ρ.re = 1 / 2 ∨ ρ.re ≠ 1 / 2
+  reflect_swap : ∀ y : ℝ,
+    coshDetectorLeft (1 - ρ.re) y = coshDetectorRight ρ.re y
+
+/-- **Online two-kernel diagnostic**: detector agreement at the critical line. -/
+structure TwoKernelOnlineDiagnostic (ρ : ℂ) where
+  on_line : ρ.re = 1 / 2
+  agreement_defect_zero : pairAgreementDefect (Real.pi / 3) ρ.re = 0
+  kernels_agree_everywhere : ∀ y : ℝ,
+    coshDetectorLeft ρ.re y = coshDetectorRight ρ.re y
+  pair_sum_is_calibration : ∀ y : ℝ,
+    coshDetectorLeft ρ.re y + coshDetectorRight ρ.re y =
+      2 * Real.cosh ((1 - Real.pi / 3) * y / 2)
+
+/-- **Offline two-kernel diagnostic**: strict kernel disagreement at every nonzero scale. -/
+structure TwoKernelOfflineDiagnostic (ρ : ℂ) where
+  off_line : ρ.re ≠ 1 / 2
+  agreement_defect_pos : 0 < pairAgreementDefect (Real.pi / 3) ρ.re
+  kernels_disagree_at_nonzero :
+    ∀ {y : ℝ}, y ≠ 0 → coshDetectorLeft ρ.re y ≠ coshDetectorRight ρ.re y
+  kernels_disagree_at_primes :
+    ∀ p : ℕ, Nat.Prime p →
+      coshDetectorLeft ρ.re (Real.log (↑p)) ≠ coshDetectorRight ρ.re (Real.log (↑p))
+  pair_sum_strict_excess :
+    ∀ {y : ℝ}, y ≠ 0 →
+      2 * Real.cosh ((1 - Real.pi / 3) * y / 2) <
+        coshDetectorLeft ρ.re y + coshDetectorRight ρ.re y
+
+/-! ### §11.7. Diagnostic constructors -/
+
+/-- **Nontrivial two-kernel diagnostic** (unconditional). -/
+def diagnostic_twoKernel (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
+    TwoKernelDiagnostic ρ where
+  in_strip := ⟨hρ.1, hρ.2.1⟩
+  left_defect_nonneg := amplitudeDefectLeft_nonneg pi_third_pos _
+  right_defect_nonneg := amplitudeDefectRight_nonneg pi_third_pos _
+  agreement_defect_nonneg := pairAgreementDefect_nonneg _ _
+  online_or_offline := Classical.em _
+  reflect_swap y := coshDetector_reflect_swap ρ.re y
+
+/-- **Online two-kernel diagnostic**: kernels agree everywhere. -/
+def diagnostic_twoKernel_online (ρ : ℂ) (hρ : ρ ∈ ZD.OnLineZeros) :
+    TwoKernelOnlineDiagnostic ρ where
+  on_line := hρ.2
+  agreement_defect_zero := by
+    rw [hρ.2]
+    exact (pairAgreementDefect_eq_zero_iff pi_third_pos pi_third_ne_one).mpr rfl
+  kernels_agree_everywhere y := by
+    rw [hρ.2]; exact coshDetectors_equal_on_critical_line y
+  pair_sum_is_calibration y := by
+    rw [coshDetector_pair_sum, hρ.2, coshDetector_one_of_online]; ring
+
+/-- **Offline two-kernel diagnostic**: kernels disagree at every nonzero scale. -/
+def diagnostic_twoKernel_offline (ρ : ℂ) (hρ : ρ ∈ ZD.OffLineZeros) :
+    TwoKernelOfflineDiagnostic ρ where
+  off_line := hρ.2
+  agreement_defect_pos := pairAgreementDefect_pos pi_third_pos pi_third_ne_one hρ.2
+  kernels_disagree_at_nonzero hy h := by
+    exact hρ.2 ((coshDetectors_agree_iff hy).mp h)
+  kernels_disagree_at_primes p hp h := by
+    have hlog : Real.log (↑p) ≠ 0 :=
+      Real.log_ne_zero_of_pos_of_ne_one
+        (Nat.cast_pos.mpr hp.pos) (by exact_mod_cast hp.one_lt.ne')
+    exact hρ.2 ((coshDetectors_agree_iff hlog).mp h)
+  pair_sum_strict_excess := @fun y hy => by
+    rw [coshDetector_pair_sum]
+    have hcosh : 1 < coshDetector ρ.re y := coshDetector_gt_one_of_offline hρ.2 hy
+    have hcal : 0 < 2 * Real.cosh ((1 - Real.pi / 3) * y / 2) :=
+      coshDetector_pair_calibration_pos y
+    nlinarith [hcal, hcosh]
 
 end
