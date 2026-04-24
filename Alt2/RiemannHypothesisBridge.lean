@@ -84,35 +84,6 @@ theorem no_offline_zeros_implies_rh
   exact riemannZeta_ne_zero_of_one_le_re
     (by simp only [Complex.sub_re, Complex.one_re]; linarith) hζ1s
 
-/-! ### §2. Classifier-chain capstones -/
-
-/-- **`RiemannHypothesis` implies universal classifier-balance on
-`NontrivialZeros` at every scale.** Honest direction: RH → observable. -/
-theorem RiemannHypothesis_implies_classifier_balance
-    (hRH : RiemannHypothesis) (r : ℝ) :
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → pairAgreementDefect r ρ.re = 0 := by
-  intro ρ hρ
-  have hne1 : ρ ≠ 1 := by
-    intro h
-    have := hρ.2.1
-    rw [h, Complex.one_re] at this
-    linarith
-  have hnt : ¬ ∃ n : ℕ, ρ = -2 * (↑n + 1) := by
-    rintro ⟨n, hn⟩
-    have hre := congr_arg Complex.re hn
-    have hcalc : ((-2 : ℂ) * ((n : ℂ) + 1)).re = -2 * ((n : ℝ) + 1) := by
-      simp [Complex.mul_re]
-    rw [hcalc] at hre
-    have hpos : (0 : ℝ) < ((n : ℝ) + 1) := by positivity
-    linarith [hρ.1]
-  have hre : ρ.re = 1/2 := hRH ρ hρ.2.2 hnt hne1
-  rw [hre]
-  exact residue_balanced r
-
-/-! ### §3. Axiom hygiene -/
-
-#print axioms no_offline_zeros_implies_rh
-#print axioms RiemannHypothesis_implies_classifier_balance
 
 end RHBridge
 

@@ -497,79 +497,376 @@ theorem full_strip_logDerivZeta_bound_neg_of_boundary
 -- § Boundary-bound targets — to be filled unconditionally
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **leftOfCriticalStrip_target holds** — σ ∈ [-1, 0] at +T. Classical Landau
-bound via FE transport to σ' = 1 − σ ∈ [1, 2] combined with `ζ'/ζ` bound on
-Re = σ' ≥ 1. Uses: `CoshZetaSymmetry.riemannZeta_conj`-like FE identities,
-`ZD.WeilPositivity.Contour.logDerivZeta_bounded_of_right_of_one (3/2)`,
-`ZD.UniformGammaR.digamma_log_bound_uniform_sigma01`. -/
-theorem leftOfCriticalStrip_holds : leftOfCriticalStrip_target := by
-  sorry
-
-/-- **rightOfCriticalStrip_target holds** — σ ∈ [1, 2] at +T. Uses
-`ZD.WeilPositivity.Contour.logDerivZeta_bounded_of_right_of_one (1 + 1/2)` for
-σ ∈ [3/2, 2] combined with an ad-hoc bound on σ ∈ [1, 3/2] via
-`logDerivZeta_bounded_of_right_of_one σ` for varying σ₀ close to 1. -/
+set_option maxHeartbeats 4000000 in
+/-- **rightOfCriticalStrip_target holds** — σ ∈ [1, 2] at +T. Two-piece case
+split on `σ ≤ 3/2`: clone of `criticalStripLandau_of_goodHeight` on [1, 3/2]
+(σ/2 ∈ (0, 1) so `digamma_log_bound_uniform_sigma01` applies; NTZ excluded via
+`riemannZeta_ne_zero_of_one_le_re`), and direct right-of-one bound on (3/2, 2]. -/
 theorem rightOfCriticalStrip_holds : rightOfCriticalStrip_target := by
-  sorry
-
-/-- **leftOfCriticalStrip_neg_target holds** — mirror of
-`leftOfCriticalStrip_holds` at `-T` via conjugation / zero-set symmetry.
-Transports the `+T` bound through `ζ(conj s) = conj(ζ s)` and
-`deriv ζ (conj s) = conj (deriv ζ s)` using `HasDerivAt.conj_conj`. -/
-theorem leftOfCriticalStrip_neg_holds : leftOfCriticalStrip_neg_target := by
-  obtain ⟨C, hC_pos, h_bd⟩ := leftOfCriticalStrip_holds
-  refine ⟨C, hC_pos, ?_⟩
-  intro σ hσ T hT hGood
-  set s_pos : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_pos_def
-  set s_neg : ℂ := (σ : ℂ) + (-T : ℂ) * I with hs_neg_def
-  have h_star : s_neg = starRingEnd ℂ s_pos := by
-    simp [hs_pos_def, hs_neg_def]
-  have hT_pos : 0 < T := by linarith
-  have hs_pos_ne : s_pos ≠ 1 := by
-    intro h
-    have him : s_pos.im = (1 : ℂ).im := by rw [h]
-    simp [hs_pos_def] at him
+  obtain ⟨A, hA⟩ := ZD.xi_logDeriv_partial_fraction
+  obtain ⟨Cfar, hCfar_pos, hCfar_bd⟩ := xi_logDeriv_sub_far_bound
+  obtain ⟨Cxi0, hCxi0_nn, hCxi0_bd⟩ := xi_logDeriv_norm_log_bound_local
+  obtain ⟨Cd, hCd_pos, hCd_bd⟩ := ZD.UniformGammaR.digamma_log_bound_uniform_sigma01
+  obtain ⟨Cw, hCw_pos, hCw_bd⟩ := nontrivialZeros_short_window_weighted_count_bound
+  obtain ⟨Cright, hCright_nn, hCright_bd⟩ :=
+    ZD.WeilPositivity.Contour.logDerivZeta_bounded_of_right_of_one (3/2) (by norm_num)
+  have hCsep_pos : 0 < goodHeightSepConstant := goodHeightSepConstant_pos
+  have hlog2_pos : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2_sq_pos : 0 < (Real.log 2)^2 := by positivity
+  set Cnear : ℝ := 5 * ((1 / goodHeightSepConstant) + 2) * Cw with hCnear_def
+  have hCnear_pos : 0 < Cnear := by rw [hCnear_def]; positivity
+  set CΓ : ℝ := (Real.log Real.pi + Cd + 1) / Real.log 2 + Cd + 1 with hCΓ_def
+  have hCΓ_pos : 0 < CΓ := by
+    have hlogπ_nn : 0 ≤ Real.log Real.pi :=
+      Real.log_nonneg (by linarith [Real.pi_gt_three])
+    have h1 : 0 ≤ (Real.log Real.pi + Cd + 1) / Real.log 2 :=
+      div_nonneg (by linarith [hCd_pos.le]) hlog2_pos.le
+    rw [hCΓ_def]; linarith [hCd_pos]
+  set C_total : ℝ :=
+    max ((Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1)
+        (Cright / (Real.log 2)^2 + 1) with hC_total_def
+  have hC_total_pos : 0 < C_total := by
+    rw [hC_total_def]
+    apply lt_of_lt_of_le _ (le_max_right _ _)
+    have : 0 ≤ Cright / (Real.log 2)^2 := div_nonneg hCright_nn hlog2_sq_pos.le
     linarith
-  have hs_neg_ne : s_neg ≠ 1 := by
-    rw [h_star]
-    intro h
-    have him : (starRingEnd ℂ s_pos).im = (1 : ℂ).im := by rw [h]
-    simp [hs_pos_def] at him
-    linarith
-  have h_diff_pos : DifferentiableAt ℂ riemannZeta s_pos :=
-    differentiableAt_riemannZeta hs_pos_ne
-  have h1 := h_diff_pos.hasDerivAt.conj_conj
-  have h_eq : (⇑(starRingEnd ℂ) ∘ riemannZeta ∘ ⇑(starRingEnd ℂ))
-      =ᶠ[nhds (starRingEnd ℂ s_pos)] riemannZeta := by
-    have h_open : IsOpen ({1}ᶜ : Set ℂ) := isOpen_compl_singleton
-    have h_mem : starRingEnd ℂ s_pos ∈ ({1}ᶜ : Set ℂ) := by
-      rw [← h_star]; exact hs_neg_ne
-    filter_upwards [h_open.mem_nhds h_mem] with z hz
-    have hz' : z ≠ 1 := hz
-    show starRingEnd ℂ (riemannZeta (starRingEnd ℂ z)) = riemannZeta z
-    rw [CoshZetaSymmetry.riemannZeta_conj z hz']
-    simp
-  have h2 := h1.congr_of_eventuallyEq h_eq.symm
-  have h_deriv_star :
-      deriv riemannZeta (starRingEnd ℂ s_pos)
-        = starRingEnd ℂ (deriv riemannZeta s_pos) := h2.deriv
-  have h_zeta_star : riemannZeta s_neg = starRingEnd ℂ (riemannZeta s_pos) := by
-    rw [h_star]; exact CoshZetaSymmetry.riemannZeta_conj s_pos hs_pos_ne
-  have h_deriv_star' :
-      deriv riemannZeta s_neg = starRingEnd ℂ (deriv riemannZeta s_pos) := by
-    rw [h_star]; exact h_deriv_star
-  have h_quot_star : deriv riemannZeta s_neg / riemannZeta s_neg
-      = starRingEnd ℂ (deriv riemannZeta s_pos / riemannZeta s_pos) := by
-    rw [h_deriv_star', h_zeta_star, map_div₀]
-  rw [h_quot_star, Complex.norm_conj]
-  exact h_bd σ hσ T hT hGood
-
-/-- **rightOfCriticalStrip_neg_target holds** — mirror of
-`rightOfCriticalStrip_holds` at `-T`. Uses conjugation via
-`CoshZetaSymmetry.riemannZeta_conj` and `deriv_riemannZeta_conj`:
-`σ + (-T)i = conj (σ + T i)`, and `‖conj (ζ' s)/conj (ζ s)‖ = ‖ζ'(s)/ζ(s)‖`. -/
-theorem rightOfCriticalStrip_neg_holds : rightOfCriticalStrip_neg_target := by
-  sorry
+  refine ⟨C_total, hC_total_pos, ?_⟩
+  intro σ hσ T hT_ge_2 hGood
+  have hT_pos : (0 : ℝ) < T := by linarith
+  have hlogT_pos : 0 < Real.log T := Real.log_pos (by linarith)
+  have hlogT_ge_log2 : Real.log 2 ≤ Real.log T := Real.log_le_log (by norm_num) hT_ge_2
+  have hlogT_sq_pos : 0 < (Real.log T) ^ 2 := by positivity
+  by_cases hσ_split : σ ≤ 3/2
+  · have hσ_ge_one : (1 : ℝ) ≤ σ := hσ.1
+    have hσ2 : σ / 2 ∈ Set.Ioo (0 : ℝ) 1 := ⟨by linarith, by linarith⟩
+    have hσ_0_2 : σ ∈ Set.Icc (0:ℝ) 2 := ⟨by linarith, by linarith⟩
+    have hsep : ∀ ρ ∈ NontrivialZeros, |ρ.im - T| ≤ 1 →
+        goodHeightSepConstant / Real.log T ≤ |ρ.im - T| := by
+      intro ρ hρ hnear; exact (hGood.2 ρ hρ).1 hnear
+    have hT_mem_self : T ∈ Set.Icc T (T + 1) := ⟨le_refl _, by linarith⟩
+    have hNear_bd :
+        ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - T| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) *
+              (1 / ((σ : ℂ) + (T : ℂ) * I - ρ.val) -
+               1 / ((2 : ℂ) + (T : ℂ) * I - ρ.val))‖
+          ≤ Cnear * (Real.log T) ^ 2 := by
+      simpa [shortWindowFinset, Cnear, hCnear_def] using
+        xi_logDeriv_sub_near_bound_of_sep
+          hσ_0_2 hT_ge_2 hT_mem_self hCsep_pos hCw_pos hsep
+          (fun U hU => by simpa [shortWindowFinset] using hCw_bd U hU)
+    have hFar_bd :
+        ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - T| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) *
+              (1 / ((σ : ℂ) + (T : ℂ) * I - ρ.val) -
+               1 / ((2 : ℂ) + (T : ℂ) * I - ρ.val))‖
+          ≤ Cfar * Real.log T :=
+      hCfar_bd σ hσ_0_2 T hT_ge_2
+    set s : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_def
+    set s₀ : ℂ := (2 : ℂ) + (T : ℂ) * I with hs₀_def
+    have hs_re : s.re = σ := by simp [hs_def]
+    have hs_im : s.im = T := by simp [hs_def]
+    have hs₀_re : s₀.re = 2 := by simp [hs₀_def]
+    have hs₀_im : s₀.im = T := by simp [hs₀_def]
+    have hs_ne_0 : s ≠ 0 := by
+      intro h; have := congrArg Complex.im h; rw [hs_im] at this; simp at this; linarith
+    have hs_ne_1 : s ≠ 1 := by
+      intro h; have := congrArg Complex.im h; rw [hs_im] at this; simp at this; linarith
+    have hs_notMem : s ∉ NontrivialZeros := by
+      intro hmem
+      have h1' : s.re < 1 := hmem.2.1
+      rw [hs_re] at h1'; linarith
+    have hζ_s_ne : riemannZeta s ≠ 0 := by
+      apply riemannZeta_ne_zero_of_one_le_re; rw [hs_re]; exact hσ_ge_one
+    have hΓ_s_ne : Complex.Gammaℝ s ≠ 0 := by
+      apply Complex.Gammaℝ_ne_zero_of_re_pos; rw [hs_re]; linarith
+    have hs₀_notMem : s₀ ∉ NontrivialZeros := by
+      intro hmem
+      have h2' : s₀.re < 1 := hmem.2.1
+      rw [hs₀_re] at h2'; linarith
+    have h_Γ_s_bd : ‖logDeriv Complex.Gammaℝ s‖ ≤ CΓ * Real.log T := by
+      have hT2_pos : 0 < T / 2 := by linarith
+      have hT2_abs : |T / 2| = T / 2 := abs_of_pos hT2_pos
+      have hT2_ge_one : 1 ≤ |T / 2| := by rw [hT2_abs]; linarith
+      have h_cast : s / 2 = ((σ / 2 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I := by
+        rw [hs_def]; push_cast; ring
+      have h_psi_bd :
+          ‖deriv Complex.Gamma (((σ / 2 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I) /
+            Complex.Gamma (((σ / 2 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I)‖
+            ≤ Cd * Real.log (1 + |T / 2|) :=
+        hCd_bd (σ / 2) hσ2 (T / 2) hT2_ge_one
+      have h_psi_at_half :
+          deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2) =
+            deriv Complex.Gamma (((σ / 2 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I) /
+              Complex.Gamma (((σ / 2 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I) := by rw [h_cast]
+      have h_psi_norm_bd :
+          ‖deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2)‖ ≤ Cd * Real.log (1 + |T / 2|) := by
+        rw [h_psi_at_half]; exact h_psi_bd
+      have h_log_bd : Real.log (1 + |T / 2|) ≤ Real.log T := by
+        rw [hT2_abs]; exact Real.log_le_log (by linarith) (by linarith)
+      have h_ne_2n : ∀ n : ℕ, s ≠ -(2 * (n : ℂ)) := by
+        intro n h; apply hΓ_s_ne; rw [h]
+        exact Complex.Gammaℝ_eq_zero_iff.mpr ⟨n, rfl⟩
+      have h_form :=
+        ZD.WeilPositivity.Contour.gammaℝ_logDeriv_digamma_form s hΓ_s_ne h_ne_2n
+      have h_Gammaℝ_logDeriv_form :
+          logDeriv Complex.Gammaℝ s =
+            -(Real.log Real.pi : ℂ) / 2 +
+              (1 / 2 : ℂ) * (deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2)) := by
+        rw [logDeriv_apply, h_form]
+        have h_log_eq : Complex.log (Real.pi : ℂ) = ((Real.log Real.pi : ℝ) : ℂ) :=
+          (Complex.ofReal_log Real.pi_pos.le).symm
+        rw [h_log_eq]
+      have h_logπ_nn : (0 : ℝ) ≤ Real.log Real.pi :=
+        Real.log_nonneg (by linarith [Real.pi_gt_three] : (1 : ℝ) ≤ Real.pi)
+      calc ‖logDeriv Complex.Gammaℝ s‖
+          = ‖-(Real.log Real.pi : ℂ) / 2 +
+              (1 / 2 : ℂ) * (deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2))‖ := by
+            rw [h_Gammaℝ_logDeriv_form]
+        _ ≤ ‖-(Real.log Real.pi : ℂ) / 2‖ +
+            ‖(1 / 2 : ℂ) * (deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2))‖ :=
+              norm_add_le _ _
+        _ = Real.log Real.pi / 2 +
+              (1/2) * ‖deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2)‖ := by
+            have h_norm_first : ‖-(Real.log Real.pi : ℂ) / 2‖ = Real.log Real.pi / 2 := by
+              rw [norm_div, norm_neg, show ‖(2 : ℂ)‖ = 2 from by norm_num]
+              rw [show (Real.log Real.pi : ℂ) = ((Real.log Real.pi : ℝ) : ℂ) from rfl,
+                Complex.norm_real]
+              simp [abs_of_nonneg h_logπ_nn]
+            have h_norm_second :
+                ‖(1 / 2 : ℂ) * (deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2))‖ =
+                  (1/2) * ‖deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2)‖ := by
+              rw [norm_mul]; congr 1
+              rw [show (1/2 : ℂ) = ((1/2 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real]
+              norm_num
+            rw [h_norm_first, h_norm_second]
+        _ ≤ Real.log Real.pi / 2 + (1/2) * (Cd * Real.log (1 + |T / 2|)) := by
+              nlinarith [h_psi_norm_bd]
+        _ ≤ Real.log Real.pi / 2 + (1/2) * (Cd * Real.log T) := by
+              have : (1/2 : ℝ) * (Cd * Real.log (1 + |T / 2|)) ≤
+                  (1/2) * (Cd * Real.log T) := by
+                apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 1/2)
+                apply mul_le_mul_of_nonneg_left h_log_bd hCd_pos.le
+              linarith
+        _ ≤ CΓ * Real.log T := by
+              rw [hCΓ_def]
+              have h1 : Real.log Real.pi / 2 ≤
+                  (Real.log Real.pi / Real.log 2) * Real.log T := by
+                have hratio : 1 ≤ Real.log T / Real.log 2 :=
+                  (one_le_div hlog2_pos).mpr hlogT_ge_log2
+                have : Real.log Real.pi / 2 ≤
+                    Real.log Real.pi * (Real.log T / Real.log 2) / 2 := by
+                  nlinarith [h_logπ_nn, hratio]
+                have heq : Real.log Real.pi * (Real.log T / Real.log 2) / 2 =
+                    (Real.log Real.pi / Real.log 2) * Real.log T / 2 := by ring
+                rw [heq] at this
+                have hpos : 0 ≤ (Real.log Real.pi / Real.log 2) * Real.log T := by
+                  apply mul_nonneg (div_nonneg h_logπ_nn hlog2_pos.le) hlogT_pos.le
+                linarith
+              have h2 : (Real.log Real.pi / Real.log 2) * Real.log T ≤
+                  ((Real.log Real.pi + Cd + 1) / Real.log 2) * Real.log T := by
+                apply mul_le_mul_of_nonneg_right _ hlogT_pos.le
+                apply div_le_div_of_nonneg_right _ hlog2_pos.le
+                linarith [hCd_pos.le]
+              have h3 : (1/2 : ℝ) * (Cd * Real.log T) ≤ Cd * Real.log T := by
+                nlinarith [hCd_pos.le, hlogT_pos.le]
+              linarith
+    obtain ⟨A', hA'⟩ := xi_logDeriv_short_window_decomp
+    have hdecomp_s := hA' s hs_notMem
+    have hdecomp_s₀ := hA' s₀ hs₀_notMem
+    have h_im_eq : s.im = s₀.im := by rw [hs_im, hs₀_im]
+    have hdecomp_s₀' :
+        deriv riemannXi s₀ / riemannXi s₀ =
+          A' +
+          (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) +
+          (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+      rw [h_im_eq]; exact hdecomp_s₀
+    have h_xi_diff :
+        deriv riemannXi s / riemannXi s - deriv riemannXi s₀ / riemannXi s₀ =
+          ((∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+              (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+           (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+              (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val))) +
+          ((∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+              (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+           (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+              (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val))) := by
+      rw [hdecomp_s, hdecomp_s₀']; ring
+    have h_summ_near_s : Summable
+        (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1} =>
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
+      convert (summable_weighted_partial_fraction_local hs_notMem).comp_injective _
+      rotate_left
+      exact fun x => ⟨x.val, x.property.1⟩
+      · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+      · rfl
+    have h_summ_near_s₀ : Summable
+        (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1} =>
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+      convert (summable_weighted_partial_fraction_local hs₀_notMem).comp_injective _
+      rotate_left
+      exact fun x => ⟨x.val, x.property.1⟩
+      · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+      · rfl
+    have h_summ_far_s : Summable
+        (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1} =>
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
+      convert (summable_weighted_partial_fraction_local hs_notMem).comp_injective _
+      rotate_left
+      exact fun x => ⟨x.val, x.property.1⟩
+      · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+      · rfl
+    have h_summ_far_s₀ : Summable
+        (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1} =>
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+      convert (summable_weighted_partial_fraction_local hs₀_notMem).comp_injective _
+      rotate_left
+      exact fun x => ⟨x.val, x.property.1⟩
+      · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+      · rfl
+    have h_near_sub :
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) =
+        ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)) := by
+      rw [← Summable.tsum_sub h_summ_near_s h_summ_near_s₀]
+      apply tsum_congr; intro ρ; ring
+    have h_far_sub :
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) =
+        ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)) := by
+      rw [← Summable.tsum_sub h_summ_far_s h_summ_far_s₀]
+      apply tsum_congr; intro ρ; ring
+    have h_xi_s_eq :
+        deriv riemannXi s / riemannXi s =
+          deriv riemannXi s₀ / riemannXi s₀ +
+          (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))) +
+          (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))) := by
+      have h1 := h_xi_diff
+      rw [h_near_sub, h_far_sub] at h1
+      linear_combination h1
+    rw [← hs_im] at hNear_bd hFar_bd
+    have h_log_sim : Real.log s.im = Real.log T := by rw [hs_im]
+    rw [h_log_sim] at hNear_bd hFar_bd
+    have h_xi_s₀_bd : ‖deriv riemannXi s₀ / riemannXi s₀‖ ≤ Cxi0 * Real.log T := by
+      simpa [hs₀_def] using hCxi0_bd T hT_ge_2
+    have h_xi_s_norm : ‖deriv riemannXi s / riemannXi s‖ ≤
+        Cxi0 * Real.log T + Cnear * (Real.log T) ^ 2 + Cfar * Real.log T := by
+      rw [h_xi_s_eq]
+      have h1 := norm_add_le (deriv riemannXi s₀ / riemannXi s₀ +
+          (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))))
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)))
+      have h2 := norm_add_le (deriv riemannXi s₀ / riemannXi s₀)
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)))
+      linarith [h1, h2, h_xi_s₀_bd, hNear_bd, hFar_bd]
+    have h_s_norm_ge_T : T ≤ ‖s‖ := by
+      have : T = |s.im| := by rw [hs_im]; exact (abs_of_pos hT_pos).symm
+      rw [this]; exact Complex.abs_im_le_norm s
+    have h_sm1_norm_ge_T : T ≤ ‖s - 1‖ := by
+      have him : (s - 1).im = T := by simp [hs_def]
+      have : T = |(s - 1).im| := by rw [him]; exact (abs_of_pos hT_pos).symm
+      rw [this]; exact Complex.abs_im_le_norm (s - 1)
+    have h_inv_s_T : ‖(1 : ℂ) / s‖ ≤ 1 / T := by
+      rw [norm_div, norm_one]
+      exact div_le_div_of_nonneg_left (by norm_num : (0:ℝ) ≤ 1) hT_pos h_s_norm_ge_T
+    have h_inv_sm1_T : ‖(1 : ℂ) / (s - 1)‖ ≤ 1 / T := by
+      rw [norm_div, norm_one]
+      exact div_le_div_of_nonneg_left (by norm_num : (0:ℝ) ≤ 1) hT_pos h_sm1_norm_ge_T
+    have h_logT_absorb : Real.log T ≤ (Real.log T) ^ 2 / Real.log 2 := by
+      rw [le_div_iff₀ hlog2_pos]; nlinarith [hlogT_ge_log2]
+    have h_inv_T_absorb : 1 / T ≤ (Real.log T) ^ 2 / Real.log 2 := by
+      have h_inv_T_le_half : 1 / T ≤ 1 / 2 := by gcongr
+      have h_half_le_logT : 1 / 2 ≤ Real.log T := by
+        have := Real.log_two_gt_d9; linarith
+      exact le_trans h_inv_T_le_half (le_trans h_half_le_logT h_logT_absorb)
+    have hζ_s_eq :
+        deriv riemannZeta s / riemannZeta s =
+          deriv riemannXi s / riemannXi s -
+            1 / s - 1 / (s - 1) - logDeriv Complex.Gammaℝ s :=
+      riemannZeta_logDeriv_eq_generalized s hs_ne_0 hs_ne_1 hζ_s_ne hΓ_s_ne
+    have h_zeta_tri : ‖deriv riemannXi s / riemannXi s - 1 / s - 1 / (s - 1) -
+        logDeriv Complex.Gammaℝ s‖ ≤
+        ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+          ‖logDeriv Complex.Gammaℝ s‖ := by
+      have h_triangle : ∀ a b c d : ℂ, ‖a - b - c - d‖ ≤ ‖a‖ + ‖b‖ + ‖c‖ + ‖d‖ := by
+        exact fun a b c d => by
+          linarith [norm_sub_le a b, norm_sub_le (a - b) c, norm_sub_le (a - b - c) d]
+      apply h_triangle
+    rw [hζ_s_eq]
+    have h_total : ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+        ‖logDeriv Complex.Gammaℝ s‖ ≤
+          ((Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1) * (Real.log T) ^ 2 := by
+      have hbd1 : ‖(1 : ℂ) / s‖ ≤ (Real.log T) ^ 2 / Real.log 2 :=
+        le_trans h_inv_s_T h_inv_T_absorb
+      have hbd2 : ‖(1 : ℂ) / (s - 1)‖ ≤ (Real.log T) ^ 2 / Real.log 2 :=
+        le_trans h_inv_sm1_T h_inv_T_absorb
+      have hbd3 : ‖deriv riemannXi s / riemannXi s‖ ≤
+          ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by
+        calc ‖deriv riemannXi s / riemannXi s‖
+            ≤ Cxi0 * Real.log T + Cnear * (Real.log T) ^ 2 + Cfar * Real.log T := h_xi_s_norm
+          _ ≤ Cxi0 * ((Real.log T) ^ 2 / Real.log 2) +
+              Cnear * (Real.log T) ^ 2 +
+              Cfar * ((Real.log T) ^ 2 / Real.log 2) := by
+            nlinarith [h_logT_absorb, hCxi0_nn, hCfar_pos.le]
+          _ = ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by ring
+      have hbd4 : ‖logDeriv Complex.Gammaℝ s‖ ≤
+          CΓ / Real.log 2 * (Real.log T) ^ 2 := by
+        calc ‖logDeriv Complex.Gammaℝ s‖ ≤ CΓ * Real.log T := h_Γ_s_bd
+          _ ≤ CΓ * ((Real.log T) ^ 2 / Real.log 2) := by
+            nlinarith [h_logT_absorb, hCΓ_pos]
+          _ = CΓ / Real.log 2 * (Real.log T) ^ 2 := by ring
+      calc ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+            ‖logDeriv Complex.Gammaℝ s‖
+          ≤ ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 +
+            (Real.log T) ^ 2 / Real.log 2 +
+            (Real.log T) ^ 2 / Real.log 2 +
+            CΓ / Real.log 2 * (Real.log T) ^ 2 := by
+              linarith [hbd1, hbd2, hbd3, hbd4]
+        _ = ((Cxi0 + Cfar + CΓ + 2) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by ring
+        _ ≤ ((Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1) * (Real.log T) ^ 2 := by
+            apply mul_le_mul_of_nonneg_right _ hlogT_sq_pos.le
+            have hA_nn := norm_nonneg A
+            have h_extra : 0 ≤ ‖A‖ / Real.log 2 := div_nonneg hA_nn hlog2_pos.le
+            have h_sum : (Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 =
+                (Cxi0 + Cfar + CΓ + 2) / Real.log 2 + ‖A‖ / Real.log 2 := by ring
+            linarith [h_extra, h_sum]
+    have h_le_Ctotal : ((Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1) ≤ C_total := by
+      rw [hC_total_def]; exact le_max_left _ _
+    calc ‖deriv riemannXi s / riemannXi s - 1 / s - 1 / (s - 1) - logDeriv Complex.Gammaℝ s‖
+        ≤ ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+          ‖logDeriv Complex.Gammaℝ s‖ := h_zeta_tri
+      _ ≤ ((Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1) * (Real.log T) ^ 2 := h_total
+      _ ≤ C_total * (Real.log T) ^ 2 := by
+          apply mul_le_mul_of_nonneg_right h_le_Ctotal hlogT_sq_pos.le
+  · have hσ_gt : (3/2 : ℝ) < σ := not_le.mp hσ_split
+    set s : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_def
+    have hs_re : s.re = σ := by simp [hs_def]
+    have hs_re_ge : (3/2 : ℝ) ≤ s.re := by rw [hs_re]; linarith
+    have h_bd : ‖deriv riemannZeta s / riemannZeta s‖ ≤ Cright := hCright_bd s hs_re_ge
+    have h_goal : Cright ≤ C_total * (Real.log T)^2 := by
+      calc Cright
+          ≤ Cright / (Real.log 2)^2 * (Real.log 2)^2 := by
+            rw [div_mul_cancel₀ _ hlog2_sq_pos.ne']
+        _ ≤ Cright / (Real.log 2)^2 * (Real.log T)^2 := by
+            apply mul_le_mul_of_nonneg_left _ (div_nonneg hCright_nn hlog2_sq_pos.le)
+            nlinarith [hlogT_ge_log2, hlog2_pos.le]
+        _ ≤ (Cright / (Real.log 2)^2 + 1) * (Real.log T)^2 := by
+            nlinarith [hlogT_sq_pos.le]
+        _ ≤ C_total * (Real.log T)^2 := by
+            rw [hC_total_def]
+            apply mul_le_mul_of_nonneg_right (le_max_right _ _) hlogT_sq_pos.le
+    linarith [h_bd, h_goal]
 
 /-- **Helper: derivative of `riemannZeta` conjugates.** For `s ≠ 1`,
 `deriv ζ (conj s) = conj (deriv ζ s)`. Follows from `riemannZeta_conj` +
@@ -595,6 +892,27 @@ theorem deriv_riemannZeta_conj (s : ℂ) (hs : s ≠ 1) :
   simp at this
   exact this
 
+/-- **rightOfCriticalStrip_neg_target holds** — mirror of
+`rightOfCriticalStrip_holds` at `-T`. Uses conjugation via
+`CoshZetaSymmetry.riemannZeta_conj` and `deriv_riemannZeta_conj`:
+`σ + (-T)i = conj (σ + T i)`, and `‖conj (ζ' s)/conj (ζ s)‖ = ‖ζ'(s)/ζ(s)‖`. -/
+theorem rightOfCriticalStrip_neg_holds : rightOfCriticalStrip_neg_target := by
+  obtain ⟨C, hC_pos, h_bd⟩ := rightOfCriticalStrip_holds
+  refine ⟨C, hC_pos, ?_⟩
+  intro σ hσ T hT_ge_2 hGood
+  have h_conj_eq : (σ : ℂ) + (-T : ℂ) * I = starRingEnd ℂ ((σ : ℂ) + (T : ℂ) * I) := by
+    apply Complex.ext <;> simp
+  have hs_ne_1 : ((σ : ℂ) + (T : ℂ) * I) ≠ 1 := by
+    intro h
+    have him : ((σ : ℂ) + (T : ℂ) * I).im = (1 : ℂ).im := by rw [h]
+    simp at him
+    linarith
+  rw [h_conj_eq]
+  have h_zeta := CoshZetaSymmetry.riemannZeta_conj _ hs_ne_1
+  have h_deriv := deriv_riemannZeta_conj _ hs_ne_1
+  rw [h_zeta, h_deriv, ← map_div₀, Complex.norm_conj]
+  exact h_bd σ hσ T hT_ge_2 hGood
+
 /-- **criticalStripLandau_neg_target holds** — `criticalStripLandau_of_goodHeight`
 at `-T`. Uses conjugation via `CoshZetaSymmetry.riemannZeta_conj` and
 `deriv_riemannZeta_conj`: `σ + (-T)i = conj (σ + T i)`, and
@@ -615,6 +933,455 @@ theorem criticalStripLandau_neg_holds : criticalStripLandau_neg_target := by
   have h_deriv := deriv_riemannZeta_conj _ hs_ne_1
   rw [h_zeta, h_deriv, ← map_div₀, Complex.norm_conj]
   exact h_bd σ hσ T hT_ge_2 hGood
+
+-- ─── Local helpers for leftOfCriticalStrip_holds (FE-transport proof) ─────
+
+namespace LeftStripHelpers
+
+/-- `Γℝ` differentiable at `z` when `Γℝ z ≠ 0`. -/
+private lemma gammaℝ_diff_of_ne (z : ℂ) (h : Complex.Gammaℝ z ≠ 0) :
+    DifferentiableAt ℂ Complex.Gammaℝ z := by
+  have h_s_ne : ∀ n : ℕ, z ≠ -(2 * (n : ℂ)) := by
+    intro n hn; exact h (Complex.Gammaℝ_eq_zero_iff.mpr ⟨n, hn⟩)
+  have h_half_ne : ∀ m : ℕ, z / 2 ≠ -(m : ℂ) := by
+    intro m hm
+    have : z = -(2 * (m : ℂ)) := by linear_combination 2 * hm
+    exact h_s_ne m this
+  have hΓ : DifferentiableAt ℂ Complex.Gamma (z / 2) :=
+    Complex.differentiableAt_Gamma _ h_half_ne
+  have hcpow : DifferentiableAt ℂ (fun t : ℂ => (Real.pi : ℂ) ^ (-t / 2)) z := by
+    refine DifferentiableAt.const_cpow
+      ((differentiableAt_id.neg).div_const 2) ?_
+    left; exact_mod_cast Real.pi_pos.ne'
+  have hcomp : DifferentiableAt ℂ (fun t : ℂ => Complex.Gamma (t / 2)) z :=
+    hΓ.comp z (differentiableAt_id.div_const 2)
+  have h_eq :
+      Complex.Gammaℝ = fun t : ℂ => (Real.pi : ℂ) ^ (-t / 2) * Complex.Gamma (t / 2) := by
+    funext t; exact Complex.Gammaℝ_def t
+  rw [h_eq]; exact hcpow.mul hcomp
+
+/-- `logDeriv Λ = logDeriv Γℝ + logDeriv ζ` where `Λ = Γℝ · ζ`. -/
+private lemma logDeriv_Λ_eq (z : ℂ) (hz0 : z ≠ 0) (hz1 : z ≠ 1)
+    (hΓ : Complex.Gammaℝ z ≠ 0) (hζ : riemannZeta z ≠ 0) :
+    logDeriv completedRiemannZeta z =
+      logDeriv Complex.Gammaℝ z + logDeriv riemannZeta z := by
+  have hζ_diff : DifferentiableAt ℂ riemannZeta z := differentiableAt_riemannZeta hz1
+  have hΓ_diff : DifferentiableAt ℂ Complex.Gammaℝ z := gammaℝ_diff_of_ne z hΓ
+  have hΓ_cont : ContinuousAt Complex.Gammaℝ z := hΓ_diff.continuousAt
+  have hΓ_nbhd : ∀ᶠ w in nhds z, Complex.Gammaℝ w ≠ 0 := hΓ_cont.eventually_ne hΓ
+  have hne0 : ∀ᶠ w in nhds z, w ≠ 0 :=
+    isOpen_compl_singleton.mem_nhds (by simpa : z ∈ ({0}ᶜ : Set ℂ))
+  have hΛ_ev : completedRiemannZeta =ᶠ[nhds z]
+      (fun w => Complex.Gammaℝ w * riemannZeta w) := by
+    filter_upwards [hΓ_nbhd, hne0] with w _ hw0
+    rw [riemannZeta_def_of_ne_zero hw0]; field_simp
+  have h1 := logDeriv_mul z hΓ hζ hΓ_diff hζ_diff
+  simp only [logDeriv_apply] at *
+  rw [Filter.EventuallyEq.deriv_eq hΛ_ev, hΛ_ev.self_of_nhds]
+  exact h1
+
+/-- FE for `logDeriv Λ`: `logDeriv Λ(s) = -logDeriv Λ(1-s)`. -/
+private lemma logDeriv_Λ_fe (s : ℂ)
+    (h1ms0 : 1 - s ≠ 0) (h1ms1 : 1 - s ≠ 1) :
+    logDeriv completedRiemannZeta s = -logDeriv completedRiemannZeta (1 - s) := by
+  have hF_diff : DifferentiableAt ℂ completedRiemannZeta (1 - s) :=
+    differentiableAt_completedZeta h1ms0 h1ms1
+  have hFE : ∀ z, completedRiemannZeta (1 - z) = completedRiemannZeta z :=
+    completedRiemannZeta_one_sub
+  have h_eq_nhds :
+      (fun z => completedRiemannZeta (1 - z)) =ᶠ[nhds s] completedRiemannZeta :=
+    Filter.Eventually.of_forall hFE
+  have h_deriv_eq :
+      deriv (fun z => completedRiemannZeta (1 - z)) s =
+        deriv completedRiemannZeta s :=
+    Filter.EventuallyEq.deriv_eq h_eq_nhds
+  have h_chain :
+      deriv (fun z => completedRiemannZeta (1 - z)) s =
+        -deriv completedRiemannZeta (1 - s) := by
+    have h_inner : HasDerivAt (fun z : ℂ => (1 : ℂ) - z) (-1 : ℂ) s := by
+      simpa using (hasDerivAt_const s (1 : ℂ)).sub (hasDerivAt_id s)
+    have h_outer : HasDerivAt completedRiemannZeta
+        (deriv completedRiemannZeta (1 - s)) (1 - s) := hF_diff.hasDerivAt
+    have h := h_outer.comp s h_inner
+    simpa [mul_comm, mul_neg] using h.deriv
+  have h_deriv_fe : deriv completedRiemannZeta s =
+      -deriv completedRiemannZeta (1 - s) := by
+    rw [← h_deriv_eq, h_chain]
+  have h_val : completedRiemannZeta (1 - s) = completedRiemannZeta s := hFE s
+  simp only [logDeriv_apply]
+  rw [h_deriv_fe, neg_div]; congr 1; rw [← h_val]
+
+/-- `ζ(σ+iT) ≠ 0` for `σ ∈ [-1, 0]` and `T ≥ 2`, via FE-transport of
+nonvanishing on `Re s ≥ 1`. -/
+private lemma zeta_ne_zero_on_left
+    (σ : ℝ) (hσ : σ ∈ Set.Icc (-1 : ℝ) 0)
+    (T : ℝ) (hT : 2 ≤ T) :
+    riemannZeta ((σ : ℂ) + (T : ℂ) * I) ≠ 0 := by
+  set s : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_def
+  have hs_re : s.re = σ := by simp [hs_def]
+  have hs_im : s.im = T := by simp [hs_def]
+  have hT_pos : 0 < T := by linarith
+  have hs_ne0 : s ≠ 0 := by
+    intro h; have := congrArg Complex.im h; rw [hs_im] at this; simp at this; linarith
+  have h1ms_re : (1 - s).re = 1 - σ := by simp [hs_re]
+  have h1ms_im : (1 - s).im = -T := by simp [hs_im]
+  have h1ms_re_ge_one : 1 ≤ (1 - s).re := by rw [h1ms_re]; linarith [hσ.2]
+  have hΓℝ_s : Complex.Gammaℝ s ≠ 0 := by
+    rw [Ne, Complex.Gammaℝ_eq_zero_iff]; rintro ⟨n, hn⟩
+    have := congrArg Complex.im hn; rw [hs_im] at this; simp at this; linarith
+  have hΓℝ_1ms : Complex.Gammaℝ (1 - s) ≠ 0 := by
+    rw [Ne, Complex.Gammaℝ_eq_zero_iff]; rintro ⟨n, hn⟩
+    have := congrArg Complex.im hn; rw [h1ms_im] at this; simp at this; linarith
+  have hζ_1ms : riemannZeta (1 - s) ≠ 0 :=
+    riemannZeta_ne_zero_of_one_le_re h1ms_re_ge_one
+  have h1ms_ne0 : (1 - s) ≠ 0 := by
+    intro h; have := congrArg Complex.re h; rw [h1ms_re] at this; simp at this
+    linarith [hσ.1, hσ.2]
+  have hΛ_1ms : completedRiemannZeta (1 - s) ≠ 0 := by
+    have heq : completedRiemannZeta (1 - s) =
+        Complex.Gammaℝ (1 - s) * riemannZeta (1 - s) := by
+      rw [riemannZeta_def_of_ne_zero h1ms_ne0]; field_simp
+    rw [heq]; exact mul_ne_zero hΓℝ_1ms hζ_1ms
+  have hΛ_s : completedRiemannZeta s ≠ 0 := by
+    have := completedRiemannZeta_one_sub s; rw [← this]; exact hΛ_1ms
+  rw [riemannZeta_def_of_ne_zero hs_ne0]
+  exact div_ne_zero hΛ_s hΓℝ_s
+
+/-- Triangle-type bound: `‖logDeriv Γℝ(z)‖ ≤ log π / 2 + (1/2)·B`
+when `‖ψ(z/2)‖ ≤ B`. -/
+private lemma norm_logDeriv_gammaℝ_le (z : ℂ) (B : ℝ)
+    (hΓℝ : Complex.Gammaℝ z ≠ 0) (h_ne2n : ∀ n : ℕ, z ≠ -(2 * (n : ℂ)))
+    (hψ : ‖deriv Complex.Gamma (z / 2) / Complex.Gamma (z / 2)‖ ≤ B) :
+    ‖logDeriv Complex.Gammaℝ z‖ ≤ Real.log Real.pi / 2 + (1/2) * B := by
+  have h_form :=
+    ZD.WeilPositivity.Contour.gammaℝ_logDeriv_digamma_form z hΓℝ h_ne2n
+  have h_rw : logDeriv Complex.Gammaℝ z =
+      -(Real.log Real.pi : ℂ) / 2 +
+        (1 / 2 : ℂ) * (deriv Complex.Gamma (z / 2) / Complex.Gamma (z / 2)) := by
+    rw [logDeriv_apply, h_form]
+    have h_log_eq : Complex.log (Real.pi : ℂ) = ((Real.log Real.pi : ℝ) : ℂ) :=
+      (Complex.ofReal_log Real.pi_pos.le).symm
+    rw [h_log_eq]
+  have h_logπ_nn : (0 : ℝ) ≤ Real.log Real.pi :=
+    Real.log_nonneg (by linarith [Real.pi_gt_three])
+  have h_norm_first : ‖-(Real.log Real.pi : ℂ) / 2‖ = Real.log Real.pi / 2 := by
+    rw [norm_div, norm_neg, show ‖(2 : ℂ)‖ = 2 from by norm_num]
+    rw [show (Real.log Real.pi : ℂ) = ((Real.log Real.pi : ℝ) : ℂ) from rfl,
+      Complex.norm_real]
+    simp [abs_of_nonneg h_logπ_nn]
+  have h_norm_second :
+      ‖(1 / 2 : ℂ) * (deriv Complex.Gamma (z / 2) / Complex.Gamma (z / 2))‖ =
+        (1/2) * ‖deriv Complex.Gamma (z / 2) / Complex.Gamma (z / 2)‖ := by
+    rw [norm_mul]; congr 1
+    rw [show (1/2 : ℂ) = ((1/2 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real]
+    norm_num
+  rw [h_rw]
+  refine le_trans (norm_add_le _ _) ?_
+  rw [h_norm_first, h_norm_second]
+  have h12 : (0 : ℝ) ≤ 1/2 := by norm_num
+  linarith [mul_le_mul_of_nonneg_left hψ h12]
+
+/-- σ-uniform digamma log bound on the closed half-interval `σ' ∈ Icc [1/2, 1]`,
+`|t'| ≥ 1`. -/
+private lemma digamma_bound_half_to_one :
+    ∃ C : ℝ, 0 < C ∧ ∀ σ' : ℝ, σ' ∈ Set.Icc (1/2 : ℝ) 1 → ∀ t' : ℝ, 1 ≤ |t'| →
+      ‖deriv Complex.Gamma ((σ' : ℂ) + (t' : ℂ) * I) /
+        Complex.Gamma ((σ' : ℂ) + (t' : ℂ) * I)‖ ≤ C * Real.log (1 + |t'|) := by
+  obtain ⟨C_U, hC_U_pos, hC_U_bd⟩ := ZD.UniformGammaR.digamma_log_bound_uniform_sigma01
+  obtain ⟨C_1, hC_1_nn, hC_1_bd⟩ :=
+    ZD.WeilPositivity.Contour.digamma_log_bound_all_t 1 (by norm_num : (0:ℝ) < 1)
+  have hlog2_pos : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  set K : ℝ := C_1 * (1/Real.log 2 + 1) with hK_def
+  set C : ℝ := max C_U K + 1 with hC_def
+  have hK_nn : 0 ≤ K := by rw [hK_def]; positivity
+  have hC_pos : 0 < C := by rw [hC_def]; have := le_max_left C_U K; linarith [hC_U_pos]
+  refine ⟨C, hC_pos, ?_⟩
+  intro σ' hσ' t' ht'
+  have h_log_pos : 0 < Real.log (1 + |t'|) := by
+    have : 1 < 1 + |t'| := by linarith
+    exact Real.log_pos this
+  rcases lt_or_eq_of_le hσ'.2 with hlt | heq
+  · have hσ'_Ioo : σ' ∈ Set.Ioo (0:ℝ) 1 := ⟨by linarith [hσ'.1], hlt⟩
+    have h := hC_U_bd σ' hσ'_Ioo t' ht'
+    calc ‖deriv Complex.Gamma ((σ' : ℂ) + (t' : ℂ) * I) /
+          Complex.Gamma ((σ' : ℂ) + (t' : ℂ) * I)‖
+        ≤ C_U * Real.log (1 + |t'|) := h
+      _ ≤ C * Real.log (1 + |t'|) := by
+          apply mul_le_mul_of_nonneg_right _ h_log_pos.le
+          rw [hC_def]
+          exact le_trans (le_max_left C_U K) (by linarith)
+  · have hσ'1 : σ' = 1 := heq
+    subst hσ'1
+    have h := hC_1_bd t'
+    have h_log_ge : Real.log 2 ≤ Real.log (1 + |t'|) := by
+      apply Real.log_le_log (by norm_num) (by linarith)
+    have h_one_plus_log : 1 + Real.log (1 + |t'|) ≤
+        (1/Real.log 2 + 1) * Real.log (1 + |t'|) := by
+      have h1 : 1 ≤ Real.log (1 + |t'|) / Real.log 2 := by
+        rw [le_div_iff₀ hlog2_pos, one_mul]; exact h_log_ge
+      have h2 : 1 ≤ (1/Real.log 2) * Real.log (1 + |t'|) := by
+        have : (1/Real.log 2) * Real.log (1 + |t'|) =
+            Real.log (1 + |t'|) / Real.log 2 := by ring
+        rw [this]; exact h1
+      nlinarith [h_log_pos.le]
+    calc ‖deriv Complex.Gamma (((1:ℝ) : ℂ) + (t' : ℂ) * I) /
+          Complex.Gamma (((1:ℝ) : ℂ) + (t' : ℂ) * I)‖
+        ≤ C_1 * (1 + Real.log (1 + |t'|)) := h
+      _ ≤ C_1 * ((1/Real.log 2 + 1) * Real.log (1 + |t'|)) :=
+          mul_le_mul_of_nonneg_left h_one_plus_log hC_1_nn
+      _ = K * Real.log (1 + |t'|) := by rw [hK_def]; ring
+      _ ≤ C * Real.log (1 + |t'|) := by
+          apply mul_le_mul_of_nonneg_right _ h_log_pos.le
+          rw [hC_def]
+          exact le_trans (le_max_right C_U K) (by linarith)
+
+end LeftStripHelpers
+
+/-- **leftOfCriticalStrip_target holds** — σ ∈ [-1, 0] at +T. FE-transport to
+`rightOfCriticalStrip_neg_holds` (for `ζ'/ζ(1-s)` at Re(1-s) ∈ [1,2], Im = -T)
++ σ-uniform Γℝ'/Γℝ bound on `[1/2, 1]`. -/
+theorem leftOfCriticalStrip_holds : leftOfCriticalStrip_target := by
+  obtain ⟨Cz, hCz_pos, hCz_bd⟩ := rightOfCriticalStrip_neg_holds
+  obtain ⟨Cd, hCd_pos, hCd_bd⟩ := LeftStripHelpers.digamma_bound_half_to_one
+  have hlog2_pos : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlogπ_nn : (0 : ℝ) ≤ Real.log Real.pi :=
+    Real.log_nonneg (by linarith [Real.pi_gt_three])
+  have hlog2_sq_pos : 0 < (Real.log 2)^2 := by positivity
+  set A : ℝ := Real.log Real.pi / (Real.log 2)^2 + Cd / Real.log 2 +
+      1 / (2 * (Real.log 2)^2) with hA_def
+  set C : ℝ := Cz + A + 1 with hC_def
+  have hA_nn : 0 ≤ A := by
+    rw [hA_def]
+    have h1 : 0 ≤ Real.log Real.pi / (Real.log 2)^2 :=
+      div_nonneg hlogπ_nn hlog2_sq_pos.le
+    have h2 : 0 ≤ Cd / Real.log 2 := div_nonneg hCd_pos.le hlog2_pos.le
+    have h3 : 0 ≤ 1 / (2 * (Real.log 2)^2) := by positivity
+    linarith
+  have hC_pos : 0 < C := by rw [hC_def]; linarith [hCz_pos]
+  refine ⟨C, hC_pos, ?_⟩
+  intro σ hσ T hT hGood
+  set s : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_def
+  have hs_re : s.re = σ := by simp [hs_def]
+  have hs_im : s.im = T := by simp [hs_def]
+  have hT_pos : 0 < T := by linarith
+  have hlogT_pos : 0 < Real.log T := Real.log_pos (by linarith)
+  have hlogT_ge_log2 : Real.log 2 ≤ Real.log T :=
+    Real.log_le_log (by norm_num) hT
+  have hs_ne0 : s ≠ 0 := by
+    intro h; have := congrArg Complex.im h; rw [hs_im] at this; simp at this; linarith
+  have hs_ne1 : s ≠ 1 := by
+    intro h; have := congrArg Complex.im h; rw [hs_im] at this; simp at this; linarith
+  have h1ms_re : (1 - s).re = 1 - σ := by simp [hs_re]
+  have h1ms_im : (1 - s).im = -T := by simp [hs_im]
+  have h1ms_re_ge_one : 1 ≤ (1 - s).re := by rw [h1ms_re]; linarith [hσ.2]
+  have h1ms_ne0 : (1 - s) ≠ 0 := by
+    intro h; have := congrArg Complex.re h; rw [h1ms_re] at this; simp at this
+    linarith [hσ.1, hσ.2]
+  have h1ms_ne1 : (1 - s) ≠ 1 := by
+    intro h; have := congrArg Complex.im h; rw [h1ms_im] at this; simp at this
+    linarith
+  have hΓℝ_s : Complex.Gammaℝ s ≠ 0 := by
+    rw [Ne, Complex.Gammaℝ_eq_zero_iff]; rintro ⟨n, hn⟩
+    have := congrArg Complex.im hn; rw [hs_im] at this; simp at this; linarith
+  have hΓℝ_1ms : Complex.Gammaℝ (1 - s) ≠ 0 := by
+    rw [Ne, Complex.Gammaℝ_eq_zero_iff]; rintro ⟨n, hn⟩
+    have := congrArg Complex.im hn; rw [h1ms_im] at this; simp at this; linarith
+  have hζ_s : riemannZeta s ≠ 0 := LeftStripHelpers.zeta_ne_zero_on_left σ hσ T hT
+  have hζ_1ms : riemannZeta (1 - s) ≠ 0 :=
+    riemannZeta_ne_zero_of_one_le_re h1ms_re_ge_one
+  have hLΛ_s : logDeriv completedRiemannZeta s =
+      logDeriv Complex.Gammaℝ s + logDeriv riemannZeta s :=
+    LeftStripHelpers.logDeriv_Λ_eq s hs_ne0 hs_ne1 hΓℝ_s hζ_s
+  have hLΛ_1ms : logDeriv completedRiemannZeta (1 - s) =
+      logDeriv Complex.Gammaℝ (1 - s) + logDeriv riemannZeta (1 - s) :=
+    LeftStripHelpers.logDeriv_Λ_eq (1 - s) h1ms_ne0 h1ms_ne1 hΓℝ_1ms hζ_1ms
+  have hFE := LeftStripHelpers.logDeriv_Λ_fe s h1ms_ne0 h1ms_ne1
+  have h_core :
+      deriv riemannZeta s / riemannZeta s =
+        -(deriv riemannZeta (1 - s) / riemannZeta (1 - s))
+          - logDeriv Complex.Gammaℝ s - logDeriv Complex.Gammaℝ (1 - s) := by
+    have : logDeriv riemannZeta s =
+        -logDeriv riemannZeta (1 - s) - logDeriv Complex.Gammaℝ s
+          - logDeriv Complex.Gammaℝ (1 - s) := by
+      have heq :
+          logDeriv Complex.Gammaℝ s + logDeriv riemannZeta s =
+            -(logDeriv Complex.Gammaℝ (1 - s) + logDeriv riemannZeta (1 - s)) := by
+        rw [← hLΛ_s, ← hLΛ_1ms, hFE]
+      linear_combination heq
+    simpa [logDeriv_apply] using this
+  have h_1ms_form : 1 - s = ((1 - σ : ℝ) : ℂ) + (-T : ℂ) * I := by
+    rw [hs_def]; push_cast; ring
+  have hσ_1m : (1 - σ) ∈ Set.Icc (1:ℝ) 2 :=
+    ⟨by linarith [hσ.2], by linarith [hσ.1]⟩
+  have h_bd_zeta :
+      ‖deriv riemannZeta (1 - s) / riemannZeta (1 - s)‖ ≤ Cz * (Real.log T)^2 := by
+    rw [h_1ms_form]
+    exact hCz_bd (1 - σ) hσ_1m T hT hGood
+  have h_bd_Γs :
+      ‖logDeriv Complex.Gammaℝ s‖ ≤
+        Real.log Real.pi / 2 + (1/2) * (Cd * Real.log T + 1) := by
+    have h_cast_shift : s / 2 + 1 =
+        (((σ/2 + 1 : ℝ)) : ℂ) + ((T/2 : ℝ) : ℂ) * I := by
+      rw [hs_def]; push_cast; ring
+    have hσ' : σ/2 + 1 ∈ Set.Icc (1/2 : ℝ) 1 := by
+      refine ⟨?_, ?_⟩ <;> linarith [hσ.1, hσ.2]
+    have h_abs_T : |(T/2 : ℝ)| = T/2 := abs_of_pos (by linarith : (0:ℝ) < T/2)
+    have hT' : 1 ≤ |(T/2)| := by rw [h_abs_T]; linarith
+    have hψ_bd :
+        ‖deriv Complex.Gamma ((((σ/2+1) : ℝ) : ℂ) + ((T/2 : ℝ) : ℂ) * I) /
+          Complex.Gamma ((((σ/2+1) : ℝ) : ℂ) + ((T/2 : ℝ) : ℂ) * I)‖ ≤
+          Cd * Real.log (1 + |T/2|) :=
+      hCd_bd (σ/2 + 1) hσ' (T/2) hT'
+    rw [h_abs_T] at hψ_bd
+    have hψ_shift : ‖deriv Complex.Gamma (s/2 + 1) / Complex.Gamma (s/2 + 1)‖
+          ≤ Cd * Real.log (1 + T/2) := by
+      rw [h_cast_shift]; exact hψ_bd
+    have h_log_le : Real.log (1 + T/2) ≤ Real.log T :=
+      Real.log_le_log (by linarith) (by linarith)
+    have hψ_shift_T : ‖deriv Complex.Gamma (s/2 + 1) / Complex.Gamma (s/2 + 1)‖
+          ≤ Cd * Real.log T :=
+      hψ_shift.trans (mul_le_mul_of_nonneg_left h_log_le hCd_pos.le)
+    have h_half_ne : ∀ m : ℕ, s / 2 ≠ -(m : ℂ) := by
+      intro m h
+      have : s = -(2 * (m : ℂ)) := by linear_combination 2 * h
+      exact hΓℝ_s (Complex.Gammaℝ_eq_zero_iff.mpr ⟨m, this⟩)
+    have h_shift :
+        deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2) =
+          deriv Complex.Gamma (s / 2 + 1) / Complex.Gamma (s / 2 + 1) - 2 / s := by
+      have h := Complex.digamma_apply_add_one (s / 2) h_half_ne
+      unfold Complex.digamma logDeriv at h
+      simp only [Pi.div_apply] at h
+      have h2 : (s / 2)⁻¹ = 2 / s := by field_simp
+      linear_combination -h - h2
+    have h_2_over_s : ‖(2 : ℂ) / s‖ ≤ 1 := by
+      have hs_norm_ge : T ≤ ‖s‖ := by
+        have h_eq : T = |s.im| := by rw [hs_im, abs_of_pos hT_pos]
+        rw [h_eq]; exact Complex.abs_im_le_norm s
+      have hs_norm_pos : 0 < ‖s‖ := lt_of_lt_of_le hT_pos hs_norm_ge
+      rw [norm_div]
+      rw [show ‖(2 : ℂ)‖ = 2 from by norm_num]
+      rw [div_le_iff₀ hs_norm_pos]; linarith
+    have hψ_orig : ‖deriv Complex.Gamma (s / 2) / Complex.Gamma (s / 2)‖
+          ≤ Cd * Real.log T + 1 := by
+      rw [h_shift]
+      refine le_trans (norm_sub_le _ _) ?_
+      linarith [hψ_shift_T, h_2_over_s]
+    have h_ne2n : ∀ n : ℕ, s ≠ -(2 * (n : ℂ)) := by
+      intro n h
+      exact hΓℝ_s (Complex.Gammaℝ_eq_zero_iff.mpr ⟨n, h⟩)
+    exact LeftStripHelpers.norm_logDeriv_gammaℝ_le s (Cd * Real.log T + 1)
+      hΓℝ_s h_ne2n hψ_orig
+  have h_bd_Γ1ms :
+      ‖logDeriv Complex.Gammaℝ (1 - s)‖ ≤
+        Real.log Real.pi / 2 + (1/2) * (Cd * Real.log T) := by
+    have h_cast : (1 - s) / 2 =
+        ((((1 - σ) / 2 : ℝ)) : ℂ) + ((-T/2 : ℝ) : ℂ) * I := by
+      rw [hs_def]; push_cast; ring
+    have hσ' : (1 - σ) / 2 ∈ Set.Icc (1/2 : ℝ) 1 := by
+      refine ⟨?_, ?_⟩ <;> linarith [hσ.1, hσ.2]
+    have h_abs_negT : |(-T/2 : ℝ)| = T/2 := by
+      rw [abs_of_nonpos (by linarith : (-T/2 : ℝ) ≤ 0)]; ring
+    have hT' : 1 ≤ |(-T/2)| := by rw [h_abs_negT]; linarith
+    have hψ_bd :
+        ‖deriv Complex.Gamma ((((1-σ)/2 : ℝ) : ℂ) + ((-T/2 : ℝ) : ℂ) * I) /
+          Complex.Gamma ((((1-σ)/2 : ℝ) : ℂ) + ((-T/2 : ℝ) : ℂ) * I)‖ ≤
+          Cd * Real.log (1 + |(-T/2)|) :=
+      hCd_bd ((1 - σ)/2) hσ' (-T/2) hT'
+    rw [h_abs_negT] at hψ_bd
+    have hψ_at : ‖deriv Complex.Gamma ((1 - s) / 2) / Complex.Gamma ((1 - s) / 2)‖
+          ≤ Cd * Real.log (1 + T/2) := by
+      rw [h_cast]; exact hψ_bd
+    have h_log_le : Real.log (1 + T/2) ≤ Real.log T :=
+      Real.log_le_log (by linarith) (by linarith)
+    have hψ_le : ‖deriv Complex.Gamma ((1 - s) / 2) / Complex.Gamma ((1 - s) / 2)‖
+          ≤ Cd * Real.log T :=
+      hψ_at.trans (mul_le_mul_of_nonneg_left h_log_le hCd_pos.le)
+    have h_ne2n : ∀ n : ℕ, (1 - s) ≠ -(2 * (n : ℂ)) := by
+      intro n h
+      exact hΓℝ_1ms (Complex.Gammaℝ_eq_zero_iff.mpr ⟨n, h⟩)
+    exact LeftStripHelpers.norm_logDeriv_gammaℝ_le (1 - s) (Cd * Real.log T)
+      hΓℝ_1ms h_ne2n hψ_le
+  rw [h_core]
+  have h_norm_add3 :
+      ‖-(deriv riemannZeta (1 - s) / riemannZeta (1 - s))
+        - logDeriv Complex.Gammaℝ s - logDeriv Complex.Gammaℝ (1 - s)‖ ≤
+      ‖deriv riemannZeta (1 - s) / riemannZeta (1 - s)‖
+        + ‖logDeriv Complex.Gammaℝ s‖ + ‖logDeriv Complex.Gammaℝ (1 - s)‖ := by
+    have h1 := norm_sub_le
+        (-(deriv riemannZeta (1 - s) / riemannZeta (1 - s)) - logDeriv Complex.Gammaℝ s)
+        (logDeriv Complex.Gammaℝ (1 - s))
+    have h2 := norm_sub_le
+        (-(deriv riemannZeta (1 - s) / riemannZeta (1 - s)))
+        (logDeriv Complex.Gammaℝ s)
+    have h3 : ‖-(deriv riemannZeta (1 - s) / riemannZeta (1 - s))‖
+        = ‖deriv riemannZeta (1 - s) / riemannZeta (1 - s)‖ := norm_neg _
+    linarith
+  have h_sum_bd :
+      ‖deriv riemannZeta (1 - s) / riemannZeta (1 - s)‖
+        + ‖logDeriv Complex.Gammaℝ s‖ + ‖logDeriv Complex.Gammaℝ (1 - s)‖ ≤
+      Cz * (Real.log T)^2 + Real.log Real.pi + Cd * Real.log T + 1/2 := by
+    linarith [h_bd_zeta, h_bd_Γs, h_bd_Γ1ms]
+  refine le_trans h_norm_add3 (le_trans h_sum_bd ?_)
+  have hlogT_sq_ge : (Real.log 2)^2 ≤ (Real.log T)^2 := by
+    nlinarith [hlogT_ge_log2, hlog2_pos.le]
+  have h_termπ :
+      Real.log Real.pi ≤ (Real.log Real.pi / (Real.log 2)^2) * (Real.log T)^2 := by
+    have h1 : (Real.log Real.pi / (Real.log 2)^2) * (Real.log T)^2 =
+              Real.log Real.pi * ((Real.log T)^2 / (Real.log 2)^2) := by ring
+    rw [h1]
+    have h2 : 1 ≤ (Real.log T)^2 / (Real.log 2)^2 :=
+      (one_le_div hlog2_sq_pos).mpr hlogT_sq_ge
+    nlinarith
+  have h_termCd : Cd * Real.log T ≤ Cd / Real.log 2 * (Real.log T)^2 := by
+    have h_ratio : 1 ≤ Real.log T / Real.log 2 :=
+      (one_le_div hlog2_pos).mpr hlogT_ge_log2
+    have h_nn : 0 ≤ Cd * Real.log T := mul_nonneg hCd_pos.le hlogT_pos.le
+    have h_target :
+        Cd / Real.log 2 * (Real.log T)^2 = Cd * Real.log T * (Real.log T / Real.log 2) := by
+      field_simp
+    rw [h_target]
+    have : Cd * Real.log T = Cd * Real.log T * 1 := by ring
+    linarith [mul_le_mul_of_nonneg_left h_ratio h_nn]
+  have h_term12 : (1/2 : ℝ) ≤ 1 / (2 * (Real.log 2)^2) * (Real.log T)^2 := by
+    rw [show (1 / (2 * (Real.log 2)^2) * (Real.log T)^2 : ℝ) =
+        (Real.log T)^2 / (2 * (Real.log 2)^2) from by ring]
+    rw [le_div_iff₀ (by positivity : (0:ℝ) < 2 * (Real.log 2)^2)]
+    linarith
+  have hA_expand : A * (Real.log T)^2 =
+      (Real.log Real.pi / (Real.log 2)^2) * (Real.log T)^2 +
+      (Cd / Real.log 2) * (Real.log T)^2 +
+      (1 / (2 * (Real.log 2)^2)) * (Real.log T)^2 := by rw [hA_def]; ring
+  have h_pre :
+      Cz * (Real.log T)^2 + Real.log Real.pi + Cd * Real.log T + 1/2 ≤
+      Cz * (Real.log T)^2 + A * (Real.log T)^2 := by
+    nlinarith [h_termπ, h_termCd, h_term12, hA_expand]
+  have h_final :
+      Cz * (Real.log T)^2 + A * (Real.log T)^2 ≤ C * (Real.log T)^2 := by
+    have h1 : Cz * (Real.log T)^2 + A * (Real.log T)^2 =
+        (Cz + A) * (Real.log T)^2 := by ring
+    rw [h1, hC_def]
+    apply mul_le_mul_of_nonneg_right
+    · linarith
+    · positivity
+  linarith [h_pre, h_final]
+
+/-- **leftOfCriticalStrip_neg_target holds** — mirror at `-T` via conjugation. -/
+theorem leftOfCriticalStrip_neg_holds : leftOfCriticalStrip_neg_target := by
+  obtain ⟨C, hC_pos, h_bd⟩ := leftOfCriticalStrip_holds
+  refine ⟨C, hC_pos, ?_⟩
+  intro σ hσ T hT hGood
+  have h_conj_eq : (σ : ℂ) + (-T : ℂ) * I = starRingEnd ℂ ((σ : ℂ) + (T : ℂ) * I) := by
+    apply Complex.ext <;> simp
+  have hs_ne_1 : ((σ : ℂ) + (T : ℂ) * I) ≠ 1 := by
+    intro h
+    have him : ((σ : ℂ) + (T : ℂ) * I).im = (1 : ℂ).im := by rw [h]
+    simp at him
+    linarith
+  rw [h_conj_eq]
+  have h_zeta := CoshZetaSymmetry.riemannZeta_conj _ hs_ne_1
+  have h_deriv := deriv_riemannZeta_conj _ hs_ne_1
+  rw [h_zeta, h_deriv, ← map_div₀, Complex.norm_conj]
+  exact h_bd σ hσ T hT hGood
 
 /-- **FullStripLogDerivInputs unconditional** — assembles the `pos` and `neg`
 field bounds from the individual boundary targets (Steps 6 + 7 in the plan). -/
@@ -851,21 +1618,29 @@ Expected route:
   choose `N = 2`.
 -/
 theorem full_strip_logDerivZeta_bound_N_lt_4_unconditional :
-    full_strip_logDerivZeta_bound_N_lt_4_target := by
-  sorry
+    full_strip_logDerivZeta_bound_N_lt_4_target :=
+  full_strip_logDerivZeta_bound_pos_of_boundary
+    leftOfCriticalStrip_holds rightOfCriticalStrip_holds
 
-/-- **Remaining Landau provider, negative height.**
-
-This is the bottom-edge analogue of
-`full_strip_logDerivZeta_bound_N_lt_4_unconditional`.  The intended proof is
-to transport the positive-height full-strip bound by conjugation:
-`ζ (conj s) = conj (ζ s)`, derivative compatibility for `riemannZeta`, and
-norm invariance under conjugation.  Strong `goodHeight T` already contains
-both `+T` and `-T` zero-avoidance data.
--/
+/-- **Negative-height full-strip Landau bound via conjugation.** -/
 theorem full_strip_logDerivZeta_bound_N_lt_4_neg_unconditional :
     full_strip_logDerivZeta_bound_N_lt_4_neg_target := by
-  sorry
+  obtain ⟨C, N, T₀, hC_pos, hT₀, hN_lt, h_bd⟩ :=
+    full_strip_logDerivZeta_bound_N_lt_4_unconditional
+  refine ⟨C, N, T₀, hC_pos, hT₀, hN_lt, ?_⟩
+  intro T hT hGood σ hσ
+  have h_conj_eq : (σ : ℂ) + (-T : ℂ) * I = starRingEnd ℂ ((σ : ℂ) + (T : ℂ) * I) := by
+    apply Complex.ext <;> simp
+  have hs_ne_1 : ((σ : ℂ) + (T : ℂ) * I) ≠ 1 := by
+    intro h
+    have him : ((σ : ℂ) + (T : ℂ) * I).im = (1 : ℂ).im := by rw [h]
+    simp at him
+    linarith [hT₀, hT]
+  rw [h_conj_eq]
+  have h_zeta := CoshZetaSymmetry.riemannZeta_conj _ hs_ne_1
+  have h_deriv := deriv_riemannZeta_conj _ hs_ne_1
+  rw [h_zeta, h_deriv, ← map_div₀, Complex.norm_conj]
+  exact h_bd T hT hGood σ hσ
 
 /-- **Closed full-strip log-derivative input bundle.**
 
@@ -877,27 +1652,334 @@ theorem fullStripLogDerivInputs_unconditional : FullStripLogDerivInputs :=
   ⟨full_strip_logDerivZeta_bound_N_lt_4_unconditional,
     full_strip_logDerivZeta_bound_N_lt_4_neg_unconditional⟩
 
-/-- **Remaining finite-height FE transport for the vertical edges.**
+/-! ### Finite-height FE transport for the vertical edges — plan
 
 For each finite good height `T`, prove that the right-minus-left vertical edge
 integral over `[-T, T]` is exactly the reflected-prime integral on the right
 edge `σ = 2`.
 
-Expected route:
-* Right edge `σ = 2`: rewrite `weilIntegrand (pairTestMellin β)` using the
-  corrected arch/prime/reflected pointwise identity already used in
-  `ArchOperatorBound.weilArchPrimeIdentityTarget_at_two`.
-* Left edge `σ = -1`: apply the functional equation and the substitution
-  `1 - (-1 + iy) = 2 - iy`.
-* Use orientation/substitution on interval integrals and conjugation/evenness
-  of the pair test to align the finite interval with the right-edge
-  reflected-prime integral.
-* Use `goodHeight T` only for the zero/pole avoidance needed to justify the
-  pointwise functional-equation rewrites on the finite contour.
--/
+## Statement the target reduces to
+
+Apply the right-edge pointwise split (Step 1 below) under the finite integral.
+The target becomes
+
+```
+∫_{-T}^{T} archIntegrand β 2 y dy  =  ∫_{-T}^{T} weilIntegrand (pairTestMellin β) (-1 + y·I) dy   (*)
+```
+
+All remaining work is `(*)`. Every piece needed is already in the repo.
+
+## Resources
+
+### Step 1 — Right edge σ = 2 pointwise split
+
+* `Contour.weilIntegrand_split_via_arch` — `RequestProject/WeilArchPrimeIdentity.lean:473`.
+  Gives `weilIntegrand (pairTestMellin β) s = archIntegrand_form + ζ'/ζ(1−s)·h(s)` pointwise.
+* At `s = 2 + i y`: `archIntegrand β 2 y = (Γℝ'/Γℝ(2+iy) + Γℝ'/Γℝ(-1−iy))·h(2+iy)` —
+  `RequestProject/WeilArchPrimeIdentity.lean:443`.
+* Reflected piece matches `reflectedPrimeIntegrand β 2 y` by `def reflectedPrimeIntegrand` —
+  `RequestProject/WeilPairIBP.lean:2173`.
+* Nonzero side-conditions at σ = 2 (all unconditional): `two_plus_tI_ne_zero`,
+  `two_plus_tI_ne_one`, `zeta_ne_zero_two`, `zeta_ne_zero_reflected_two`,
+  `gammaR_ne_zero_two`, `gammaR_ne_zero_reflected_two` — all in `ArchOperatorBound.lean`,
+  used exactly this way at `weilArchPrimeIdentityTarget_at_two`
+  (`ArchOperatorBound.lean:789`).
+* Integrability on ℝ (needed for `integral_sub`): `archIntegrand_integrable_at_two`,
+  `primeIntegrand_integrable`, `reflectedPrimeIntegrand_integrable_at_two` —
+  `ArchOperatorBound.lean:775`.
+
+### Step 2 — Left edge σ = −1 arch decomposition
+
+* `Contour.weilIntegrand_arch_decomposition` — `RequestProject/WeilContour.lean:2358`
+  (generic in `h`, so it applies to `pairTestMellin β`).
+  At `s = −1 + i y` (where `1 − s = 2 − iy`):
+  ```
+  weilIntegrand(-1+iy) = (Γℝ'/Γℝ(-1+iy) + Γℝ'/Γℝ(2-iy)) · h(-1+iy)
+                       + ζ'/ζ(2-iy) · h(-1+iy)
+  ```
+* Side-conditions at σ = −1: `(-1 + iy) ≠ 0, 1` trivial (real part is −1);
+  `Γℝ(-1+iy) ≠ 0`, `Γℝ(2-iy) ≠ 0` come from `Gammaℝ_ne_zero_of_re_pos` plus
+  `gammaR_ne_zero_reflected_two`-style lemmas. The only condition requiring
+  `goodHeight T` is `riemannZeta(-1+iy) ≠ 0` at `y = ±T` (and `ζ(2-iy) ≠ 0`
+  is automatic since `Re = 2 > 1`). `goodHeight T` supplies precisely the
+  contour-avoidance needed.
+
+### Step 3 — Orientation / conjugation on `[-T, T]`
+
+* `pairTestMellin_conj` — `RequestProject/WeilFinalAssemblyUnconditional.lean:147`:
+  `pairTestMellin β s̄ = conj(pairTestMellin β s)`.
+* `Complex.Gammaℝ` and ζ real-coefficient conjugation:
+  `CoshZetaSymmetry.riemannZeta_conj`, `deriv_riemannZeta_conj` (used in
+  `full_strip_logDerivZeta_bound_N_lt_4_neg_unconditional`,
+  `WeilFinalAssemblyUnconditional.lean:1632–1643`). Same trick gives
+  `Γℝ(s̄) = conj(Γℝ(s))` and `deriv Gammaℝ (s̄) = conj (deriv Gammaℝ s)`.
+* `MeasureTheory.integral_comp_neg` / `intervalIntegral.integral_comp_neg` —
+  standard Mathlib. Lets you substitute `y ↦ -y` inside `∫_{-T}^{T}`.
+  Using this, `arch-op(2−iy)·h(−1+iy)` integrated over `[−T, T]` becomes
+  `arch-op(2+iy)·h(−1−iy)` integrated over `[−T, T]`.
+* Note `arch-op(s) = Γℝ'/Γℝ(s) + Γℝ'/Γℝ(1−s)` is already symmetric under
+  `s ↔ 1 − s` — so `arch-op(−1+iy) = arch-op(2−iy)` is free.
+
+### Step 4 — Collapse `(*)` via Cauchy on the rectangle
+
+After Steps 1–3, `(*)` is an identity among integrals of `arch-op(2+iy)·h(·)` and
+`ζ'/ζ(2+iy)·h(·)` on the same vertical line σ = 2 (via the `y ↦ −y`
+substitution). The remaining `h`-argument mismatch (`h(2+iy)` vs `h(−1−iy)`) is
+exactly the content of rectangle Cauchy on `[−1, 2] × [−T, T]` for
+`weilIntegrand (pairTestMellin β)`:
+
+* Template already executed for `hadamardKernel`:
+  `rectContourIntegral_weilIntegrand_hadamardKernel_eq_boundary_forms_with_origin_neg_one`
+  — `RequestProject/WeilHadamardBoundaryDecomposition.lean:188-310` with companion
+  `rectContourIntegral_weilIntegrand_hadamardKernel_eq_residue_sum` —
+  `WeilHadamardRectangleResidueSum.lean:264-311`.
+* Port machinery (mostly mechanical, since the arch decomposition in Step 2 is
+  already `h`-generic):
+  * Analyticity of `pairTestMellin β` on the rectangle:
+    `Contour.pairTestMellin_differentiableOn` (used in
+    `pairTestMellin_cosh_expansion`, `WeilContour.lean:1995-2078`).
+  * Zero-sum on good heights: `goodHeight T` (`WeilFinalAssembly.lean:681`) plus
+    `exists_goodHeight_strong_ge` (`WeilFinalAssembly.lean:693`).
+  * Residue at `s = 1`: `riemannZeta_pole_at_one` (`WeilContour.lean:2390`) —
+    residue contribution `pairTestMellin β 1 = gaussianPairDefect β` via
+    `pairTestMellin_at_one` (`WeilContour.lean:1156`).
+  * Per-zero residue: `weil_circle_integral_per_zero` (`WeilContour.lean:2328`) —
+    residue `−h(ρ)` per simple zero.
+
+### Step 5 — Finite-T assembly
+
+* `intervalIntegral.integral_sub`, `intervalIntegral.integral_add`,
+  `intervalIntegral.integral_congr` — standard Mathlib, for threading the
+  pointwise identities under `∫_{−T}^{T}`.
+* Pair-combined identity at σ = 2: `Contour.pair_coeffs_sum`
+  (`WeilContour.lean:1909`) and `Contour.pairTestMellin_cosh_expansion`
+  (`WeilContour.lean:1995`) — the algebraic pair-telescope that supplies the
+  cancellation of the extra `ζ'/ζ(2+iy)·h` piece against residues at the π/6
+  pair axes.
+
+## Concrete proof skeleton
+
+```lean
 theorem verticalEdges_eq_reflectedPrime_unconditional (β : ℝ) :
     verticalEdges_eq_reflectedPrime_target β := by
+  intro T hGood
+  -- Step 1: pointwise split on right edge s = 2+iy
+  have h_right_ptw : ∀ y : ℝ,
+      Contour.weilIntegrand (Contour.pairTestMellin β) ((2:ℂ) + y*I)
+        = Contour.archIntegrand β 2 y + Contour.reflectedPrimeIntegrand β 2 y := by
+    intro y
+    have := Contour.weilIntegrand_split_via_arch β ((2:ℂ) + y*I)
+      (two_plus_tI_ne_zero y) (two_plus_tI_ne_one y)
+      (zeta_ne_zero_two y) (zeta_ne_zero_reflected_two y)
+      (gammaR_ne_zero_two y) (gammaR_ne_zero_reflected_two y)
+    -- repackage as archIntegrand + reflectedPrimeIntegrand
+    simp [Contour.archIntegrand, Contour.reflectedPrimeIntegrand] at this ⊢
+    linarith_or_linear_combination using this
+  -- Step 2: FE decomposition on left edge s = -1+iy (uses goodHeight for ζ-nonzero at y=±T)
+  have h_left_ptw : ∀ y ∈ Set.Icc (-T) T,
+      Contour.weilIntegrand (Contour.pairTestMellin β) ((-1:ℂ) + y*I) = … := by
+    intro y hy
+    apply Contour.weilIntegrand_arch_decomposition
+    · -- -1+iy ≠ 0
+    · -- -1+iy ≠ 1
+    · -- ζ(-1+iy) ≠ 0  -- via goodHeight T + y ∈ [-T,T]
+    · -- ζ(2-iy) ≠ 0  -- auto: Re = 2 > 1
+    · -- Γℝ(-1+iy) ≠ 0
+    · -- Γℝ(2-iy) ≠ 0
+  -- Step 3: rewrite the two interval integrals with intervalIntegral.integral_congr
+  --         then subtract; reduce to (*)
+  -- Step 4: apply Cauchy/residue on rectangle [-1,2]×[-T,T] (ported from
+  --         rectContourIntegral_weilIntegrand_hadamardKernel_eq_boundary_forms_with_origin_neg_one)
+  --         to supply the remaining integral identity
+  …
+```
+
+## Bottom line
+
+Everything for Steps 1–3 and 5 is already discharged elsewhere and can be copied
+essentially verbatim. The one piece that requires work is porting the
+Hadamard-kernel rectangle-Cauchy/residue decomposition to `pairTestMellin β`
+(mechanical — the generic pointwise machinery it invokes is already
+`h`-generic). Once ported, `(*)` closes by rectangle Cauchy plus the
+already-proved `pair_coeffs_sum` / `pairTestMellin_cosh_expansion` cancellation.
+-/
+/-- Pointwise right-edge split for `pairTestMellin β` at `σ = 2`.
+Unconditional specialization of `Contour.weilIntegrand_split_via_arch` at `s = 2 + iy`,
+identifying the two pieces as `Contour.archIntegrand β 2 y` and
+`Contour.reflectedPrimeIntegrand β 2 y`.
+
+The nonzero side-conditions at `σ = 2` (mirroring the private lemmas
+`two_plus_tI_ne_zero`, `two_plus_tI_ne_one`, `zeta_ne_zero_two`,
+`zeta_ne_zero_reflected_two`, `gammaR_ne_zero_two`, `gammaR_ne_zero_reflected_two`
+in `ArchOperatorBound.lean`) are re-derived here since those lemmas are private. -/
+private theorem weilIntegrand_pair_right_edge_two_split (β : ℝ) (y : ℝ) :
+    Contour.weilIntegrand (Contour.pairTestMellin β) (((2:ℝ):ℂ) + (y:ℂ) * I)
+      = Contour.archIntegrand β 2 y + Contour.reflectedPrimeIntegrand β 2 y := by
+  set s : ℂ := (((2:ℝ):ℂ) + (y:ℂ) * I) with hs_def
+  have hs_re : s.re = 2 := by simp [s]
+  have h1s_re : (1 - s).re = -1 := by simp [s]; ring
+  have hne_zero : s ≠ 0 := fun h => by
+    have hh : s.re = (0:ℂ).re := by rw [h]
+    rw [hs_re] at hh; norm_num at hh
+  have hne_one : s ≠ 1 := fun h => by
+    have hh : s.re = (1:ℂ).re := by rw [h]
+    rw [hs_re] at hh; norm_num at hh
+  have hre2 : (1:ℝ) < s.re := by rw [hs_re]; norm_num
+  have hζ_s : riemannZeta s ≠ 0 := riemannZeta_ne_zero_of_one_lt_re hre2
+  have hΓ_s : s.Gammaℝ ≠ 0 := by
+    apply Complex.Gammaℝ_ne_zero_of_re_pos
+    rw [hs_re]; norm_num
+  -- Γℝ(1-s) ≠ 0 at σ=2 : (1-s).re = -1, uses Gammaℝ_eq_zero_iff
+  have hΓ_1s : (1 - s).Gammaℝ ≠ 0 := by
+    intro h
+    rw [Complex.Gammaℝ_eq_zero_iff] at h
+    obtain ⟨n, hn⟩ := h
+    have hre : (1 - s).re = (-(2 * (n:ℂ))).re := by rw [hn]
+    rw [h1s_re] at hre
+    simp at hre
+    have h_int : (2 * n : ℤ) = 1 := by exact_mod_cast (by linarith : (2 * (n:ℝ)) = 1)
+    omega
+  -- ζ(1-s) ≠ 0 via completed zeta reflection ξ(1-s) = ξ(s) = Γℝ(s)·ζ(s).
+  have h1s_ne_zero : (1 - s) ≠ 0 := by
+    intro h
+    have hh : (1 - s).re = (0:ℂ).re := by rw [h]
+    rw [h1s_re] at hh; norm_num at hh
+  have hζ_1s : riemannZeta (1 - s) ≠ 0 := by
+    have h_xi_s : completedRiemannZeta s = s.Gammaℝ * riemannZeta s :=
+      Contour.completed_eq_gammaℝ_mul_zeta hne_zero hΓ_s
+    have h_xi_s_ne : completedRiemannZeta s ≠ 0 := by
+      rw [h_xi_s]; exact mul_ne_zero hΓ_s hζ_s
+    have h_xi_1s : completedRiemannZeta (1 - s) = completedRiemannZeta s :=
+      completedRiemannZeta_one_sub s
+    have h_xi_1s_ne : completedRiemannZeta (1 - s) ≠ 0 := by
+      rw [h_xi_1s]; exact h_xi_s_ne
+    have h_zeta_1s_eq :
+        riemannZeta (1 - s) = completedRiemannZeta (1 - s) / (1 - s).Gammaℝ :=
+      riemannZeta_def_of_ne_zero h1s_ne_zero
+    rw [h_zeta_1s_eq]
+    exact div_ne_zero h_xi_1s_ne hΓ_1s
+  -- Apply the split
+  have h_split := Contour.weilIntegrand_split_via_arch β s hne_zero hne_one
+    hζ_s hζ_1s hΓ_s hΓ_1s
+  -- Identify pieces with archIntegrand / reflectedPrimeIntegrand
+  show Contour.weilIntegrand (Contour.pairTestMellin β) s
+      = Contour.archIntegrand β 2 y + Contour.reflectedPrimeIntegrand β 2 y
+  rw [h_split]
+  unfold Contour.archIntegrand Contour.reflectedPrimeIntegrand
+  show (deriv Complex.Gammaℝ s / s.Gammaℝ +
+         deriv Complex.Gammaℝ (1 - s) / (1 - s).Gammaℝ) *
+           Contour.pairTestMellin β s +
+        deriv riemannZeta (1 - s) / riemannZeta (1 - s) *
+           Contour.pairTestMellin β s
+      = (deriv Complex.Gammaℝ (((2:ℝ):ℂ) + (y:ℂ) * I) /
+            (((2:ℝ):ℂ) + (y:ℂ) * I).Gammaℝ +
+          deriv Complex.Gammaℝ (1 - (((2:ℝ):ℂ) + (y:ℂ) * I)) /
+            (1 - (((2:ℝ):ℂ) + (y:ℂ) * I)).Gammaℝ) *
+          Contour.pairTestMellin β (((2:ℝ):ℂ) + (y:ℂ) * I) +
+        deriv riemannZeta (1 - (((2:ℝ):ℂ) + (y:ℂ) * I)) /
+          riemannZeta (1 - (((2:ℝ):ℂ) + (y:ℂ) * I)) *
+          Contour.pairTestMellin β (((2:ℝ):ℂ) + (y:ℂ) * I)
+  rfl
+
+/-- Core integral identity remaining after the right-edge pointwise split.
+Reduces `verticalEdges_eq_reflectedPrime_target β` (together with
+`weilIntegrand_pair_right_edge_two_split`) to a single cleanly-stated
+identity between the finite interval integral of `archIntegrand β 2`
+and the finite interval integral of `weilIntegrand (pairTestMellin β)`
+on the left edge `σ = -1`.
+
+This is the `(*)` identity of the surrounding docstring. It is exactly the
+content of rectangle Cauchy on `[-1, 2] × [-T, T]` for
+`weilIntegrand (pairTestMellin β)`, which is a straightforward port of
+`rectContourIntegral_weilIntegrand_hadamardKernel_eq_boundary_forms_with_origin_neg_one`
+and `rectContourIntegral_weilIntegrand_hadamardKernel_eq_residue_sum` from
+`WeilHadamardBoundaryDecomposition.lean` and `WeilHadamardRectangleResidueSum.lean`
+(both generic in the arch decomposition `h`). The pair cancellation at the
+cosh-pair axes is discharged by `Contour.pair_coeffs_sum` and
+`Contour.pairTestMellin_cosh_expansion` in `WeilContour.lean`. -/
+def archIntegrand_interval_eq_left_edge_integral_target (β : ℝ) : Prop :=
+  ∀ T : ℝ, goodHeight T →
+    (∫ y : ℝ in (-T : ℝ)..T, Contour.archIntegrand β 2 y)
+      = ∫ y : ℝ in (-T : ℝ)..T,
+          Contour.weilIntegrand (Contour.pairTestMellin β)
+            ((((-1:ℝ)):ℂ) + (y:ℂ) * I)
+
+/-- Hypothesis-form placeholder for the remaining rectangle-Cauchy content.
+Given the rectangle-Cauchy identity `archIntegrand_interval_eq_left_edge_integral_target β`,
+the finite-height FE transport follows by combining it with the right-edge
+pointwise split `weilIntegrand_pair_right_edge_two_split` and
+`intervalIntegral.integral_sub`. -/
+theorem verticalEdges_eq_reflectedPrime_of_archIntegrand_interval_eq
+    (β : ℝ)
+    (h_arch_eq : archIntegrand_interval_eq_left_edge_integral_target β) :
+    verticalEdges_eq_reflectedPrime_target β := by
+  intro T hGood
+  -- Right-edge pointwise split: weil(2+iy) = arch + reflectedPrime (pointwise).
+  have h_right_ptw : ∀ y : ℝ,
+      Contour.weilIntegrand (Contour.pairTestMellin β) (((2:ℝ):ℂ) + (y:ℂ) * I)
+        = Contour.archIntegrand β 2 y + Contour.reflectedPrimeIntegrand β 2 y :=
+    fun y => weilIntegrand_pair_right_edge_two_split β y
+  -- Integral form of the right-edge split.
+  have h_right_int :
+      (∫ y : ℝ in (-T:ℝ)..T,
+          Contour.weilIntegrand (Contour.pairTestMellin β) (((2:ℝ):ℂ) + (y:ℂ) * I))
+        = (∫ y : ℝ in (-T:ℝ)..T,
+            Contour.archIntegrand β 2 y + Contour.reflectedPrimeIntegrand β 2 y) := by
+    apply intervalIntegral.integral_congr
+    intro y _; exact h_right_ptw y
+  -- Unfold the target and simplify: note the statement uses `((2:ℝ):ℂ) = (2:ℂ)`.
+  show (∫ y : ℝ in (-T : ℝ)..T,
+        Contour.weilIntegrand (Contour.pairTestMellin β)
+          (((2 : ℝ) : ℂ) + (y : ℝ) * I))
+      - (∫ y : ℝ in (-T : ℝ)..T,
+        Contour.weilIntegrand (Contour.pairTestMellin β)
+          ((((-1 : ℝ)) : ℂ) + (y : ℝ) * I))
+    = ∫ y : ℝ in (-T : ℝ)..T, Contour.reflectedPrimeIntegrand β 2 y
+  rw [h_right_int]
+  -- Use archIntegrand_interval_eq_left_edge_integral_target to rewrite the left edge.
+  have h_left_eq := h_arch_eq T hGood
+  -- Rewrite: ∫left = ∫arch, then the target becomes
+  -- (∫arch + ∫ref) - ∫arch = ∫ref, which is algebraic.
+  rw [show (∫ y : ℝ in (-T : ℝ)..T,
+        Contour.weilIntegrand (Contour.pairTestMellin β)
+          ((((-1 : ℝ)) : ℂ) + (y : ℝ) * I)) =
+        (∫ y : ℝ in (-T:ℝ)..T, Contour.archIntegrand β 2 y) from h_left_eq.symm]
+  -- Split the right integral via intervalIntegral.integral_add. For this we need
+  -- IntervalIntegrable of both summands on `[-T, T]` — both are continuous
+  -- (archIntegrand) respectively from the globally integrable reflectedPrimeIntegrand.
+  have h_arch_int : IntervalIntegrable (Contour.archIntegrand β 2) MeasureTheory.volume
+      (-T) T :=
+    (Contour.archIntegrand_integrable_at_two β).intervalIntegrable
+  have h_ref_int : IntervalIntegrable (Contour.reflectedPrimeIntegrand β 2)
+      MeasureTheory.volume (-T) T :=
+    (Contour.reflectedPrimeIntegrand_integrable_at_two β).intervalIntegrable
+  rw [intervalIntegral.integral_add h_arch_int h_ref_int]
+  ring
+
+/-- **Placeholder rectangle-Cauchy discharge.**
+Currently a single refactoring `sorry`: this is exactly the
+`(*)` identity of the docstring and is the last remaining mechanical port of
+the Hadamard-kernel rectangle-Cauchy machinery
+(`rectContourIntegral_weilIntegrand_hadamardKernel_eq_boundary_forms_with_origin_neg_one`
+and `rectContourIntegral_weilIntegrand_hadamardKernel_eq_residue_sum`) to the
+`pairTestMellin β` kernel. The pair cancellation at the cosh-pair axes is
+supplied by `Contour.pair_coeffs_sum` + `Contour.pairTestMellin_cosh_expansion`. -/
+theorem archIntegrand_interval_eq_left_edge_integral_target_holds (β : ℝ) :
+    archIntegrand_interval_eq_left_edge_integral_target β := by
   sorry
+
+/-- **Finite-height FE transport for the vertical edges.**
+
+Currently reduced to the single named intermediate identity
+`archIntegrand_interval_eq_left_edge_integral_target β` — see the docstring on that
+definition for the precise content (rectangle-Cauchy on `[-1, 2] × [-T, T]` for
+`weilIntegrand (pairTestMellin β)`). All other pieces of the original target
+(Step 1 right-edge pointwise split, Step 5 integral-of-sum combination) are
+discharged unconditionally above. -/
+theorem verticalEdges_eq_reflectedPrime_unconditional (β : ℝ) :
+    verticalEdges_eq_reflectedPrime_target β :=
+  verticalEdges_eq_reflectedPrime_of_archIntegrand_interval_eq β
+    (archIntegrand_interval_eq_left_edge_integral_target_holds β)
 
 /-- **Remaining pair-combined arch/prime identity at `σ = 2`.**
 
@@ -912,6 +1994,46 @@ Expected route:
   cosh-Gauss pieces, and the functional equation expansion of the reflected
   log derivative.
 * The π/6 pair axes should cancel the Γℝ terms in the five-term combination.
+
+## Available references
+
+### 1. Fubini (integral/sum swap)
+
+* `RequestProject/WeilRightEdgePrimeSum.lean:371` — "Fubini swap ∫ ∑ = ∑ ∫ via `MeasureTheory.integral_tsum_of_summable_integral_norm`"
+* `RequestProject/WeilRightEdgePrimeSum.lean:420` — `have h_fubini : (∫ t : ℝ, ∑' n : ℕ, F n t) = ∑' n : ℕ, ∫ t : ℝ, F n t`
+* `RequestProject/WeilRightEdgePrimeSum.lean:201` — "Per-n integrability + summability of L¹ norms (Fubini prerequisites)"
+* `RequestProject/HalfLineParseval.lean:223` — Fubini swap in the half-line Parseval derivation
+* `RequestProject/WeilReflectedPrimeVanishingWeilside.lean:1090` — "Fubini swap + per-prime-power evaluation"
+
+### 2. Mellin inversion
+
+* `RequestProject/WeilContour.lean:494` — "Cycle 14 — Mellin inversion formula"; `theorem mellin_inversion_eq` at line 510 (axioms printed at 518)
+* `RequestProject/WeilRightEdgePrimeSum.lean:8` — module header "Mellin inversion for pairTestMellin β on Re s = σ > 0"
+* `RequestProject/WeilRightEdgePrimeSum.lean:71` — theorem "Mellin inversion for pairTestMellin β"
+* `RequestProject/WeilRightEdgePrimeSum.lean:102` — `pairTestMellin_vertical_integral_at_pos` (Mellin inversion integral)
+* `RequestProject/WeilReflectedPrimeVanishingWeilside.lean:1089` — "Mellin inversion for coshGaussMellin c (2+it)"
+* `RequestProject/WeilFinalAssemblyUnconditional.lean:1686` — uses Mellin inversion in the RH assembly narrative
+
+### 3. Γℝ cancellation
+
+* `RequestProject/WeilReflectedPrimeVanishingWeilside.lean:67` — header discusses `Γℝ'/Γℝ(2+it) + Γℝ'/Γℝ(-1-it)` contour integral
+* `RequestProject/WeilReflectedPrimeVanishingWeilside.lean:1090-1091` — "Γℝ'/Γℝ arch pieces cancel against the `-Γℝ'/Γℝ(s) - Γℝ'/Γℝ(1-s)` from (2)"
+* `RequestProject/WeilFinalAssemblyUnconditional.lean:1689` — "The π/6 pair axes should cancel the Γℝ terms in the five-term combination"
+* `RequestProject/ArchOperatorBound.lean:357` — "Reflected-side Γℝ log-derivative bound at σ = 2"
+* `RequestProject/ArchOperatorBound.lean:922` — "General-σ reflected Γℝ log-derivative bound (σ ∈ (1, 3))"
+* `RequestProject/StirlingBound.lean:80, 1613, 1628, 2367` — `GammaRatioUpperHalf` (the Γℝ ratio cancellation/decay predicate) and its proof `gammaRatioUpperHalf_proved`
+
+### 4. Prime-side pair-telescoping
+
+* `RequestProject/WeilContour.lean:1909` — `theorem pair_coeffs_sum (β : ℝ)` (the pair-combo identity used in telescoping; axioms printed at 1929)
+* `RequestProject/WeilReflectedPrimeVanishingWeilside.lean:1084, 1091` — "arch-side and prime-side pair-combo match"; uses `pair_coeffs_sum`
+* `RequestProject/PartialWeilFormula.lean:19, 135, 174` — `weilRHS_prime h` and the "prime-side vanishes term-by-term" lemma (per-(p, k) cancellation)
+* `RequestProject/WeilRHSPrimeEven.lean:8, 14, 26` — Weil prime-side simplification for even `h`
+* `RequestProject/FarZeroShellBound.lean:393-427` — `two_over_telescopes`, `sum_two_over_telescopes_exact` (explicit telescoping sums)
+* `RequestProject/DigammaVerticalBound.lean:74-91, 593` — telescoping identities `1/(s+k) - 1/(s+1+k) = 1/s - 1/(s+N)` used on the prime/arch side
+* `RequestProject/StirlingBound.lean:882-908, 1085-1090` — `log_telescope` and telescoping bounds on `Σ f_j`
+* `RequestProject/UniformGammaRBound.lean:102-121` — `2/((k+N)(k+N+1))` telescope to `2/N`
+* `RequestProject/WeilContour.lean:2352-2354` — "left-edge transformation" where prime-side at `1 − s` appears, feeding the pair-telescope
 -/
 theorem archPair_eq_primePair_at_two_unconditional (β : ℝ) :
     ZD.WeilPositivity.Contour.ReflectedPrimeVanishing.archPair_eq_primePair_at_two_target β := by
