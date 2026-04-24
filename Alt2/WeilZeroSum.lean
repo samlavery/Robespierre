@@ -16,13 +16,6 @@ convergence.
   Weil formula for the pair test.
 * Re-export of `nontrivialZeros_inv_sq_summable` with short docstring.
 
-## Deferred (remaining in cycle 46)
-
-* Enumerate zeros inside rectangle as a finite set parameterized by T.
-* Swap sum and limit / integral (Tonelli).
-* Extract `Σ_ρ pairTestMellin β ρ` as a convergent series.
-
-Estimated remaining work: 200–400 lines.
 -/
 
 open Complex Real MeasureTheory Set Filter
@@ -257,19 +250,10 @@ and the bound
 ‖pairTestMellin β ρ‖ ≤ C / |ρ·(ρ−1)|²     for every nontrivial zero ρ.
 ```
 
-**Why this is needed.** Jensen summability (`nontrivialZeros_inv_sq_summable_reexport`)
+Jensen summability (`nontrivialZeros_inv_sq_summable_reexport`)
 gives `∑ 1/|ρ·(ρ−1)|² < ∞`. Combined with this bound, `∑ ‖pairTestMellin β ρ‖`
 converges, which is equivalent (via `Summable.of_norm`) to summability of the
-complex-valued series.
-
-**Status.** This is a named target (not proved). Discharging it requires showing
-`‖pairTestMellin β (σ + iT)‖` decays at least as fast as `|T|^{-4}` uniformly
-in `σ ∈ (0, 1)`. From the cosh expansion (cycle 38), each term
-`coshGaussMellin c (σ + iT)` is a Mellin transform of `cosh(c·t)·exp(−2t²)`,
-which has smooth Gaussian profile — integration by parts gives arbitrary
-polynomial decay in `|T|` on any vertical strip. Proving this in Lean requires
-the IBP machinery specialized to Mellin transforms, which lives in a separate
-analytic infrastructure cycle. -/
+complex-valued series. -/
 def pairTestMellin_decay_target (β : ℝ) : Prop :=
   ∃ C : ℝ, 0 ≤ C ∧ ∀ ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
     ‖pairTestMellin β ρ.val‖ ≤ C * (1 / Complex.normSq (ρ.val * (ρ.val - 1)))
@@ -361,16 +345,13 @@ This is **strictly stronger** than `pairTestMellin_decay_target β`: an
 algebraic bound `(1 + (Im ρ)²)^2 ≥ normSq (ρ · (ρ − 1))` lets us convert
 this into the Jensen form.
 
-**Analytic content.** Discharging this requires showing that the Mellin
-transform `pairTestMellin β (σ + iT)` decays like `|T|^{−4}` as `|T| → ∞`,
+Discharging this requires showing that the Mellin transform
+`pairTestMellin β (σ + iT)` decays like `|T|^{−4}` as `|T| → ∞`,
 uniformly for `σ` in any compact subset of `(0, 1)`. This follows from
 four-step integration by parts: since `pair_cosh_gauss_test β t` is smooth
 in `t` with Gaussian decay and vanishes to order 4 at `t = 0` (it equals
 `4 · sinh² · sinh² · exp(−2t²)`), each IBP peels off a factor of
-`|s|^{−1}` in the Mellin transform.  Four IBPs yield the quartic decay.
-
-The IBP machinery is not yet formalized in Mathlib; this target sits on
-top of that analytic infrastructure gap. -/
+`|s|^{−1}` in the Mellin transform.  Four IBPs yield the quartic decay. -/
 def pairTestMellin_im_quartic_decay_target (β : ℝ) : Prop :=
   ∃ C : ℝ, 0 ≤ C ∧ ∀ ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
     ‖pairTestMellin β ρ.val‖ ≤ C / (1 + ρ.val.im^2)^2

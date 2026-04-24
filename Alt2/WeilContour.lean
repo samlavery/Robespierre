@@ -1,19 +1,19 @@
 import Mathlib
-import RequestProject.WeilPairFormula
+import RequestProject.PairCoshGaussTest
 import RequestProject.RiemannXiDecay
 import RequestProject.ZetaStripBound
 import RequestProject.MellinPathToXi
+import RequestProject.PartialWeilFormula
+import RequestProject.WeilCoshPairPositivity_RouteBeta
+import RequestProject.WeilCoshTest
 
 /-!
 # Weil Contour Integration Chain — Building Blocks
 
-This file begins the Weil agent's **Route B** — the unconditional contour
-integration proof of the Gaussian-pair Weil formula instance. The goal
-across many sessions is to discharge the single tracked `sorry` in
-`WeilPairFormula.lean` via a full derivation of Weil's explicit formula
-for the specific cosh-pair Gaussian test function.
+This file provides building blocks for the unconditional contour
+integration proof of the Gaussian-pair Weil formula instance.
 
-## Cycle 1 deliverable (this session)
+## Cycle 1
 
 * `mellin_gaussian` — the foundational Mellin transform of `exp(-x²)`:
   ```
@@ -22,20 +22,6 @@ for the specific cosh-pair Gaussian test function.
   Derived from Mathlib's `mellin_comp_rpow` + `Complex.Gamma_eq_integral` +
   `Complex.GammaIntegral_eq_mellin`. Axiom-clean.
 
-## Plan for future cycles (not delivered this session)
-
-* **Cycle 2**: Mellin transform of pair-cosh-Gaussian test; analyticity.
-* **Cycle 3**: Contour setup — rectangular contour `{−1 ≤ Re s ≤ 2}`.
-* **Cycle 4**: Cauchy-Goursat on `−ζ'/ζ · M(h)` along the contour.
-* **Cycle 5**: Residue at `s = 1` (pole of ζ).
-* **Cycle 6–8**: Residues at nontrivial zeros (uses Jensen summability).
-* **Cycle 9**: FE transfer from `Re = −1` to `Re = 2`.
-* **Cycle 10**: Euler product conversion at `Re = 2` to prime side.
-* **Cycle 11**: Assembly of `weilRHS_prime + weilRHS_arch = weilLHS`.
-* **Cycle 12+**: Positivity extraction → `pair_defect_vanishes_at_zeros`.
-
-Each cycle: 100–300 lines, axiom-clean, tracked progress toward discharging
-the one tracked `sorry` in `WeilPairFormula.lean`.
 -/
 
 open Complex Real MeasureTheory Set Filter

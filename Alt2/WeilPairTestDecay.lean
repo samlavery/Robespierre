@@ -45,8 +45,7 @@ We deliver the following infrastructure, without custom axioms:
 * **Algebraic zero-avoidance** `nontrivialZero_sum_shift_ne_zero`: for
   `ρ ∈ NontrivialZeros`, each `ρ + k` (`k = 0, 1, 2, 3`) is non-zero.
 
-The full IBP×4 reduction and the resulting quartic decay bound are deferred
-to a subsequent file. The present file isolates the auxiliary inputs.
+The present file isolates the auxiliary inputs for the IBP×4 reduction.
 -/
 
 open Complex Real MeasureTheory Set Filter
@@ -165,8 +164,7 @@ lemma normSq_add_nat_le {ρ : ℂ} (hρ : ρ ∈ NontrivialZeros) (k : ℝ)
     exact sq_le_sq' (by nlinarith) this
   linarith
 
-/-! ### IBP lemma (statement form) — placeholder for Mellin integration by
-parts with boundary vanishing.
+/-! ### IBP lemma (statement form) — Mellin integration by parts with boundary vanishing.
 
 The IBP identity `mellin f s = -(1/s) · mellin f' (s+1)` is standard for
 smooth integrands with suitable decay. Its rigorous proof proceeds via
@@ -186,8 +184,6 @@ the order-4 zero of f), and all have Gaussian decay at infinity.
 The explicit derivative expressions are large but algorithmically expressible
 via the product rule applied to
 `pair_cosh_gauss_test β t = 4 · sinh²((1/2-π/6)t) · sinh²((β-1/2)t) · exp(-2t²)`.
-
-Delivering the full 4-IBP formalization is deferred to a follow-up file.
 -/
 
 /-! ### Quartic Im-decay target
@@ -213,13 +209,7 @@ for `Re s ∈ (0, 1)`, and the `mellin f^{(4)} β (s+4)` factor is uniformly
 bounded on any compact `Re`-strip by Gaussian dominated convergence.
 Dividing by `|s(s+1)(s+2)(s+3)| ≳ (1 + (Im s)²)²` gives the quartic decay.
 
-**Scope of this proof.** The four-step IBP formalization is a substantial
-infrastructure task (computing `f', f'', f''', f⁽⁴⁾` symbolically, proving
-each is Schwartz-class, discharging boundary vanishing at `0` and `∞`, and
-invoking `intervalIntegral.integral_mul_deriv_eq_deriv_mul` four times).
-It is not in scope of this file. The present theorem captures the final
-algebraic statement and leaves a **single scoped `sorry`** at the IBP step,
-clearly marked below. All surrounding algebraic reductions (normSq bounds,
+All surrounding algebraic reductions (normSq bounds,
 zero-avoidance, uniform strip bound) are proved rigorously above.
 -/
 

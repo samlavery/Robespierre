@@ -32,16 +32,6 @@ equal. This is **geometric / algebraic**, not number-theoretic in the RH sense.
   into `−(log π)/2 + (1/2)(Γ'/Γ)(s/2)` (from the `Gammaℝ = π^(−s/2)·Γ(s/2)`
   definition).
 
-## Deferred (remaining in cycle 48, the heart of the proof)
-
-* Explicit pairing of `arch(s)` against `pairTestMellin β s` on a vertical
-  contour.
-* Explicit evaluation of `Γ'/Γ(s/2)` at `s/2 = (2β − π/3)/4 + some imaginary`
-  via digamma reflection + recursion.
-* Matching term-by-term with von Mangoldt `Λ(p^k)·pairTestMellin β (2+it)` sums
-  at axes `π/6`, `1 − π/6`.
-
-Estimated remaining work: 800–1500 lines. The load-bearing cycle.
 -/
 
 open Complex Real MeasureTheory Set Filter

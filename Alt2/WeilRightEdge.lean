@@ -20,13 +20,6 @@ form + its analytic extension).
 * `weilIntegrand_right_edge_eq_LSeries_pairing` — pointwise identity on
   `Re s > 1`: `weilIntegrand h s = (LSeries Λ s) · h s`.
 
-## Deferred (remaining in cycle 42)
-
-* Full vertical-line integral evaluation with absolute convergence of the
-  Λ-series paired against `pairTestMellin`.
-* Tonelli/Fubini swap of sum and integral.
-
-Estimated remaining work: 300–500 lines.
 -/
 
 open Complex Real MeasureTheory Set Filter

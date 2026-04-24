@@ -1,8 +1,8 @@
 import Mathlib
-import RequestProject.XiPartialFraction
 import RequestProject.LogDerivIdentity
 import RequestProject.ArchOperatorBound
 import RequestProject.WeilLogDerivZetaBound
+import RequestProject.XiPartialFraction
 
 /-!
 # H10: Short-window zero count `#{γ : |γ - T| ≤ 1} ≤ C·log T`
@@ -208,41 +208,6 @@ private lemma xi_logDeriv_norm_log_bound :
     _ = ((Cζ + 2 + CΓ) / Real.log 2 + 2 * CΓ) * Real.log T := by field_simp; ring
     _ = K * Real.log T := by rw [hK_def]
 
-/-- **Summability of the weighted partial-fraction tsum** at `s ∉ NontrivialZeros`.
-Derived from `summable_logDeriv_multi` via `Summable.sigma` on the per-factor
-reduction `logDeriv (factor) = s/(ρ·(s-ρ))` and the algebraic identity
-`s/(ρ·(s-ρ)) = 1/(s-ρ) + 1/ρ`. -/
-private lemma summable_weighted_partial_fraction {s : ℂ} (hs : s ∉ NontrivialZeros) :
-    Summable (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros} =>
-      (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
-  have h_multi_summ := summable_logDeriv_multi hs
-  have h_eq : ∀ p : MultiZeroIdx,
-      logDeriv (fun w => 1 + xiWeierstrassTerm p.1.val w) s =
-      s / (p.1.val * (s - p.1.val)) := by
-    intro p
-    have hρ_ne : p.1.val ≠ 0 := by
-      intro heq; have hre : (0 : ℝ) < p.1.val.re := p.1.property.1
-      rw [heq] at hre; simp at hre
-    have hs_ne_ρ : s ≠ p.1.val := fun h => hs (h ▸ p.1.property)
-    exact logDeriv_one_add_xiWeierstrassTerm hρ_ne hs_ne_ρ
-  have h_sigma_summ : Summable (fun p : MultiZeroIdx =>
-      s / (p.1.val * (s - p.1.val))) := h_multi_summ.congr h_eq
-  have h_sigma := h_sigma_summ.sigma
-  refine h_sigma.congr ?_
-  intro ρ
-  have hρ_ne : ρ.val ≠ 0 := by
-    intro heq; have hre : (0 : ℝ) < ρ.val.re := ρ.property.1
-    rw [heq] at hre; simp at hre
-  have hs_ne_ρ : s - ρ.val ≠ 0 := by
-    intro heq; have : s = ρ.val := by linear_combination heq
-    exact hs (this ▸ ρ.property)
-  have h_simp : (fun c : Fin (xiOrderNat ρ.val) => s / ((⟨ρ, c⟩ : MultiZeroIdx).1.val *
-      (s - (⟨ρ, c⟩ : MultiZeroIdx).1.val))) = fun _ : Fin (xiOrderNat ρ.val) =>
-      s / (ρ.val * (s - ρ.val)) := by funext c; rfl
-  rw [h_simp, tsum_const, Nat.card_eq_fintype_card, Fintype.card_fin]
-  have h_alg : s / (ρ.val * (s - ρ.val)) = 1 / (s - ρ.val) + 1 / ρ.val := by field_simp; ring
-  rw [h_alg, nsmul_eq_mul]
-
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Main H10 + corollary
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -269,7 +234,8 @@ theorem nontrivialZeros_short_window_weighted_count_bound :
     rw [le_div_iff₀ hlog2_pos, one_mul]
     exact Real.log_le_log (by norm_num) hT
   set s : ℂ := (2 : ℂ) + (T : ℂ) * I with hs_def
-  have hs_notMem : s ∉ NontrivialZeros := two_plus_tI_notMem_NontrivialZeros T
+  have hs_notMem : s ∉ NontrivialZeros := by
+    simpa [hs_def] using two_plus_tI_notMem_NontrivialZeros T
   have h8 := hA s hs_notMem
   have h_summ := summable_weighted_partial_fraction hs_notMem
   have h8' : deriv riemannXi s / riemannXi s - A =

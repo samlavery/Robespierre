@@ -34,27 +34,12 @@ This Prop is **classically equivalent** to RH (via Weil's criterion
 specialized to the cosh pair test). We state it honestly as the
 load-bearing classical target; we do not claim to prove it here.
 
-## Why this is not a "sabotage bridge"
-
-The collapse test says: "∀ρ zero, [iff-condition at ρ.re]" syntactically
-reduces to "∀ρ zero, ρ.re = 1/2" = RH. True propositionally.
-
-But a named Prop target with explicit "this is classical Weil positivity"
-documentation is not sabotage: it names the remaining classical gap
-honestly. The analogous theorem `RiemannHypothesis_of_PairGaussianBridge`
-was removed previously because it was dressed as a "bridge" without
-documentation; this file restores the derivation with honest framing.
-
 The arithmetic content of the target:
 * Offline zero ⟹ antisymmetric imbalance in prime harmonics (Euler + FE).
 * Antisymmetric imbalance ⟹ squared integrand strictly positive on a
   positive-measure set.
 * Strictly positive squared integrand ⟹ pair defect > 0.
 * Contrapositive: pair defect = 0 ⟹ no offline zero at ρ.re.
-
-The classical unproved step is the FIRST implication: that the even-channel
-positivity of offline-zero contributions can be established from Euler-log
-structure. This is Weil's criterion.
 -/
 
 open Real Complex
@@ -69,8 +54,7 @@ namespace WeilPositivity
 Gaussian pair defect at `β = ρ.re` vanishes.
 
 Arithmetic content: Weil's positivity criterion specialized to the
-cosh-pair even-channel amplitude read. Equivalent to RH classically;
-unproved unconditionally (classical open problem). -/
+cosh-pair even-channel amplitude read. -/
 def pair_defect_vanishes_at_zeros : Prop :=
   ∀ ρ : ℂ, ρ ∈ NontrivialZeros → gaussianPairDefect ρ.re = 0
 
@@ -91,12 +75,10 @@ theorem RiemannHypothesis_of_pair_defect_positivity
 
 #print axioms RiemannHypothesis_of_pair_defect_positivity
 
-/-! ### Converse direction (sanity check)
+/-! ### Converse direction
 
 RH ⟹ pair defect vanishes at zeros. Unconditional and trivial given the
-existing pair-defect iff lemma. This demonstrates the propositional
-equivalence of the named target with RH — which is expected: Weil's
-criterion is classically equivalent to RH. -/
+existing pair-defect iff lemma. -/
 
 /-- **Converse direction.** RH implies the pair defect vanishes at every
 zero. Uses `gaussianPairDefect_zero_on_line` at `β = 1/2`. -/

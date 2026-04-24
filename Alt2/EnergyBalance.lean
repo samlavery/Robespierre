@@ -137,22 +137,21 @@ theorem online_zero_no_averaged_defect
   rw [h_online]; exact averageEnergyDefect_zero_on_line ψ
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- § Bidirectional form
+-- § Offline-zero detector excess (detector geometry only, no RH framing)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **`zero_forces_vanishing` bidirectional form.**
-
-"Every nontrivial ζ zero has zero averaged energy defect at its real
-part" ↔ "every nontrivial ζ zero has real part `1/2`." -/
-theorem zero_forces_vanishing_iff_RH (ψ : ℝ → ℝ)
-    (hψ : AdmissibleThetaKernel ψ) :
-    (∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → averageEnergyDefect ψ ρ.re = 0)
-    ↔ (∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2) := by
-  refine ⟨?_, ?_⟩
-  · intro h ρ hρ
-    exact (energy_balance_iff_on_line ψ hψ ρ.re).mp (h ρ hρ)
-  · intro h ρ hρ
-    exact (energy_balance_iff_on_line ψ hψ ρ.re).mpr (h ρ hρ)
+/-- **Offline nontrivial zeros produce detector excess.** Pure detector
+geometry: `averageEnergyDefect ψ β` is the Parseval-rewritten weighted
+L² norm `2π · ∫((cosh((β−1/2)t)−1)² + sinh²((β−1/2)t))·ψ(t)² dt`, whose
+integrand vanishes pointwise iff `β = 1/2`. For a nontrivial zero `ρ`
+with `ρ.re ≠ 1/2` — *offline* — the detector excess at `ρ.re` is strictly
+positive. No RH content; it is `averaged_positivity_offline` specialized
+to an offline zero. -/
+theorem offlineZero_detector_excess_pos (ψ : ℝ → ℝ)
+    (hψ : AdmissibleThetaKernel ψ) {ρ : ℂ}
+    (_hρ : ρ ∈ ZD.NontrivialZeros) (h_off : ρ.re ≠ 1 / 2) :
+    0 < averageEnergyDefect ψ ρ.re :=
+  averaged_positivity_offline ψ hψ h_off
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Prime-harmonic probes

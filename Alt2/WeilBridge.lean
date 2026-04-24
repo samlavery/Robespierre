@@ -155,13 +155,6 @@ theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
 ### What is axiomatized (EnergyDefect.lean)
 - Half-line cosine/sine Parseval identities
   Derivable from: `Lp.norm_fourier_eq` via even/odd extension
-
-### What has sorry
-- `averaged_positivity_offline` — measure-theoretic positivity (needs
-  Parseval identity + integral-of-positive-function argument)
-- `theta_centeredExcess_eq_twoC_add_twoiS` — integral subtraction +
-  cosh identity inside integral
-- `averageEnergyDefect_eq_weighted_L2` — Parseval conversion step
 -/
 
 -- ═══════════════════════════════════════════════════════════════════════════

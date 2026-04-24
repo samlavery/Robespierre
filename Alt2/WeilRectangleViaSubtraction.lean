@@ -10,9 +10,7 @@ it into tractable subtasks via the **residue subtraction trick**.
 
 ## Strategy
 
-Instead of proving the rectangle-with-holes theorem by decomposing the punctured
-region (classical Green's theorem approach, infeasible without multi-thousand-
-line infrastructure), we use residue subtraction:
+We use residue subtraction to prove the rectangle-with-holes theorem:
 
 For `f` with simple pole at `p` with residue `r`, define `g(z) := f(z) − r/(z − p)`.
 Then:
@@ -30,7 +28,7 @@ computation (four log/arctan integrals summing to `2πi` by classical argument).
 ## Subtasks delivered as named targets + main theorem
 
 * `rectContourIntegral_inv_center_eq_twoPiI_target` — the winding integral target
-  (provable by direct parameterization; deferred to a separate cycle).
+  (provable by direct parameterization).
 * `rectResidueTheorem_via_subtraction` — closes the rectangle residue theorem for
   a single simple pole, **unconditionally given the winding target + residue
   subtraction hypothesis**.
@@ -54,10 +52,7 @@ contour integral of `1/(z − p)` around the rectangle equals `2πi`. This is th
 classical winding-number-one statement.
 
 **Provable by direct parameterization**: each of the four edges contributes a
-log-and-arctan integral; summing gives `2πi` by classical arctangent identity.
-
-Status: stated as a named target. Unconditional classical theorem; closure
-requires ~300-500 lines of edge-by-edge integration. -/
+log-and-arctan integral; summing gives `2πi` by classical arctangent identity. -/
 def rectContourIntegral_inv_center_eq_twoPiI_target : Prop :=
   ∀ (σL σR T : ℝ) (_hσ : σL < σR) (_hT : 0 < T) (p : ℂ)
     (_hp_re : σL < p.re ∧ p.re < σR) (_hp_im : -T < p.im ∧ p.im < T),

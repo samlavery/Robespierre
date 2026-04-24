@@ -28,13 +28,6 @@ Combined: `|weilIntegrand·pairMellin| ≤ C · |T|^N · exp(−π|T|/4)` for la
 
 * `weilIntegrand_horizontal_strip_bound_target` — target statement for the
   horizontal decay; serves as a named target for the cycle.
-
-## Deferred (remaining in cycle 44)
-
-* Explicit Stirling + ζ-strip bound composition.
-* Dominated convergence → integral → 0.
-
-Estimated remaining work: 300–500 lines.
 -/
 
 open Complex Real MeasureTheory Set Filter

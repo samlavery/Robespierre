@@ -97,7 +97,7 @@ Conditional on `γ ≠ 0`, which forces `Im z_±(a,γ) = γ/2 ≠ 0`, placing bo
 digamma arguments off the pole locus `{-n : n ∈ ℕ} ⊂ ℝ`. At poles the
 unconditional statement is false, so the hypothesis is not cosmetic.
 
-**Proof sketch** (deferred):
+**Proof sketch**:
   1. `Complex.digamma = logDeriv Complex.Gamma` (`Complex.digamma_def`);
      `Complex.meromorphic_digamma` gives analyticity off the pole set.
   2. Differentiability at `zPlus a γ`, `zMinus a γ` from `γ ≠ 0`

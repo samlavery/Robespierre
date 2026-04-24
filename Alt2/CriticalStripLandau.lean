@@ -1,9 +1,11 @@
 import Mathlib
-import RequestProject.XiPartialFraction
+-- import RequestProject.XiPartialFraction
 import RequestProject.XiShortWindowCount
 import RequestProject.LogDerivIdentity
 import RequestProject.WeilPigeonhole
 import RequestProject.DigammaVerticalBound
+import RequestProject.FarZeroShellBound
+import RequestProject.UniformGammaRBound
 
 /-!
 # H11: Critical-strip Landau `‖ζ'/ζ(σ + iT*)‖ = O((log T)²)`
@@ -50,7 +52,7 @@ private theorem exists_point_far_from_finset' {a b : ℝ} (hab : a < b) (S : Fin
 /-- **Summability of the weighted partial-fraction tsum** at `s ∉ NontrivialZeros`
 (local copy of the private lemma from XiShortWindowCount). Derived from
 `summable_logDeriv_multi` via `Summable.sigma` and the per-factor reduction. -/
-private lemma summable_weighted_partial_fraction_local {s : ℂ} (hs : s ∉ NontrivialZeros) :
+lemma summable_weighted_partial_fraction_local {s : ℂ} (hs : s ∉ NontrivialZeros) :
     Summable (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros} =>
       (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
   have h_multi_summ := summable_logDeriv_multi hs
@@ -171,7 +173,7 @@ private lemma one_div_sub_one_div_formula
   ring
 
 /-- The H10 short-window finset at height `T`. -/
-private def shortWindowFinset (T : ℝ) : Finset ℂ :=
+def shortWindowFinset (T : ℝ) : Finset ℂ :=
   ((ZD.ZeroCount.NontrivialZeros_inter_closedBall_finite (T + 1)).toFinset.filter
     (fun ρ => |ρ.im - T| ≤ 1))
 
@@ -365,11 +367,14 @@ private lemma log_twoT_add_six_le_four_log {T : ℝ} (hT : 2 ≤ T) :
     Real.log (2 * T + 6) ≤ 4 * Real.log T := by
   have hT_pos : 0 < T := by linarith
   have harg_pos : 0 < 2 * T + 6 := by linarith
+  have hT_sq : 4 ≤ T ^ 2 := by nlinarith
   have hpow : 2 * T + 6 ≤ T ^ 4 := by
-    nlinarith
+    have h1 : (8 : ℝ) ≤ T ^ 3 := by nlinarith [sq_nonneg (T - 2), hT_sq]
+    have h2 : (8 : ℝ) * T ≤ T ^ 4 := by nlinarith [h1, sq_nonneg T]
+    nlinarith [h2]
   calc
     Real.log (2 * T + 6) ≤ Real.log (T ^ 4) := Real.log_le_log harg_pos hpow
-    _ = 4 * Real.log T := by rw [Real.log_rpow]; ring
+    _ = 4 * Real.log T := by rw [Real.log_pow]; push_cast; ring
 
 private lemma max_radius_log_le_const_mul
     {R₀ T : ℝ} (hR₀_pos : 0 < R₀) (hT : 2 ≤ T) :
@@ -401,7 +406,7 @@ private lemma max_radius_log_le_const_mul
       Real.log_le_log hR_pos hR_le
     rw [Real.log_mul hA_pos.ne' hT_pos.ne'] at hlog_le
     have hratio : 1 ≤ Real.log T / Real.log 2 := by
-      rw [le_div_iff₀ hlog2_pos]
+      rw [le_div_iff₀ hlog2_pos, one_mul]
       exact Real.log_le_log (by norm_num) hT
     have hconst_nonneg : 0 ≤ Real.log (R₀ + 5) := Real.log_nonneg (by linarith)
     have hconst :
@@ -410,12 +415,12 @@ private lemma max_radius_log_le_const_mul
         Real.log (R₀ + 5) = Real.log (R₀ + 5) * 1 := by ring
         _ ≤ Real.log (R₀ + 5) * (Real.log T / Real.log 2) := by
               gcongr
-        _ = (Real.log (R₀ + 5) / Real.log 2) * Real.log T := by
-              field_simp
-              ring
+        _ = (Real.log (R₀ + 5) / Real.log 2) * Real.log T := by ring
     linarith
   have hcoeff_nonneg : 0 ≤ Real.log (R₀ + 5) / Real.log 2 + 1 := by
-    positivity
+    have hlog_R₀_nn : 0 ≤ Real.log (R₀ + 5) := Real.log_nonneg (by linarith)
+    have : 0 ≤ Real.log (R₀ + 5) / Real.log 2 := div_nonneg hlog_R₀_nn hlog2_pos.le
+    linarith
   calc
     max R₀ (2 * T + 5) * Real.log (max R₀ (2 * T + 5))
       ≤ max R₀ (2 * T + 5) *
@@ -427,20 +432,20 @@ private lemma max_radius_log_le_const_mul
             ring
 
 /-- **Far-zero subtraction bound**: `‖Σ_{|γ-T|>1} xiOrderNat(ρ) ·
-(1/(σ+iT - ρ) - 1/(2+iT - ρ))‖ = O(log T)`. Uses the cancellation-of-`1/ρ`
-subtraction form to get `|1/(s-ρ) - 1/(s₀-ρ)| ≤ 2/|T-γ|²` via
-`|s-ρ| ≥ |T-γ|` and `|s₀-ρ| ≥ |T-γ|`. Sum via dyadic shells + H10.
+(1/(σ+iT - ρ) - 1/(2+iT - ρ))‖ = O(log T)`. Uses cancellation-of-`1/ρ`
+subtraction form: `|1/(s-ρ) - 1/(s₀-ρ)| ≤ 2/|T-γ|²` for far zeros and
+`≤ 8/‖ρ‖²` for `‖ρ‖ ≥ 2T+5`. Tail summability + dyadic shells + H10.
 
 **TRACKED sorry.** Full implementation needs dyadic shell decomposition plus
-iterated H10 application at shifted centers. ~200 lines Lean. -/
+iterated H10 application at shifted centers. ~200-300 lines Lean. -/
 theorem xi_logDeriv_sub_far_bound :
-    ∃ C : ℝ, 0 < C ∧ ∀ σ ∈ Set.Ioo (0:ℝ) 1, ∀ T : ℝ, 2 ≤ T →
+    ∃ C : ℝ, 0 < C ∧ ∀ σ ∈ Set.Icc (0:ℝ) 2, ∀ T : ℝ, 2 ≤ T →
       ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - T| ≤ 1},
           (ZD.xiOrderNat ρ.val : ℂ) *
             (1 / ((σ : ℂ) + (T : ℂ) * I - ρ.val) -
              1 / ((2 : ℂ) + (T : ℂ) * I - ρ.val))‖
-        ≤ C * Real.log T := by
-  sorry
+        ≤ C * Real.log T :=
+  ZD.FarShell.xi_logDeriv_sub_far_bound_proved
 
 /-- Good height existence: for every `T₀ ≥ 2` there is a height `T ∈ [T₀, T₀+1]`
 such that every zero `ρ` with `|ρ.im - T₀| ≤ 1` has `|ρ.im - T| ≥ C / log T₀` for
@@ -1055,8 +1060,8 @@ private lemma mem_three_shortWindows_of_near_interval
       exact Or.inr hmem2
 
 /-- Local near-window bound from an explicit good-height separation hypothesis. -/
-private lemma xi_logDeriv_sub_near_bound_of_sep
-    {σ T₀ T : ℝ} (hσ : σ ∈ Set.Ioo (0 : ℝ) 1) (hT₀ : 2 ≤ T₀)
+lemma xi_logDeriv_sub_near_bound_of_sep
+    {σ T₀ T : ℝ} (_hσ : σ ∈ Set.Icc (0 : ℝ) 2) (hT₀ : 2 ≤ T₀)
     (hT_mem : T ∈ Set.Icc T₀ (T₀ + 1))
     {Csep Cw : ℝ} (hCsep_pos : 0 < Csep) (hCw_pos : 0 < Cw)
     (hsep : ∀ ρ ∈ NontrivialZeros, |ρ.im - T| ≤ 1 →
@@ -1380,12 +1385,13 @@ theorem xi_logDeriv_sub_near_bound_at_good_height :
   obtain ⟨T, hT_mem, hsep⟩ := hgood T₀ hT₀
   refine ⟨T, hT_mem, ?_⟩
   simpa [shortWindowFinset] using
-    xi_logDeriv_sub_near_bound_of_sep hσ hT₀ hT_mem hCsep_pos hCw_pos hsep
+    xi_logDeriv_sub_near_bound_of_sep
+      ⟨hσ.1.le, by linarith [hσ.2]⟩ hT₀ hT_mem hCsep_pos hCw_pos hsep
       (fun U hU => by simpa [shortWindowFinset] using hCw_bd U hU)
 
 /-- Local copy of the H10-side `ξ'/ξ(2+iT) = O(log T)` bound, kept non-private
 to this file so the final Landau assembly can use it directly. -/
-private lemma xi_logDeriv_norm_log_bound_local :
+lemma xi_logDeriv_norm_log_bound_local :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ T : ℝ, 2 ≤ T →
       ‖deriv riemannXi ((2 : ℂ) + (T : ℂ) * I) /
         riemannXi ((2 : ℂ) + (T : ℂ) * I)‖ ≤ C * Real.log T := by
@@ -1506,131 +1512,16 @@ requires `ζ(s) ≠ 0` (ensured by `s ∉ NontrivialZeros`) and `Γℝ(s) ≠ 0`
 **TRACKED sorry.** Port of `riemannZeta_logDeriv_eq_xi_minus_pole_minus_gammaℝ`
 with relaxed hypotheses (~80 lines; existing proof structure goes through,
 replacing `1 < s.re`-specific steps with direct `ζ s ≠ 0` / `Γℝ s ≠ 0`). -/
-private lemma riemannZeta_logDeriv_eq_generalized
+lemma riemannZeta_logDeriv_eq_generalized
     (s : ℂ) (hs_ne0 : s ≠ 0) (hs_ne1 : s ≠ 1)
     (hζ_ne : riemannZeta s ≠ 0) (hΓ_ne : Complex.Gammaℝ s ≠ 0) :
     deriv riemannZeta s / riemannZeta s =
       deriv riemannXi s / riemannXi s -
         1 / s - 1 / (s - 1) - logDeriv Complex.Gammaℝ s := by
-  have hs_sub_ne : s - 1 ≠ 0 := sub_ne_zero.mpr hs_ne1
-  have hs_div_ne : s / 2 ≠ 0 := div_ne_zero hs_ne0 two_ne_zero
-  have hcompleted_ne : completedRiemannZeta s ≠ 0 := by
-    intro hcomp
-    apply hζ_ne
-    rw [riemannZeta_def_of_ne_zero hs_ne0, hcomp, zero_div]
-  have hxi_classical : ZD.riemannXi s = (s * (s - 1) / 2) * completedRiemannZeta s :=
-    riemannXi_eq_classical_of_ne_zero_of_ne_one s hs_ne0 hs_ne1
-  have hxi_ne : ZD.riemannXi s ≠ 0 := by
-    rw [hxi_classical]
-    exact mul_ne_zero
-      (div_ne_zero (mul_ne_zero hs_ne0 hs_sub_ne) two_ne_zero) hcompleted_ne
-  have hΓ_diff : DifferentiableAt ℂ Complex.Gammaℝ s := by
-    have h_s_ne : ∀ n : ℕ, s ≠ -(2 * (n : ℂ)) := by
-      intro n h
-      exact hΓ_ne (Complex.Gammaℝ_eq_zero_iff.mpr ⟨n, h⟩)
-    have h_s_half_ne : ∀ m : ℕ, s / 2 ≠ -(m : ℂ) := by
-      intro m h
-      have : s = -(2 * (m : ℂ)) := by linear_combination 2 * h
-      exact h_s_ne m this
-    have hΓ_diff : DifferentiableAt ℂ Complex.Gamma (s / 2) :=
-      Complex.differentiableAt_Gamma _ h_s_half_ne
-    have hcpow_diff :
-        DifferentiableAt ℂ (fun t : ℂ => (Real.pi : ℂ) ^ (-t / 2)) s := by
-      refine DifferentiableAt.const_cpow
-        ((differentiableAt_id.neg).div_const 2) ?_
-      left
-      exact_mod_cast Real.pi_pos.ne'
-    have hcomp :
-        DifferentiableAt ℂ (fun t : ℂ => Complex.Gamma (t / 2)) s :=
-      hΓ_diff.comp s (differentiableAt_id.div_const 2)
-    have h_eq :
-        Complex.Gammaℝ = fun t : ℂ => (Real.pi : ℂ) ^ (-t / 2) * Complex.Gamma (t / 2) := by
-      funext t
-      exact Complex.Gammaℝ_def t
-    rw [h_eq]
-    exact hcpow_diff.mul hcomp
-  have hζ_diff : DifferentiableAt ℂ riemannZeta s := differentiableAt_riemannZeta hs_ne1
-  have hcompleted_diff : DifferentiableAt ℂ completedRiemannZeta s :=
-    differentiableAt_completedZeta hs_ne0 hs_ne1
-  set p : ℂ → ℂ := fun z => z * (z - 1) / 2 with hp_def
-  have hp_diff : DifferentiableAt ℂ p s := by
-    show DifferentiableAt ℂ (fun z => z * (z - 1) / 2) s
-    exact (differentiableAt_id.mul (differentiableAt_id.sub_const 1)).div_const 2
-  have hp_ne : p s ≠ 0 := by
-    show s * (s - 1) / 2 ≠ 0
-    exact div_ne_zero (mul_ne_zero hs_ne0 hs_sub_ne) two_ne_zero
-  have hriemannXi_eventually :
-      ZD.riemannXi =ᶠ[nhds s] fun z => p z * completedRiemannZeta z := by
-    have h_open_ne_zero : IsOpen ({0}ᶜ : Set ℂ) := isOpen_compl_singleton
-    have h_open_ne_one : IsOpen ({1}ᶜ : Set ℂ) := isOpen_compl_singleton
-    have h_mem : s ∈ ({0}ᶜ ∩ {1}ᶜ : Set ℂ) := by
-      refine ⟨?_, ?_⟩ <;> simp [hs_ne0, hs_ne1]
-    have h_open : IsOpen ({0}ᶜ ∩ {1}ᶜ : Set ℂ) := h_open_ne_zero.inter h_open_ne_one
-    refine Filter.eventuallyEq_of_mem (h_open.mem_nhds h_mem) ?_
-    intro z hz
-    show ZD.riemannXi z = z * (z - 1) / 2 * completedRiemannZeta z
-    exact riemannXi_eq_classical_of_ne_zero_of_ne_one z hz.1 hz.2
-  have hxi_logDeriv_eq :
-      logDeriv ZD.riemannXi s =
-        logDeriv p s + logDeriv completedRiemannZeta s := by
-    have h_deriv_eq :
-        deriv ZD.riemannXi s = deriv (fun z => p z * completedRiemannZeta z) s :=
-      Filter.EventuallyEq.deriv_eq hriemannXi_eventually
-    have h_val_eq : ZD.riemannXi s = (fun z => p z * completedRiemannZeta z) s :=
-      hriemannXi_eventually.self_of_nhds
-    simp only [logDeriv_apply] at *
-    rw [h_deriv_eq, h_val_eq]
-    have := logDeriv_mul s hp_ne hcompleted_ne hp_diff hcompleted_diff
-    simpa [logDeriv_apply] using this
-  have hp_log :
-      logDeriv p s = 1 / s + 1 / (s - 1) := by
-    have hp_mul : p = fun z => (z / 2) * (z - 1) := by
-      funext z
-      show z * (z - 1) / 2 = (z / 2) * (z - 1)
-      ring
-    rw [hp_mul]
-    have h_div2_ne : s / 2 ≠ 0 := hs_div_ne
-    have h_sub1_ne : s - 1 ≠ 0 := hs_sub_ne
-    have h_div2_diff : DifferentiableAt ℂ (fun z : ℂ => z / 2) s :=
-      differentiableAt_id.div_const 2
-    have h_sub1_diff : DifferentiableAt ℂ (fun z : ℂ => z - 1) s :=
-      differentiableAt_id.sub_const 1
-    rw [logDeriv_mul s h_div2_ne h_sub1_ne h_div2_diff h_sub1_diff]
-    have hdiv2 : logDeriv (fun z : ℂ => z / 2) s = 1 / s := by
-      rw [logDeriv_apply, deriv_div_const, deriv_id'']; field_simp
-    have hsub1 : logDeriv (fun z : ℂ => z - 1) s = 1 / (s - 1) := by
-      rw [logDeriv_apply]; simp
-    rw [hdiv2, hsub1]
-  have hriemann_eventually :
-      riemannZeta =ᶠ[nhds s] fun z => completedRiemannZeta z / Complex.Gammaℝ z := by
-    have h_open_ne_zero : IsOpen ({0}ᶜ : Set ℂ) := isOpen_compl_singleton
-    have h_mem : s ∈ ({0}ᶜ : Set ℂ) := by simp [hs_ne0]
-    refine Filter.eventuallyEq_of_mem (h_open_ne_zero.mem_nhds h_mem) ?_
-    intro z hz
-    exact riemannZeta_def_of_ne_zero hz
-  have hζ_logDeriv :
-      logDeriv riemannZeta s =
-        logDeriv completedRiemannZeta s - logDeriv Complex.Gammaℝ s := by
-    have h_deriv_eq :
-        deriv riemannZeta s = deriv (fun z => completedRiemannZeta z / Complex.Gammaℝ z) s :=
-      Filter.EventuallyEq.deriv_eq hriemann_eventually
-    have h_val_eq : riemannZeta s = (fun z => completedRiemannZeta z / Complex.Gammaℝ z) s :=
-      hriemann_eventually.self_of_nhds
-    simp only [logDeriv_apply]
-    rw [h_deriv_eq, h_val_eq]
-    have := logDeriv_div s hcompleted_ne hΓ_ne hcompleted_diff hΓ_diff
-    simpa [logDeriv_apply] using this
-  have hζ_unfold : deriv riemannZeta s / riemannZeta s = logDeriv riemannZeta s := by
-    rw [logDeriv_apply]
-  have hxi_unfold : deriv ZD.riemannXi s / ZD.riemannXi s = logDeriv ZD.riemannXi s := by
-    rw [logDeriv_apply]
-  rw [hζ_unfold, hζ_logDeriv]
-  have h_subst : logDeriv completedRiemannZeta s = logDeriv ZD.riemannXi s - logDeriv p s := by
-    rw [eq_sub_iff_add_eq, add_comm]
-    exact hxi_logDeriv_eq.symm
-  rw [h_subst, hp_log, hxi_unfold]
-  ring
+  exact ZD.riemannZeta_logDeriv_eq_xi_minus_pole_minus_gammaℝ_of_ne
+    s hs_ne0 hs_ne1 hζ_ne hΓ_ne
 
+set_option maxHeartbeats 16000000 in
 /-- **H11 main**: critical-strip Landau bound at good heights, via
 σ=2 subtraction.
 
@@ -1660,6 +1551,356 @@ theorem criticalStripLandau :
       ∃ T ∈ Set.Icc T₀ (T₀ + 1),
         ‖deriv riemannZeta ((σ : ℂ) + (T : ℂ) * I) /
           riemannZeta ((σ : ℂ) + (T : ℂ) * I)‖ ≤ C * (Real.log T) ^ 2 := by
-  sorry
+  -- Extract constants from dependencies.
+  obtain ⟨A, hA⟩ := ZD.xi_logDeriv_partial_fraction
+  obtain ⟨Cfar, hCfar_pos, hCfar_bd⟩ := xi_logDeriv_sub_far_bound
+  obtain ⟨Cxi0, hCxi0_nn, hCxi0_bd⟩ := xi_logDeriv_norm_log_bound_local
+  obtain ⟨CΓ, hCΓ_pos, hCΓ_bd⟩ :=
+    ZD.UniformGammaR.gammaR_logDeriv_uniform_criticalStrip
+  -- Use the near-bound packaged theorem, but derive the separation/s ∉ NTZ fact
+  -- separately via `exists_good_height_for_near_window`.
+  obtain ⟨Csep, hCsep_pos, hgood⟩ := exists_good_height_for_near_window
+  obtain ⟨Cw, hCw_pos, hCw_bd⟩ := nontrivialZeros_short_window_weighted_count_bound
+  have hlog2_pos : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  -- Cnear from the near-bound lemma.
+  set Cnear : ℝ := 5 * ((1 / Csep) + 2) * Cw with hCnear_def
+  have hCnear_pos : 0 < Cnear := by rw [hCnear_def]; positivity
+  -- Universal constant.
+  set C_total : ℝ :=
+    (Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 + Cnear + 1 with hC_total_def
+  have hC_total_pos : 0 < C_total := by
+    rw [hC_total_def]
+    have h1 : 0 ≤ (Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 := by
+      apply div_nonneg _ hlog2_pos.le
+      linarith [hCxi0_nn, hCfar_pos.le, hCΓ_pos.le, norm_nonneg A]
+    linarith [hCnear_pos]
+  refine ⟨C_total, hC_total_pos, ?_⟩
+  intro σ hσ T₀ hT₀
+  -- Get good height T with separation.
+  obtain ⟨T, hT_mem, hsep⟩ := hgood T₀ hT₀
+  refine ⟨T, hT_mem, ?_⟩
+  have hT_pos : (0 : ℝ) < T := by linarith [hT_mem.1]
+  have hT_ge_2 : (2 : ℝ) ≤ T := le_trans hT₀ hT_mem.1
+  have hlogT_pos : 0 < Real.log T := Real.log_pos (by linarith)
+  have hlogT_ge_log2 : Real.log 2 ≤ Real.log T := Real.log_le_log (by norm_num) hT_ge_2
+  have hlogT_sq_pos : 0 < (Real.log T) ^ 2 := by positivity
+  have hlogT₀_pos : 0 < Real.log T₀ := Real.log_pos (by linarith)
+  -- Near-bound at this T via the existing of-sep helper.
+  have hNear_bd :
+      ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - T| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) *
+            (1 / ((σ : ℂ) + (T : ℂ) * I - ρ.val) -
+             1 / ((2 : ℂ) + (T : ℂ) * I - ρ.val))‖
+        ≤ Cnear * (Real.log T) ^ 2 := by
+    simpa [shortWindowFinset, Cnear, hCnear_def] using
+      xi_logDeriv_sub_near_bound_of_sep
+        ⟨hσ.1.le, by linarith [hσ.2]⟩ hT₀ hT_mem hCsep_pos hCw_pos hsep
+        (fun U hU => by simpa [shortWindowFinset] using hCw_bd U hU)
+  -- Far-bound at this T.
+  have hFar_bd :
+      ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - T| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) *
+            (1 / ((σ : ℂ) + (T : ℂ) * I - ρ.val) -
+             1 / ((2 : ℂ) + (T : ℂ) * I - ρ.val))‖
+        ≤ Cfar * Real.log T :=
+    hCfar_bd σ ⟨hσ.1.le, by linarith [hσ.2]⟩ T hT_ge_2
+  -- Set up s, s₀.
+  set s : ℂ := (σ : ℂ) + (T : ℂ) * I with hs_def
+  set s₀ : ℂ := (2 : ℂ) + (T : ℂ) * I with hs₀_def
+  have hs_re : s.re = σ := by simp [hs_def]
+  have hs_im : s.im = T := by simp [hs_def]
+  have hs₀_re : s₀.re = 2 := by simp [hs₀_def]
+  have hs₀_im : s₀.im = T := by simp [hs₀_def]
+  have hσ_pos : 0 < σ := hσ.1
+  have hσ_lt : σ < 1 := hσ.2
+  have hs_ne_0 : s ≠ 0 := by
+    intro h; have := congrArg Complex.re h; rw [hs_re] at this; simp at this; linarith
+  have hs_ne_1 : s ≠ 1 := by
+    intro h; have := congrArg Complex.re h; rw [hs_re] at this; simp at this; linarith
+  -- s ∉ NontrivialZeros via separation at good height.
+  have hs_notMem : s ∉ NontrivialZeros := by
+    intro hmem
+    by_cases hnear : |s.im - T| ≤ 1
+    · -- s is near T — separation forces |s.im - T| ≥ Csep/log T₀ > 0, but s.im = T ⟹ 0.
+      have hsep_s : Csep / Real.log T₀ ≤ |s.im - T| := hsep s hmem hnear
+      rw [hs_im] at hsep_s
+      simp at hsep_s
+      have h_div_pos : 0 < Csep / Real.log T₀ := div_pos hCsep_pos hlogT₀_pos
+      linarith
+    · -- s is far: |s.im - T| > 1, but s.im = T gives 0 ≤ 1, contradiction.
+      apply hnear
+      rw [hs_im]; simp
+  -- ζ(s) ≠ 0 follows from s ∉ NTZ.
+  have hζ_s_ne : riemannZeta s ≠ 0 := by
+    intro hz
+    exact hs_notMem ⟨by rw [hs_re]; exact hσ_pos, by rw [hs_re]; exact hσ_lt, hz⟩
+  -- Γℝ(s) ≠ 0 from Re(s) > 0.
+  have hΓ_s_ne : Complex.Gammaℝ s ≠ 0 :=
+    Complex.Gammaℝ_ne_zero_of_re_pos (by rw [hs_re]; exact hσ_pos)
+  -- s₀ = 2+iT, Re = 2 > 1, so s₀ ∉ NTZ.
+  have hs₀_notMem : s₀ ∉ NontrivialZeros := by
+    intro hmem
+    have : s₀.re < 1 := hmem.2.1
+    rw [hs₀_re] at this; norm_num at this
+  -- Bound ‖ξ'/ξ(s₀)‖ via the σ=2 bound.
+  have hξ_s₀_bd :
+      ‖deriv riemannXi s₀ / riemannXi s₀‖ ≤ Cxi0 * Real.log T :=
+    hCxi0_bd T hT_ge_2
+  -- Key identity: `ξ'/ξ(s) - ξ'/ξ(s₀) = near_sub + far_sub`. Follows from H8
+  -- applied at both s and s₀: the Hadamard constant `A` and `1/ρ` terms
+  -- cancel term-by-term in the subtraction.
+  -- Formalization uses `xi_logDeriv_short_window_decomp` at both points.
+  have hxi_s_eq := hA s hs_notMem
+  have hxi_s₀_eq := hA s₀ hs₀_notMem
+  -- Summabilities needed for tsum_sub.
+  have h_summ_s :
+      Summable (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) :=
+    summable_weighted_partial_fraction_local hs_notMem
+  have h_summ_s₀ :
+      Summable (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) :=
+    summable_weighted_partial_fraction_local hs₀_notMem
+  -- Diff of tsums = tsum of diffs.
+  have h_tsum_sub :
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) =
+      ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)) := by
+    rw [← Summable.tsum_sub h_summ_s h_summ_s₀]
+    apply tsum_congr
+    intro ρ; ring
+  -- Final bound chain. Use H9 to convert ξ'/ξ → ζ'/ζ, then bound each piece.
+  have hζ_s_eq :
+      deriv riemannZeta s / riemannZeta s =
+        deriv riemannXi s / riemannXi s -
+          1 / s - 1 / (s - 1) - logDeriv Complex.Gammaℝ s :=
+    riemannZeta_logDeriv_eq_generalized s hs_ne_0 hs_ne_1 hζ_s_ne hΓ_s_ne
+  -- Bound ‖1/s‖ ≤ 1/T ≤ 1/log 2 · log T
+  have h_inv_s : ‖(1 : ℂ) / s‖ ≤ 1 := by
+    have h_s_re_pos : 0 < s.re := by rw [hs_re]; exact hσ_pos
+    have h_s_norm_ge : (1 : ℝ) ≤ ‖s‖ := by
+      have h_normSq : Complex.normSq s = σ^2 + T^2 := by
+        rw [hs_def]
+        simp [Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.mul_re,
+          Complex.mul_im, Complex.I_re, Complex.I_im]; ring
+      have h_norm_sq : ‖s‖^2 = Complex.normSq s := Complex.sq_norm _
+      have h_ge_1 : (1 : ℝ) ≤ ‖s‖^2 := by
+        rw [h_norm_sq, h_normSq]
+        nlinarith [sq_nonneg σ, sq_nonneg T, hT_ge_2]
+      nlinarith [norm_nonneg s]
+    have h_s_pos : (0 : ℝ) < ‖s‖ := lt_of_lt_of_le zero_lt_one h_s_norm_ge
+    rw [norm_div, norm_one, div_le_iff₀ h_s_pos]; linarith
+  -- Bound ‖1/(s-1)‖ ≤ 1
+  have h_sm1_re : (s - 1).re = σ - 1 := by simp [hs_def]
+  have h_sm1_im : (s - 1).im = T := by simp [hs_def]
+  have h_sm1_ne : s - 1 ≠ 0 := by
+    intro h
+    have := congrArg Complex.im h
+    rw [h_sm1_im] at this; simp at this; linarith
+  have h_inv_sm1 : ‖(1 : ℂ) / (s - 1)‖ ≤ 1 := by
+    have h_sm1_norm_ge : (1 : ℝ) ≤ ‖s - 1‖ := by
+      have h_normSq : Complex.normSq (s - 1) = (σ - 1)^2 + T^2 := by
+        rw [hs_def]
+        simp [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.add_re,
+          Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im]
+        ring
+      have h_norm_sq : ‖s - 1‖^2 = Complex.normSq (s - 1) := Complex.sq_norm _
+      have h_ge_1 : (1 : ℝ) ≤ ‖s - 1‖^2 := by
+        rw [h_norm_sq, h_normSq]
+        nlinarith [sq_nonneg (σ-1), sq_nonneg T, hT_ge_2]
+      nlinarith [norm_nonneg (s - 1)]
+    have h_sm1_pos : (0 : ℝ) < ‖s - 1‖ := lt_of_lt_of_le zero_lt_one h_sm1_norm_ge
+    rw [norm_div, norm_one, div_le_iff₀ h_sm1_pos]; linarith
+  -- Bound ‖logDeriv Γℝ(s)‖ ≤ CΓ·log T via uniform bound.
+  have h_Γ_s_bd : ‖logDeriv Complex.Gammaℝ s‖ ≤ CΓ * Real.log T := by
+    simpa [hs_def] using hCΓ_bd σ hσ T hT_ge_2
+  -- Apply short-window decomp at s and s₀, SAME A' existential witness.
+  obtain ⟨A', hA'⟩ := xi_logDeriv_short_window_decomp
+  have hdecomp_s := hA' s hs_notMem
+  have hdecomp_s₀ := hA' s₀ hs₀_notMem
+  -- Rewrite s₀ decomp using s.im = s₀.im = T so the subtype predicates match.
+  have h_im_eq : s.im = s₀.im := by rw [hs_im, hs₀_im]
+  have hdecomp_s₀' :
+      deriv riemannXi s₀ / riemannXi s₀ =
+        A' +
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) +
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+    rw [h_im_eq]; exact hdecomp_s₀
+  -- ξ'/ξ(s) - ξ'/ξ(s₀) by subtracting the two decomps; A' cancels.
+  have h_xi_diff :
+      deriv riemannXi s / riemannXi s - deriv riemannXi s₀ / riemannXi s₀ =
+        ((∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+         (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val))) +
+        ((∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+         (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+            (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val))) := by
+    rw [hdecomp_s, hdecomp_s₀']; ring
+  -- Rewrite s.im as T in subtypes for matching hNear_bd/hFar_bd.
+  have h_im_sub : s.im = T := hs_im
+  -- Summability of near/far-subtype restrictions (restriction of summable series).
+  have h_summ_near_s : Summable
+      (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
+    have h_summable : Summable (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros} => (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
+      exact summable_weighted_partial_fraction_local hs_notMem
+    convert h_summable.comp_injective _;
+    rotate_left;
+    exact fun x => ⟨ x.val, x.property.1 ⟩;
+    · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h;
+    · rfl -- restriction of summable_weighted_partial_fraction_local
+  have h_summ_near_s₀ : Summable
+      (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+    convert (summable_weighted_partial_fraction_local hs₀_notMem).comp_injective _
+    rotate_left
+    exact fun x => ⟨x.val, x.property.1⟩
+    · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+    · rfl
+  have h_summ_far_s : Summable
+      (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) := by
+    convert (summable_weighted_partial_fraction_local hs_notMem).comp_injective _
+    rotate_left
+    exact fun x => ⟨x.val, x.property.1⟩
+    · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+    · rfl
+  have h_summ_far_s₀ : Summable
+      (fun ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1} =>
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) := by
+    convert (summable_weighted_partial_fraction_local hs₀_notMem).comp_injective _
+    rotate_left
+    exact fun x => ⟨x.val, x.property.1⟩
+    · exact fun x y h => Subtype.ext <| by simpa using congr_arg Subtype.val h
+    · rfl
+  -- Near tsum sub = tsum of differences
+  have h_near_sub :
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) =
+      ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)) := by
+    rw [← Summable.tsum_sub h_summ_near_s h_summ_near_s₀]
+    apply tsum_congr; intro ρ; ring
+  -- Far tsum sub = tsum of differences
+  have h_far_sub :
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) + 1 / ρ.val)) -
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s₀ - ρ.val) + 1 / ρ.val)) =
+      ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)) := by
+    rw [← Summable.tsum_sub h_summ_far_s h_summ_far_s₀]
+    apply tsum_congr; intro ρ; ring
+  -- ξ'/ξ(s) = ξ'/ξ(s₀) + near_diff + far_diff
+  have h_xi_s_eq :
+      deriv riemannXi s / riemannXi s =
+        deriv riemannXi s₀ / riemannXi s₀ +
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))) +
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))) := by
+    have h1 := h_xi_diff
+    rw [h_near_sub, h_far_sub] at h1
+    linear_combination h1
+  -- Rewrite hNear_bd and hFar_bd to use s.im instead of T
+  rw [← hs_im] at hNear_bd hFar_bd
+  -- Step 1: Bound ‖ξ'/ξ(s)‖ via triangle inequality with s₀ subtraction.
+  have h_xi_s_norm : ‖deriv riemannXi s / riemannXi s‖ ≤
+      Cxi0 * Real.log T + Cnear * (Real.log T) ^ 2 + Cfar * Real.log T := by
+    rw [h_xi_s_eq]
+    have h1 := norm_add_le (deriv riemannXi s₀ / riemannXi s₀ +
+        (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+          (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val))))
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - s.im| ≤ 1},
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)))
+    have h2 := norm_add_le (deriv riemannXi s₀ / riemannXi s₀)
+      (∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ |ρ.im - s.im| ≤ 1},
+        (ZD.xiOrderNat ρ.val : ℂ) * (1 / (s - ρ.val) - 1 / (s₀ - ρ.val)))
+    grind
+  -- Step 2: Tighter bounds on 1/s and 1/(s-1): use ‖s‖ ≥ T, ‖s-1‖ ≥ T
+  have h_s_norm_ge_T : T ≤ ‖s‖ := by
+    have : T = |s.im| := by rw [hs_im]; exact (abs_of_pos hT_pos).symm
+    rw [this]; exact Complex.abs_im_le_norm s
+  have h_sm1_norm_ge_T : T ≤ ‖s - 1‖ := by
+    have him : (s - 1).im = T := by simp [hs_def]
+    have : T = |(s - 1).im| := by rw [him]; exact (abs_of_pos hT_pos).symm
+    rw [this]; exact Complex.abs_im_le_norm (s - 1)
+  have h_inv_s_T : ‖(1 : ℂ) / s‖ ≤ 1 / T := by
+    rw [norm_div, norm_one]
+    exact div_le_div_of_nonneg_left (by norm_num : (0:ℝ) ≤ 1) hT_pos h_s_norm_ge_T
+  have h_inv_sm1_T : ‖(1 : ℂ) / (s - 1)‖ ≤ 1 / T := by
+    rw [norm_div, norm_one]
+    exact div_le_div_of_nonneg_left (by norm_num : (0:ℝ) ≤ 1) hT_pos h_sm1_norm_ge_T
+  -- Step 3: Key absorbing inequality: logT ≤ logT²/log 2
+  have h_logT_absorb : Real.log T ≤ (Real.log T) ^ 2 / Real.log 2 := by
+    rw [le_div_iff₀ hlog2_pos]
+    nlinarith [hlogT_ge_log2]
+  -- Step 4: 1/T ≤ logT²/log 2
+  have h_inv_T_absorb : 1 / T ≤ (Real.log T) ^ 2 / Real.log 2 := by
+    -- Since $T \geq 2$, we have $1/T \leq 1/2$.
+    have h_inv_T_le_half : 1 / T ≤ 1 / 2 := by
+      gcongr;
+    -- Since $1/2 \leq \log T$ and $\log T \leq \log T^2 / \log 2$, we can combine these inequalities.
+    have h_combined : 1 / 2 ≤ Real.log T ∧ Real.log T ≤ Real.log T ^ 2 / Real.log 2 := by
+      exact ⟨ by have := Real.log_two_gt_d9; norm_num1 at *; linarith, h_logT_absorb ⟩;
+    exact le_trans h_inv_T_le_half h_combined.1 |> le_trans <| h_combined.2
+  -- Step 5: Triangle inequality for ζ'/ζ
+  have h_zeta_tri : ‖deriv riemannXi s / riemannXi s - 1 / s - 1 / (s - 1) -
+      logDeriv Complex.Gammaℝ s‖ ≤
+      ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+        ‖logDeriv Complex.Gammaℝ s‖ := by
+    -- Apply the triangle inequality to the four terms.
+    have h_triangle : ∀ a b c d : ℂ, ‖a - b - c - d‖ ≤ ‖a‖ + ‖b‖ + ‖c‖ + ‖d‖ := by
+      exact fun a b c d => by linarith [ norm_sub_le a b, norm_sub_le ( a - b ) c, norm_sub_le ( a - b - c ) d ] ;
+    -- Apply the triangle inequality to the four terms using the hypothesis h_triangle.
+    apply h_triangle
+  -- Step 6: Final assembly
+  rw [hζ_s_eq]
+  have h_total : ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+      ‖logDeriv Complex.Gammaℝ s‖ ≤ C_total * (Real.log T) ^ 2 := by
+    have hbd1 : ‖(1 : ℂ) / s‖ ≤ (Real.log T) ^ 2 / Real.log 2 :=
+      le_trans h_inv_s_T h_inv_T_absorb
+    have hbd2 : ‖(1 : ℂ) / (s - 1)‖ ≤ (Real.log T) ^ 2 / Real.log 2 :=
+      le_trans h_inv_sm1_T h_inv_T_absorb
+    have hbd3 : ‖deriv riemannXi s / riemannXi s‖ ≤
+        ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by
+      calc ‖deriv riemannXi s / riemannXi s‖
+          ≤ Cxi0 * Real.log T + Cnear * (Real.log T) ^ 2 + Cfar * Real.log T := h_xi_s_norm
+        _ ≤ Cxi0 * ((Real.log T) ^ 2 / Real.log 2) +
+            Cnear * (Real.log T) ^ 2 +
+            Cfar * ((Real.log T) ^ 2 / Real.log 2) := by
+          nlinarith [h_logT_absorb, hCxi0_nn, hCfar_pos.le]
+        _ = ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by ring
+    have hbd4 : ‖logDeriv Complex.Gammaℝ s‖ ≤
+        CΓ / Real.log 2 * (Real.log T) ^ 2 := by
+      calc ‖logDeriv Complex.Gammaℝ s‖ ≤ CΓ * Real.log T := h_Γ_s_bd
+        _ ≤ CΓ * ((Real.log T) ^ 2 / Real.log 2) := by
+          nlinarith [h_logT_absorb, hCΓ_pos]
+        _ = CΓ / Real.log 2 * (Real.log T) ^ 2 := by ring
+    calc ‖deriv riemannXi s / riemannXi s‖ + ‖(1 : ℂ) / s‖ + ‖(1 : ℂ) / (s - 1)‖ +
+          ‖logDeriv Complex.Gammaℝ s‖
+        ≤ ((Cxi0 + Cfar) / Real.log 2 + Cnear) * (Real.log T) ^ 2 +
+          (Real.log T) ^ 2 / Real.log 2 +
+          (Real.log T) ^ 2 / Real.log 2 +
+          CΓ / Real.log 2 * (Real.log T) ^ 2 := by linarith [hbd1, hbd2, hbd3, hbd4]
+      _ = ((Cxi0 + Cfar + CΓ + 2) / Real.log 2 + Cnear) * (Real.log T) ^ 2 := by ring
+      _ ≤ C_total * (Real.log T) ^ 2 := by
+          apply mul_le_mul_of_nonneg_right _ hlogT_sq_pos.le
+          rw [hC_total_def]
+          have hA_nn := norm_nonneg A
+          have h_extra : 0 ≤ ‖A‖ / Real.log 2 := div_nonneg hA_nn hlog2_pos.le
+          have h_sum : (Cxi0 + Cfar + CΓ + ‖A‖ + 2) / Real.log 2 =
+              (Cxi0 + Cfar + CΓ + 2) / Real.log 2 + ‖A‖ / Real.log 2 := by ring
+          linarith [h_extra, h_sum]
+  linarith [h_zeta_tri, h_total]
 
 end ZD

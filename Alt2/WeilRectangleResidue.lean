@@ -32,11 +32,8 @@ to residues and assembling a finite sum — is axiom-clean.
 
 The **geometric** content — that the rectangle contour integral equals the sum
 of small-circle integrals around interior poles (Cauchy-Goursat on the
-punctured region) — is *not* proved unconditionally. Mathlib currently exposes
-`Complex.integral_boundary_rect_eq_zero_of_differentiable_on_off_countable`
-(requires global continuity, not pole behaviour) but no rectangle-minus-disks
-Green's-theorem theorem. That gap is kept explicit as a hypothesis (the caller
-supplies the geometric identity).
+punctured region) — is not proved unconditionally here. That step is kept
+explicit as a hypothesis (the caller supplies the geometric identity).
 
 All declarations in this file have axiom footprint
 `[propext, Classical.choice, Quot.sound]`.
@@ -224,11 +221,8 @@ of the corresponding per-pole circle integrals.
 
 Given these, the rectangle contour integral equals `2πi · Σ residues p`.
 
-This is the honest axiom-clean statement: the rectangle-to-sum-of-circles step
-is the one piece genuinely missing from Mathlib, and the request's
-`hresidue_form` alone does not suffice (it names circle integrals but not the
-rectangle-reduction identity). Callers that have proved the geometric
-reduction for a specific `f` can instantiate this theorem immediately.
+Callers that have proved the geometric reduction for a specific `f` can
+instantiate this theorem immediately.
 
 Axiom footprint: `[propext, Classical.choice, Quot.sound]`. -/
 theorem rectContourIntegral_eq_sum_residues

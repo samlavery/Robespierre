@@ -20,8 +20,7 @@ Result: for `σL > 1`, the top/bottom edge integrals decay like `C·T⁻²` on a
 sequence of "good heights" `T₁ → ∞`, conditional *only* on
 `pairTestMellin_super_poly_decay_target β σL σR`.
 
-The remaining blocker is that one Mellin-decay target (the quartic-decay sorry
-in `WeilPairTestDecay.lean`). No custom axioms introduced here.
+No custom axioms introduced here.
 -/
 
 open Complex Set Filter

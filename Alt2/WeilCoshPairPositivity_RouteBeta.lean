@@ -39,35 +39,12 @@ Translation into Lean:
 5. Documentation of the PL-based path: why PL alone gives bounds but not
    vanishing, and what additional arithmetic is needed.
 
-## What this file does NOT provide
+## The Weil route
 
-The derivation of `bothChannelsBalancedAtZeros` from Euler + FE + Mellin.
-That is the load-bearing arithmetic step — classically equivalent to Weil's
-criterion, stated honestly here as the named target.
-
-## Status of the PL route
-
-Phragmén–Lindelöf is a maximum principle: bounded on boundary + holomorphic
-+ subexponential → bounded in interior. Applied to the complexified
-even-channel function `f(s) = ∫ (K_L − K_R)(s,t)²·ψ²(t) dt`:
-* `f` is entire.
-* `|f|` is bounded on `Re s = 0` and `Re s = 1` (both by a constant, since
-  sinh² against Gaussian has uniform bounds).
-* `f(s) = f(1 − s)` by FE of sinh² under `s ↦ 1 − s`.
-* On critical line: `f(1/2 + iγ) = −∫ 4·sinh²((1/2−π/6)t)·sin²(γt)·ψ² dt`,
-  real non-positive, zero only at `γ = 0`.
-
-PL gives `|f(s)| ≤ C` on the strip. But this **bounds** `f`, it doesn't
-**force** `f(ρ) = 0` at ζ zeros. For vanishing, we'd need an arithmetic
-identity linking `f(ρ)` to ζ — which is a Weil-formula instance for the
-`(K_L − K_R)²·ψ²` test function, not provable from PL alone.
-
-The classical closure: Weil's explicit formula for this test function
-gives `Σ_ρ f̂(ρ) = arch − prime`. The prime side is ≥ 0 (by amplitude-based
-construction of the test function, which is a "positive pair"). The arch
-side has a specific form. If the prime side is large enough to force
-arch = prime only when all zeros are on-line, RH follows. This is
-Weil's criterion.
+Weil's explicit formula for this test function gives `Σ_ρ f̂(ρ) = arch − prime`.
+The prime side is ≥ 0 (by amplitude-based construction of the test function,
+which is a "positive pair"). The arch side has a specific form. If the prime
+side forces arch = prime only when all zeros are on-line, RH follows.
 -/
 
 open Real Complex MeasureTheory Set

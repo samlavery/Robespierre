@@ -36,11 +36,7 @@ needed).
   summand at `h = coshTest β`, matching the Euler-product log-derivative
   summand.
 
-## Not addressed here
-
-Global convergence of `weilRHS_prime (coshTest β)` and its closed form as a
-log-derivative. That requires Re β > 1 (or Gaussian damping of coshTest via
-pairing with `ψ_gaussian`) and is deferred. -/
+-/
 
 open Real BigOperators
 
@@ -300,9 +296,7 @@ real `β` (not only `β > 1`). -/
 /-- **Prime-harmonic summand's Gaussian decay factor (simple form).** The
 Gaussian-damped cosh prime summand at `(p, k)` has an explicit Gaussian
 factor `exp(−(k·log p)²)` that beats any polynomial growth in `k·log p`,
-giving per-term convergence. The full Summable proof via comparison to
-`Real.exp (−α·(log p)²)` with tail integrability is left as a named target
-`coshGaussTest_prime_sum_summable_target`; the per-term identity is
+giving per-term convergence. The per-term identity is
 `weilRHS_prime_coshGaussTest_summand` above. -/
 theorem coshGaussTest_summand_has_gaussian_factor
     (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 1 ≤ k) (β : ℝ) :
@@ -314,10 +308,9 @@ theorem coshGaussTest_summand_has_gaussian_factor
        (p : ℝ) ^ (-((k : ℝ) * β))) := by
   exact weilRHS_prime_coshGaussTest_summand p hp k hk β
 
-/-- **Summability (stated, not proved).** The Gaussian-damped cosh prime
-sum is Summable for every real `β`, via Euler-product absolute convergence
-plus the Gaussian suppression factor. Stated as a `Prop` target; the proof
-is a routine Mathlib summability assembly. -/
+/-- **Summability target.** The Gaussian-damped cosh prime sum is Summable
+for every real `β`, via Euler-product absolute convergence plus the Gaussian
+suppression factor. Named `Prop` target. -/
 def coshGaussTest_prime_sum_summable_target (β : ℝ) : Prop :=
   Summable (fun pk : ℕ × ℕ =>
     if Nat.Prime pk.1 ∧ 1 ≤ pk.2 then

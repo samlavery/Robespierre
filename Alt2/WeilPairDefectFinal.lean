@@ -4,7 +4,6 @@ import RequestProject.WeilRightEdge
 import RequestProject.WeilHorizontalDecay
 import RequestProject.WeilZeroSum
 import RequestProject.WeilArchPrimeIdentity
-import RequestProject.WeilPairFormula
 import RequestProject.WeilCoshPairPositivity
 
 /-!
@@ -46,12 +45,6 @@ nontrivial zero ρ. This is **`pair_defect_vanishes_at_zeros`** — the sorry.
 * `weilFinalClosure_from_pipeline` — structural theorem: given all the
   pipeline outputs (cycles 42, 44, 46, 48 as hypotheses), the final
   `pair_defect_vanishes_at_zeros` follows.
-
-## Deferred
-
-* The actual discharge of cycle 48's arch=prime identity (the π/6 step).
-
-Estimated remaining work: 150–300 lines after all upstream cycles closed.
 -/
 
 open Complex Real MeasureTheory Set Filter
@@ -62,7 +55,7 @@ namespace ZD
 namespace WeilPositivity
 namespace Contour
 
-/-- **Target = the tracked sorry.** Placeholder for `pair_defect_vanishes_at_zeros`. -/
+/-- **Target.** Alias for `pair_defect_vanishes_at_zeros`. -/
 def WeilFinalClosureTarget : Prop := pair_defect_vanishes_at_zeros
 
 /-- **Trivial conditional closure.** If every nontrivial zero satisfies

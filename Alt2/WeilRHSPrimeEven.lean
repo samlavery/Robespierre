@@ -1,6 +1,6 @@
 import Mathlib
+import RequestProject.PairCoshGaussTest
 import RequestProject.PartialWeilFormula
-import RequestProject.WeilPairFormula
 
 /-!
 # G-2: Even test-function reduction of `weilRHS_prime`
