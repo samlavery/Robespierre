@@ -204,7 +204,7 @@ private theorem cosh_gaussian_integral_Ioi_two_C (a : ℂ) :
   · congr 1; ring
 
 /-- **Real `b = 2` cosh Gaussian integral on `Ioi 0`.** -/
-private theorem cosh_gaussian_half (a : ℝ) :
+theorem cosh_gaussian_half (a : ℝ) :
     ∫ t in Ioi (0:ℝ), Real.cosh (a * t) * Real.exp (-2 * t^2) =
     (1/2) * Real.sqrt (Real.pi / 2) * Real.exp (a^2 / 8) := by
   have h_eq : ((∫ t in Ioi (0:ℝ), 2 * Real.cosh (a * t) * Real.exp (-2 * t^2) : ℝ) : ℂ) =
@@ -237,7 +237,7 @@ private theorem cosh_gaussian_half (a : ℝ) :
   linarith
 
 /-- Integrability of `cosh(at)·exp(-2t²)` over `ℝ`. -/
-private lemma cosh_exp_neg_two_sq_integrable (a : ℝ) :
+lemma cosh_exp_neg_two_sq_integrable (a : ℝ) :
     Integrable (fun t : ℝ => Real.cosh (a * t) * Real.exp (-2 * t^2)) := by
   apply MeasureTheory.Integrable.mono'
     (g := fun t => Real.exp (a^2/2) * Real.exp (-(3/2) * t^2))

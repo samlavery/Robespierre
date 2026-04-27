@@ -106,46 +106,19 @@ theorem contrast_ratio (ρ_on : ℂ) (h_on : ρ_on ∈ ZD.OnLineZeros)
   ⟨(diagnostic_online ρ_on h_on).ratio_one,
    (diagnostic_offline ρ_off h_off).ratio_gt_one⟩
 
-/-! ## §5. Global Tests on ALL Nontrivial Zeros
+/-! ## §5. Global Tests on ALL Nontrivial Zeros (deleted)
 
-These are the real tests. They apply to every nontrivial zero simultaneously,
-with no online/offline assumption. Each is a biconditional that completely
-characterizes the critical line through the harmonic measurement at r = π/3.
+The "per-zero biconditional" wrappers previously in this section
+(`defect_characterizes_line`, `ratio_characterizes_line`,
+`defect_pos_iff_offline`, `ratio_gt_one_iff_offline`,
+`harmonic_balance_implies_on_line`) were RH-equivalent input traps:
+their hypothesis was no easier than RH itself. They have been removed.
+
+Use `amplitudeDefect_eq_zero_iff`, `envelopeRatio_eq_one_iff`,
+`amplitudeDefect_pos_iff`, `envelopeRatio_gt_one_iff` from `ZetaZeroDefs`
+directly when an unconditional `r ≠ 1`, `r > 0` characterization is needed.
+The "harmonic balance" hypothesis is the open question, not progress.
 -/
-
-/-- **The defect test**: For ANY nontrivial zero, the amplitude defect at π/3
-is zero if and only if the zero lies on the critical line.
-This is the complete characterization — the measurement IS the classifier. -/
-theorem defect_characterizes_line (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
-    amplitudeDefect (π / 3) ρ.re = 0 ↔ ρ.re = 1 / 2 :=
-  amplitudeDefect_eq_zero_iff pi_third_pos pi_third_ne_one
-
-/-- **The ratio test**: For ANY nontrivial zero, the envelope ratio at π/3
-equals 1 if and only if the zero lies on the critical line. -/
-theorem ratio_characterizes_line (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
-    envelopeRatio (π / 3) ρ.re = 1 ↔ ρ.re = 1 / 2 :=
-  envelopeRatio_eq_one_iff pi_third_pos pi_third_ne_one
-
-/-- **The defect positivity test**: For ANY nontrivial zero, the defect is
-strictly positive if and only if the zero is OFF the critical line. -/
-theorem defect_pos_iff_offline (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
-    0 < amplitudeDefect (π / 3) ρ.re ↔ ρ.re ≠ 1 / 2 :=
-  amplitudeDefect_pos_iff pi_third_pos pi_third_ne_one
-
-/-- **The ratio excess test**: For ANY nontrivial zero, the ratio exceeds 1
-if and only if the zero is OFF the critical line. -/
-theorem ratio_gt_one_iff_offline (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) :
-    1 < envelopeRatio (π / 3) ρ.re ↔ ρ.re ≠ 1 / 2 :=
-  envelopeRatio_gt_one_iff pi_third_pos pi_third_ne_one
-
-/-- **Harmonic balance implies RH**: If the defect vanishes on all nontrivial
-zeros, then all nontrivial zeros lie on the critical line. Fully proved — the
-hypothesis is the open question, not the implication. -/
-theorem harmonic_balance_implies_on_line
-    (balance : ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
-      amplitudeDefect (π / 3) ρ.re = 0) :
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2 :=
-  fun ρ hρ => (defect_characterizes_line ρ hρ).mp (balance ρ hρ)
 
 /-- **Online zeros exhibit harmonic balance**: every on-line nontrivial zero
 has zero defect, unit ratio, and zero signal defect at all primes. -/
@@ -205,18 +178,6 @@ at x = π/3, giving a specific computable witness. -/
 theorem offline_concrete_witness (ρ : ℂ) (hρ : ρ ∈ ZD.OffLineZeros) :
     ∃ x : ℝ, 0 < x ∧ x ≠ 1 ∧ 0 < amplitudeDefect x ρ.re :=
   ⟨π / 3, pi_third_pos, pi_third_ne_one, offline_breaks_balance ρ hρ⟩
-
-/-- **Even-channel biconditional**: The cosh observable is zero at a given scale
-if and only if the zero is on the critical line. This is the detection criterion
-on the even channel — it separates online from offline with zero false positives. -/
-theorem even_channel_characterizes_line (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros)
-    {y : ℝ} (hy : y ≠ 0) :
-    harmonicDiffPiThird ρ.re y = 0 ↔ ρ.re = 1 / 2 := by
-  constructor
-  · intro h
-    by_contra hβ
-    exact absurd h (ne_of_gt (harmonicDiffPiThird_pos_of_offline hβ hy))
-  · intro h; rw [h]; exact harmonicDiffPiThird_zero_of_online y
 
 /-! ## §5c. Infinite Prime-Indexed Detector Family
 
@@ -637,51 +598,14 @@ theorem prime_detector_balance_iff_critical_line :
     (∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2) :=
   detector_balance_iff_on_line
 
-/-! ## §5i. Global Configuration Realizability
+/-! ## §5i. Per-zero diagnostics
 
-Realizability is a GLOBAL property. One offline zero ejects the entire
-configuration. The only admissible configuration is all-online.
+The per-prime classifier `coshDetector β (log p) = 1 ↔ β = 1/2`
+(from `prime_detector_iff` above) applied at `β = ρ.re`. These are
+diagnostic; they do NOT close RH because their per-zero biconditional
+collapses (across all ρ) to RH itself — the cosh side classifies, it
+does not witness.
 -/
-
-/-- The entire zero configuration is globally realizable. -/
-def ConfigurationRealizable : Prop :=
-  ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
-    ∀ p : ℕ, Nat.Prime p → coshDetector ρ.re (Real.log (↑p)) = 1
-
-/-- **One offline zero ejects the whole configuration.** -/
-theorem one_offline_ejects_configuration
-    (ρ₀ : ℂ) (hρ₀ : ρ₀ ∈ ZD.OffLineZeros) :
-    ¬ ConfigurationRealizable := by
-  intro hreal
-  linarith [hreal ρ₀ hρ₀.1 2 (by norm_num), infinite_detection ρ₀ hρ₀ 2 (by norm_num)]
-
-/-- **Configuration realizable ↔ all zeros online.** -/
-theorem config_iff_all_online :
-    ConfigurationRealizable ↔ (∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2) :=
-  detector_balance_iff_on_line
-
-/-- **No offline zeros in a realizable configuration.** -/
-theorem no_offline_in_realizable_config (hreal : ConfigurationRealizable) :
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2 :=
-  config_iff_all_online.mp hreal
-
-/-- **Offline exists ↔ configuration not realizable.** -/
-theorem offline_exists_iff_not_realizable :
-    (∃ ρ : ℂ, ρ ∈ ZD.OffLineZeros) ↔ ¬ ConfigurationRealizable :=
-  ⟨fun ⟨ρ, hρ⟩ => one_offline_ejects_configuration ρ hρ,
-   fun h => by
-    by_contra hall; push_neg at hall
-    exact h (config_iff_all_online.mpr (fun ρ hρ => by
-      by_contra hoff; exact hall ρ ⟨hρ, hoff⟩))⟩
-
-/-- **The sum characterization** (conditional): For a realizable configuration,
-the total even-channel excess is zero. -/
-theorem realizable_sum_zero (hreal : ConfigurationRealizable)
-    (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) (ps : Finset ℕ) :
-    ∑ p ∈ ps, (coshDetector ρ.re (Real.log (↑p)) - 1) = 0 := by
-  apply Finset.sum_eq_zero; intro p _
-  have hre := no_offline_in_realizable_config hreal ρ hρ
-  simp [coshDetector, hre, Real.cosh_zero]
 
 /-- **Online zeros are zeta zeros with zero excess**: An online nontrivial zero
 has zero even-channel excess at every prime. It is consistent with the
@@ -708,47 +632,6 @@ theorem zero_excess_dichotomy (ρ : ℂ) (hρ : ρ ∈ ZD.NontrivialZeros) (p : 
   rcases Classical.em (ρ.re = 1/2) with hre | hre
   · left; rw [hre]; simp [coshDetector, Real.cosh_zero]
   · right; exact offline_excess_positive ρ ⟨hρ, hre⟩ p hp
-
-/-! ## §5j. Conclusion
-
-Online zeros have zero excess — they are zeta zeros. Offline zeros have
-irremovable positive excess in a positive cone with no compensator —
-they cannot be zeta zeros. The dichotomy is exhaustive. Therefore all
-nontrivial zeros are online.
--/
-
-
-/-
-/-- **Conclusion**: Every nontrivial zero of the Riemann zeta function
-lies on the critical line Re(s) = 1/2.
-
-Online zeros have zero even-channel excess — they are zeta zeros.
-Offline zeros have irremovable positive excess in a compensator-free
-positive cone — they are excluded. One offline zero ejects the entire
-configuration. The only surviving configuration is all-online. -/
-theorem no_offline_nontrivial_zeros :
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2 := by
-  intro ρ hρ
-  -- AM-GM at π/3: the defect is nonneg (positive cone)
-  have h_nonneg := amplitudeDefect_nonneg pi_third_pos ρ.re
-  -- AM-GM characterization: defect = 0 ↔ ρ.re = 1/2
-  have h_iff := amplitudeDefect_eq_zero_iff pi_third_pos pi_third_ne_one (β := ρ.re)
-  -- The defect is a perfect square: (r^(β/2) - r^((1-β)/2))²
-  -- In the positive cone, it's ≥ 0 with unique zero at β = 1/2
-  -- For a nontrivial zero, the balanced reading is the identity
-  -- The positive cone excludes the offline branch
-  by_contra hoff
-  have h_pos := offline_amplitude_defect_pos pi_third_pos pi_third_ne_one hoff
-  -- h_pos : 0 < amplitudeDefect (π/3) ρ.re
-  -- h_nonneg : 0 ≤ amplitudeDefect (π/3) ρ.re
-  -- The configuration ejection: one offline zero → ¬ConfigurationRealizable
-  have h_eject := one_offline_ejects_configuration ρ ⟨hρ, hoff⟩
-  -- But the all-online configuration IS realizable (identity closure)
-  -- Offline excess contradicts the balanced identity at π/3
-  -- The defect > 0 but must = 0 for the configuration to survive
-  linarith [h_iff.mpr rfl]
--/
-
 
 def evenChannelExcess (β : ℝ) (p : ℕ) : ℝ :=
   coshDetector β (Real.log (↑p)) - 1
@@ -838,11 +721,6 @@ def FinalRealizableZeros : Set ℂ :=
 #check @NontrivialDiagnostic
 #check @OnlineDiagnostic
 #check @OfflineDiagnostic
-#check @defect_characterizes_line
-#check @ratio_characterizes_line
-#check @defect_pos_iff_offline
-#check @ratio_gt_one_iff_offline
-#check @harmonic_balance_implies_on_line
 #check @offline_breaks_balance
 #check @nontrivial_in_strip
 #check @nontrivial_defect_nonneg

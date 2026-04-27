@@ -4,7 +4,23 @@ import RequestProject.GaussianAdmissible
 import RequestProject.DoubleCoshProgram
 
 /-!
-# `ExplicitFormulaBridge` from `RiemannHypothesis`
+# ⚠️ LEGACY — superseded by `WeilZeroOrthogonality.lean`.
+
+Kept only for backward import compatibility. The current architecture
+separates concerns as:
+
+* Cosh side: `WeilCoshPairPositivity.lean`
+  (`gaussianPairDefect_pos_of_ne_half`, etc.)
+* Weil target: `WeilVanishesOnZeros` (in `WeilCoshPairPositivity.lean`)
+* Orthogonality bridge: `ZeroCoefficientVanishesByOrthogonality`
+  (in `WeilZeroOrthogonality.lean`)
+
+The forward direction `RiemannHypothesis → ExplicitFormulaBridge ψ` is
+**circular** as a route to RH (it derives a bridge *from* RH). It is
+preserved here for historical reasons only. Do NOT use this direction
+to "prove" RH.
+
+# `ExplicitFormulaBridge` from `RiemannHypothesis` (legacy)
 
 Item (1) of the Weil-bridge completion program.
 
@@ -56,6 +72,7 @@ theorem nontrivial_ne_one {ρ : ℂ} (hρ : ρ ∈ NontrivialZeros) : ρ ≠ 1 :
 function `ψ` admits an `ExplicitFormulaBridge`. No admissibility or
 Parseval hypotheses required — the `zero_forces_vanishing` content is
 pure on-line vanishing of `averageEnergyDefect`. -/
+-- this needs to go
 theorem ExplicitFormulaBridge_of_RiemannHypothesis
     (hRH : RiemannHypothesis) (ψ : ℝ → ℝ) :
     ExplicitFormulaBridge ψ where
@@ -188,31 +205,14 @@ theorem WeilGaussianBridge_of_RiemannHypothesis
   rw [hre]
   exact averageEnergyDefect_zero_on_line gaussianKernel
 
-/-- **Single-call `BalancedChannel` wrapper.** Drop-in replacement for
-`weil_gaussian_bridge_axiom ρ hρ` at a callsite that needs a
-`BalancedChannel gaussianKernel ρ`. Takes `hRH : RiemannHypothesis` as
-the single replacement hypothesis. -/
+
+-- this must go
 theorem balanced_channel_of_RiemannHypothesis
     (hRH : RiemannHypothesis) (ρ : ℂ) (hρ : ρ ∈ NontrivialZeros) :
     BalancedChannel gaussianKernel ρ :=
   WeilGaussianBridge_of_RiemannHypothesis hRH ρ hρ
 
-/-! ### Bridge direction summary
 
-Previously this file carried
-```
-axiom weil_gaussian_bridge_axiom : WeilGaussianBridge
-theorem RiemannHypothesis_unconditional : RiemannHypothesis := ...
-```
-both removed.
-
-`WeilGaussianBridge_of_RiemannHypothesis` remains as the proved
-forward direction from RH to the Gaussian-bridge predicate. -/
-
-#print axioms ExplicitFormulaBridge_of_RiemannHypothesis
-#print axioms ExplicitFormulaBridge_gaussian_of_RH
-#print axioms WeilGaussianBridge_of_RiemannHypothesis
-#print axioms balanced_channel_of_RiemannHypothesis
 
 end ZD
 

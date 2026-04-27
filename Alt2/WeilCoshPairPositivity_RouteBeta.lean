@@ -5,46 +5,37 @@ import RequestProject.MellinPathToXi
 import RequestProject.WeilCoshPairPositivity
 
 /-!
-# Route β: Even/Odd channel formalization of the prime-harmonic balance argument
+# Route β: Even/Odd channel formalization (cosh side + Weil target)
 
-## The user's framing
+## Architecture
 
-> Prime harmonics are balanced or unbalanced. If balanced, the defect
-> envelope is `1/2 − 1/2 = 0`. If unbalanced, the defect envelope is
-> positive and non-cancellable — the excess is amplitude, showing up on
-> the even channel. If the channels are balanced, they vanish; if not
-> balanced, not vanishing.
+This file owns:
 
-Translation into Lean:
+1. **Even channel = cosh separation (proved).**
+   `evenChannel β := gaussianPairDefect β`. Non-negative, zero iff
+   `β = 1/2` — pure cosh geometry, sinh² factorization + AM-GM
+   dominator. Off-line `β ≠ 1/2` ⟹ `evenChannel β > 0`. No RH input.
 
-* **Even channel** = `gaussianPairDefect β = ∫ (K_L − K_R)²·ψ²` — amplitude-based,
-  non-negative, zero iff `β = 1/2` (unconditional via sinh² factorization +
-  AM-GM dominator, already in `GaussianDetectorPair.lean`).
+2. **Odd channel (proved closed form).**
+   Phase-sensitive signed integral with `sinh·sin` factors.
+   Closed-form Gaussian moment computation.
 
-* **Odd channel** = a signed (phase-sensitive) integral of the detector
-  difference. Specific form tracked below.
+3. **`bothChannelsBalancedAtZeros` — Weil/orthogonality TARGET (stated).**
+   Prop encoding the analytic claim that at every nontrivial ζ zero,
+   both channels are balanced. NOT proved here; this is the analytic
+   input from the Weil explicit formula.
 
-* **Vanishing condition**: for a point ρ to be a ζ zero, prime-harmonic
-  consistency requires both channels balanced at ρ's position. Off-line
-  ρ ⟹ even channel > 0 (non-cancellable amplitude) ⟹ ρ can't be a ζ zero.
+4. **Conditional cosh closure (proved).**
+   `bothChannelsBalancedAtZeros ⟹ RiemannHypothesis`. Reads the
+   cosh-side payoff: given the Weil-target balance, the even channel's
+   off-line strict positivity forces every zero onto `ρ.re = 1/2`.
+   This is a **conditional** theorem; it does NOT prove RH.
 
-## What this file provides
+## Cosh prose
 
-1. Even channel rename + strict positivity off-line (already proved).
-2. Odd channel definition (the signed counterpart) and basic properties.
-3. The named Prop `bothChannelsBalancedAtZeros` — the classical
-   arithmetic claim.
-4. Derivation `bothChannelsBalancedAtZeros ⟹ RiemannHypothesis`
-   unconditionally (via even channel iff).
-5. Documentation of the PL-based path: why PL alone gives bounds but not
-   vanishing, and what additional arithmetic is needed.
-
-## The Weil route
-
-Weil's explicit formula for this test function gives `Σ_ρ f̂(ρ) = arch − prime`.
-The prime side is ≥ 0 (by amplitude-based construction of the test function,
-which is a "positive pair"). The arch side has a specific form. If the prime
-side forces arch = prime only when all zeros are on-line, RH follows.
+Cosh geometry comes from cosh kernels at `π/3` and `π/6` — independent
+of any RH assumption; `1/2` is the cosh balance point. Off-line σ gives
+nonzero defect (cosh separation).
 -/
 
 open Real Complex MeasureTheory Set
@@ -523,17 +514,23 @@ theorem RiemannHypothesis_of_bothChannelsBalanced
 
 #print axioms RiemannHypothesis_of_bothChannelsBalanced
 
-/-! ### Equivalence with the pair-defect target
+/-! ### Relation to the Weil vanishing target
 
-`bothChannelsBalancedAtZeros` implies `pair_defect_vanishes_at_zeros`
+`bothChannelsBalancedAtZeros` (both even AND odd channel balanced)
+implies the strictly weaker even-channel-only target `WeilVanishesOnZeros`
 trivially (just drops the odd channel). The converse requires proving
-the odd channel also vanishes at zeros. -/
+the odd channel also vanishes at zeros and is NOT supplied here. -/
 
-/-- Both-channels-balanced target implies the even-channel-only pair-defect
-target. -/
+/-- Both-channels-balanced (Weil target, stronger) implies the
+even-channel-only Weil vanishing target. -/
+theorem WeilVanishesOnZeros_of_bothChannelsBalanced
+    (h : bothChannelsBalancedAtZeros) : WeilVanishesOnZeros :=
+  fun ρ hρ => (h ρ hρ).1
+
+/-- Backward-compatibility alias under the legacy name. -/
 theorem pair_defect_vanishes_of_bothChannelsBalanced
     (h : bothChannelsBalancedAtZeros) : pair_defect_vanishes_at_zeros :=
-  fun ρ hρ => (h ρ hρ).1
+  WeilVanishesOnZeros_of_bothChannelsBalanced h
 
 #print axioms pair_defect_vanishes_of_bothChannelsBalanced
 

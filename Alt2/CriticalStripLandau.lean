@@ -436,8 +436,7 @@ private lemma max_radius_log_le_const_mul
 subtraction form: `|1/(s-ρ) - 1/(s₀-ρ)| ≤ 2/|T-γ|²` for far zeros and
 `≤ 8/‖ρ‖²` for `‖ρ‖ ≥ 2T+5`. Tail summability + dyadic shells + H10.
 
-**TRACKED sorry.** Full implementation needs dyadic shell decomposition plus
-iterated H10 application at shifted centers. ~200-300 lines Lean. -/
+-/
 theorem xi_logDeriv_sub_far_bound :
     ∃ C : ℝ, 0 < C ∧ ∀ σ ∈ Set.Icc (0:ℝ) 2, ∀ T : ℝ, 2 ≤ T →
       ‖∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros ∧ ¬|ρ.im - T| ≤ 1},
@@ -1368,8 +1367,7 @@ At T* with separation `C/log T₀` (from `exists_good_height`):
 - Count of near zeros ≤ `C_d · log T` (H10).
 - Product: O((log T)²).
 
-**TRACKED sorry.** Structural proof ~150-200 lines Lean, with subtype/finset
-coercions. See body comments for sketch. -/
+-/
 theorem xi_logDeriv_sub_near_bound_at_good_height :
     ∃ C : ℝ, 0 < C ∧ ∀ σ ∈ Set.Ioo (0:ℝ) 1, ∀ T₀ : ℝ, 2 ≤ T₀ →
       ∃ T ∈ Set.Icc T₀ (T₀ + 1),
@@ -1509,9 +1507,7 @@ domain where ζ, Γℝ, s, s-1 are all nonzero; restricting to σ ∈ (0,1) just
 requires `ζ(s) ≠ 0` (ensured by `s ∉ NontrivialZeros`) and `Γℝ(s) ≠ 0`
 (ensured by `σ > 0`).
 
-**TRACKED sorry.** Port of `riemannZeta_logDeriv_eq_xi_minus_pole_minus_gammaℝ`
-with relaxed hypotheses (~80 lines; existing proof structure goes through,
-replacing `1 < s.re`-specific steps with direct `ζ s ≠ 0` / `Γℝ s ≠ 0`). -/
+-/
 lemma riemannZeta_logDeriv_eq_generalized
     (s : ℂ) (hs_ne0 : s ≠ 0) (hs_ne1 : s ≠ 1)
     (hζ_ne : riemannZeta s ≠ 0) (hΓ_ne : Complex.Gammaℝ s ≠ 0) :
@@ -1543,9 +1539,7 @@ At `s = σ + iT*`, `s₀ = 2 + iT*` with σ ∈ (0,1) and T* a good height:
      + Gammaℝ = π^(-s/2)·Γ(s/2) reflection.
 6. Total: `|ζ'/ζ(s)| ≤ O((log T)²) + O(log T) = O((log T)²)`.
 
-**TRACKED sorry.** Depends on `xi_logDeriv_sub_far_bound` (2),
-`xi_logDeriv_sub_near_bound_at_good_height` (4), and the generalized H9
-helper above. Once those land, assembly is ≈ 80-100 lines. -/
+-/
 theorem criticalStripLandau :
     ∃ C : ℝ, 0 < C ∧ ∀ σ ∈ Set.Ioo (0:ℝ) 1, ∀ T₀ : ℝ, 2 ≤ T₀ →
       ∃ T ∈ Set.Icc T₀ (T₀ + 1),

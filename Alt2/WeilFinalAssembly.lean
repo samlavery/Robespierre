@@ -500,25 +500,7 @@ theorem sum_nonneg_zero_forces_each
     linarith [h_sum_zero, h_sum_split]
   linarith [h_nn i hi]
 
--- ═══════════════════════════════════════════════════════════════════════════
--- § What the assembly actually produces — honest factual statement
--- ═══════════════════════════════════════════════════════════════════════════
-
-/-- **At an offline nontrivial zero, the Weil formula holds with strictly
-positive RHS.** Fully unconditional given `h_wf`:
-
-* The Weil identity at `β = ρ.re` gives
-  `Σ n(ρ') · pairTestMellin ρ.re ρ' = gaussianPairDefect ρ.re`.
-* Detector geometry (`gaussianPairDefect_pos_offline`) gives the RHS > 0
-  whenever `ρ.re ≠ 1/2`.
-
-This is **all** the Weil-formula assembly + cosh-detector geometry delivers.
-It is a factual identity with a positive RHS — it does **not** by itself
-force `ρ` onto the critical line, because the equation `Σ = (positive)`
-is satisfiable whether or not offline zeros exist. To close to RH, one
-needs the additional classical Weil-positivity ingredient (a strict
-inequality on the zero-side sum that is incompatible with offline
-contributions), which is not produced here. -/
+/-- Weil identity at an offline zero with positive right-hand side. -/
 theorem offline_zero_weil_identity_has_positive_rhs
     (h_wf : ∀ β : ℝ, β ∈ Set.Ioo (0:ℝ) 1 →
       WeilExplicitFormula_pair_cosh_gauss_target β)

@@ -2,13 +2,19 @@ import Mathlib
 import RequestProject.GaussianDetectorPair
 
 /-!
-# Pair Cosh-Gauss Test Function — unconditional
+# Pair Cosh-Gauss Test Function — cosh side, unconditional
 
-Sugar-only replacement for the test function previously sitting in
-`WeilPairFormula.lean`.  No sorries, no consumers of sorries; this file
-is strictly the pointwise product `pairDetectorSqDiff · ψ_gaussian²`
-renamed, together with the three trivial unconditional theorems about
-it.
+Sugar-only renaming of the pointwise integrand
+`pairDetectorSqDiff · ψ_gaussian²`. Three trivial unconditional
+theorems.
+
+Architecture: this is *cosh-side only*. It exposes the integrand whose
+integral is `gaussianPairDefect β`. Cosh separation
+(σ ≠ 1/2 ⟹ defect ≠ 0) lives in `GaussianDetectorPair.lean` /
+`WeilCoshPairPositivity.lean`. The Weil vanishing target
+`WeilVanishesOnZeros` (analytic, NOT proved) is in
+`WeilCoshPairPositivity.lean`. The orthogonality target is in
+`WeilZeroOrthogonality.lean`.
 
 The load-bearing classical-Weil-positivity theorem that used to live in
 `WeilPairFormula.lean` has been deleted.  That deletion is intentional:

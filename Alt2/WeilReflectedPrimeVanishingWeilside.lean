@@ -129,7 +129,7 @@ private theorem h1_mellinConv_coshGaussDerivVal (c : ℝ) {s : ℂ} (hs : 0 < s.
   · exact hs
 
 /-- **Mellin convergent of `coshGaussDeriv2Val c` on `Re s > 0`.** -/
-private theorem h1_mellinConv_coshGaussDeriv2Val (c : ℝ) {s : ℂ} (hs : 0 < s.re) :
+theorem h1_mellinConv_coshGaussDeriv2Val (c : ℝ) {s : ℂ} (hs : 0 < s.re) :
     MellinConvergent
       (fun t : ℝ => ((Contour.coshGaussDeriv2Val c t : ℝ) : ℂ)) s := by
   apply mellinConvergent_of_isBigO_rpow_exp (a := 1/2) (b := 0)
@@ -400,7 +400,7 @@ private theorem h1_coshGaussDerivMellin_ibp_once (c : ℝ) {s : ℂ} (hs : 0 < s
   exact this
 
 /-- **IBP×2**: `coshGaussMellin c s = 1/(s·(s+1)) · mellin(coshGaussDeriv2Val c) (s+2)`. -/
-private theorem h1_coshGaussMellin_ibp_twice (c : ℝ) {s : ℂ} (hs : 0 < s.re) :
+theorem h1_coshGaussMellin_ibp_twice (c : ℝ) {s : ℂ} (hs : 0 < s.re) :
     Contour.coshGaussMellin c s =
       1/(s * (s + 1)) *
         mellin (fun t : ℝ => ((Contour.coshGaussDeriv2Val c t : ℝ) : ℂ)) (s + 2) := by
@@ -799,6 +799,20 @@ private theorem h1_arch_coshGaussMellin_integrable (c : ℝ) :
   exact h_majorant_int.mono' h_meas
     (MeasureTheory.ae_of_all _ (fun t => h_ptwise t))
 
+theorem coshGaussMellin_quadratic_bound_at_two (c : ℝ) :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ t : ℝ,
+      ‖Contour.coshGaussMellin c ((2 : ℂ) + (t : ℂ) * I)‖ ≤ K / (1 + t^2) :=
+  h1_coshGaussMellin_global_quadratic_bound c
+
+theorem arch_coshGaussMellin_integrable_at_two (c : ℝ) :
+    MeasureTheory.Integrable (fun t : ℝ =>
+      (deriv Complex.Gammaℝ ((2 : ℂ) + (t : ℂ) * I) /
+          ((2 : ℂ) + (t : ℂ) * I).Gammaℝ +
+        deriv Complex.Gammaℝ (1 - ((2 : ℂ) + (t : ℂ) * I)) /
+          (1 - ((2 : ℂ) + (t : ℂ) * I)).Gammaℝ) *
+      Contour.coshGaussMellin c ((2 : ℂ) + (t : ℂ) * I)) :=
+  h1_arch_coshGaussMellin_integrable c
+
 /-- **H1: arch-side cosh expansion at σ = 2.** Substitute `pairTestMellin_cosh_expansion`
 into `archIntegrand β 2`, multiply through by the arch kernel, and apply linearity of
 integration using per-piece integrability `h1_arch_coshGaussMellin_integrable`. -/
@@ -1080,21 +1094,7 @@ theorem prime_integral_cosh_expansion_at_two (β : ℝ) :
 -- § H3 — Classical Weil identity for the pair-combined cosh-Gauss test
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **H3 (pair-combined; substantive analytic content).** Five-term weighted
-sum identity: the arch-side and prime-side pair-combo match.
-
-**Proof route (classical Weil; ~150–300 lines)**:
-1. Von Mangoldt expansion of `ζ'/ζ(2+it)` on `Re s > 1`.
-2. FE expansion of `ζ'/ζ(1−(2+it))` via `zeta_logDeriv_arch_form`.
-3. Mellin inversion for `coshGaussMellin c (2+it)` at `x > 0`.
-4. Fubini swap + per-prime-power evaluation. Γℝ'/Γℝ arch pieces cancel against
-   the `-Γℝ'/Γℝ(s) - Γℝ'/Γℝ(1-s)` from (2); `pair_coeffs_sum`,
-   `pair_coeffs_diff`, `pair_axes_sum`, `pair_half_strip` give the channel-by-channel
-   match in the pair-combo (per-c fails; pair-combo succeeds via π/6 axis design).
-
-Classical harmonic / energy-balance content; not RH content. The per-c
-identity `archSingleCosh c = primeSingleCosh c` does NOT hold; the weighted
-pair-combo DOES by design. -/
+/-- The H3 pair-combo target: five-term weighted arch/prime match. -/
 def archPair_eq_primePair_at_two_target (β : ℝ) : Prop :=
     (1/2 : ℂ) * archSingleCosh (2 * β - Real.pi / 3) +
     (1/2 : ℂ) * archSingleCosh (2 - Real.pi / 3 - 2 * β) -

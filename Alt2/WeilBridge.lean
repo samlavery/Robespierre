@@ -9,14 +9,26 @@ noncomputable section
 
 namespace ZD
 
-/-! ## Weil Explicit Formula Bridge Package
+/-! # ⚠️ LEGACY — superseded by `WeilZeroOrthogonality.lean`.
+
+Kept only for backward import compatibility. The current architecture
+uses:
+
+* `WeilCoshPairPositivity.lean` — cosh separation + `WeilVanishesOnZeros`
+  target.
+* `WeilZeroOrthogonality.lean` — `ZeroCoefficientVanishesByOrthogonality`
+  target (per-zero vanishing from a global identity family).
+
+Do NOT extend this file. New `Prop` targets belong in the architecture
+files above.
+
+## Weil Explicit Formula Bridge Package (legacy)
 
 This file introduces a parameterized bridge between the odd test-function
 Fourier profile and the zero/prime-side functionals of the Weil explicit
 formula. The bridge is axiomatized as a `structure` — it encapsulates the
 exact piece of analytic number theory that Mathlib does not yet package
-(the explicit formula for a custom test function), while keeping all
-upstream and downstream theorems unconditional.
+(the explicit formula for a custom test function).
 
 ### Architecture
 
@@ -110,28 +122,17 @@ theorem averaged_positivity_offline (ψ : ℝ → ℝ)
 -- § The Main Theorem (conditional on bridge + Parseval)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **All nontrivial zeros lie on the critical line.**
-
-Conditional on:
-1. `bridge` — the Weil explicit-formula bridge for the odd test function
-2. `hparseval` — the averaged Parseval identity (from the two axioms in
-   EnergyDefect.lean, derivable from `Lp.norm_fourier_eq` via even/odd
-   extension)
-
-The proof is a one-line contradiction: the bridge says actual zeros give
-averaged defect = 0, while Parseval + envelope positivity says off-line
-gives averaged defect > 0. -/
-theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
-    (hψ : AdmissibleThetaKernel ψ)
-    (bridge : ExplicitFormulaBridge ψ) :
-    ∀ ρ : ℂ, ρ ∈ NontrivialZeros → ρ.re = 1 / 2 := by
-  intro ρ hρ
-  by_contra hne
-  have hzero : averageEnergyDefect ψ ρ.re = 0 :=
-    bridge.zero_forces_vanishing ρ hρ
-  have hpos : 0 < averageEnergyDefect ψ ρ.re :=
-    averaged_positivity_offline ψ hψ hne
-  linarith
+-- theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
+--    (hψ : AdmissibleThetaKernel ψ)
+--    (bridge : ExplicitFormulaBridge ψ) :
+--    ∀ ρ : ℂ, ρ ∈ NontrivialZeros → ρ.re = 1 / 2 := by
+--  intro ρ hρ
+--  by_contra hne
+--  have hzero : averageEnergyDefect ψ ρ.re = 0 :=
+--    bridge.zero_forces_vanishing ρ hρ
+--  have hpos : 0 < averageEnergyDefect ψ ρ.re :=
+--    averaged_positivity_offline ψ hψ hne
+--  linarith
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Status Summary
@@ -152,9 +153,6 @@ theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
   Derivable from: Weil explicit formula for the odd test function g_ψ = 2t·ψ(t)
   Status: known mathematics, not yet in Mathlib for custom test functions
 
-### What is axiomatized (EnergyDefect.lean)
-- Half-line cosine/sine Parseval identities
-  Derivable from: `Lp.norm_fourier_eq` via even/odd extension
 -/
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -262,8 +260,5 @@ theorem rh_zero_mem_nontrivialZeros {s : ℂ}
    zeta_zero_re_lt_one hζ hs1,
    hζ⟩
 
-/-! The former `riemann_hypothesis_of_bridge` was removed.
-`rh_zero_mem_nontrivialZeros` (above) is the
-strip-membership lemma used by the Mathlib-form bridges. -/
 
 end ZD

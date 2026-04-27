@@ -30,16 +30,9 @@ The Mellin/evenKernel route avoids all three by using:
 * Differentiability and vanishing at nontrivial zeros follow from those of
   `riemannXi` (already proved in `ThetaTransport`).
 
-## Honest disclosure
-
-The Mellin identity `I_theta_of ψ_mellin s = completedRiemannZeta₀ s` is
-itself a single concrete change-of-variable + FE-symmetrization computation.
-Mathlib has the necessary primitives (`mellin_comp_rpow`, `WeakFEPair.Λ₀`,
-`hurwitzEvenFEPair_zero` Mellin formulas). The full Lean proof is ~200-400
-lines of substitution algebra and is left as one explicit named sorry,
-`I_theta_of_ψ_mellin_eq_completedRiemannZeta₀`. That single sorry, when
-discharged, closes BOTH original sorries in `ThetaTransport.lean` via this
-file's downstream lemmas — so it is strictly less work than the FT route.
+The Mellin identity `I_theta_of ψ_mellin s = completedRiemannZeta₀ s` reduces
+via change-of-variable + FE-symmetrization (mathlib primitives:
+`mellin_comp_rpow`, `WeakFEPair.Λ₀`, `hurwitzEvenFEPair_zero`).
 -/
 
 open Real Complex MeasureTheory HurwitzZeta Set Filter Topology

@@ -7,7 +7,20 @@ import RequestProject.WeilArchPrimeIdentity
 import RequestProject.WeilCoshPairPositivity
 
 /-!
-# Weil Pair Defect Final Closure — Cycle 50
+# ⚠️ LEGACY — superseded by `WeilCoshPairPositivity.lean` + `WeilZeroOrthogonality.lean`.
+
+Kept only for backward import compatibility. The current architecture
+exposes the Weil vanishing TARGET under the name `WeilVanishesOnZeros`
+(in `WeilCoshPairPositivity.lean`) and the orthogonality TARGET as
+`ZeroCoefficientVanishesByOrthogonality` (in `WeilZeroOrthogonality.lean`).
+Both are stated, not proved here. The conditional implication
+`WeilVanishesOnZeros → RiemannHypothesis` is the cosh-side payoff,
+proved in `WeilCoshPairPositivity.lean` via cosh separation.
+
+Do NOT extend this file. The "trivial conditional closure" wrapper
+below is preserved only to keep downstream imports green.
+
+# Weil Pair Defect Final Closure — Cycle 50 (legacy)
 
 Goal: discharge the tracked `sorry` in `WeilPairFormula.lean`
 (`pair_defect_vanishes_at_zeros_proof`) using the full Weil-formula pipeline
@@ -58,6 +71,7 @@ namespace Contour
 /-- **Target.** Alias for `pair_defect_vanishes_at_zeros`. -/
 def WeilFinalClosureTarget : Prop := pair_defect_vanishes_at_zeros
 
+-- This has to go
 /-- **Trivial conditional closure.** If every nontrivial zero satisfies
 `gaussianPairDefect ρ.re = 0` as a hypothesis, then (trivially)
 `pair_defect_vanishes_at_zeros`. This is the structural wrapper; the actual
