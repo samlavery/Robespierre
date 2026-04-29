@@ -662,7 +662,7 @@ theorem archIntegrand_diff_at_two_minus_neg_one_of_horizontal_vanishes
     exact h
   exact mul_left_cancel₀ Complex.I_ne_zero (h_IL_eq.trans h_target_mul.symm)
 
-/-! ## Discharge of `archKernel_pairTest_horizontal_vanishes_target` (the open piece)
+/-! ## Discharge of `archKernel_pairTest_horizontal_vanishes_target`
 
 Strategy: bound `‖archKernel·pairTest β‖` pointwise on `σ ∈ (-1, 2]` at goodHeight
 `T ≥ T₀` via the FE rewrite `archKernel(s) = -ζ'/ζ(s) - ζ'/ζ(1-s)` plus

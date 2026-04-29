@@ -17,7 +17,7 @@ decomposition
 to obtain a finite-`T` equation linking the four boundary integrals to the
 sum over the inside-rectangle residues.
 
-This is **Step 1a** of the gap analysis plan. It is the finite-`T` precursor to
+It is the finite-`T` precursor to
 the whole-line Weil explicit formula at our test.
 -/
 

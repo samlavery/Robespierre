@@ -44,6 +44,11 @@ def centeredExcess (ψ : ℝ → ℝ) (β γ : ℝ) : ℂ :=
 def energyDefect (ψ : ℝ → ℝ) (β γ : ℝ) : ℝ :=
   Complex.normSq (centeredExcess ψ β γ)
 
+/-- The even/cosine and odd/sine defect channels are balanced at height `γ`
+when both transported defect channels vanish. -/
+def EnergyChannelsBalanced (ψ : ℝ → ℝ) (β γ : ℝ) : Prop :=
+  cosineDefectTransform ψ β γ = 0 ∧ sineDefectTransform ψ β γ = 0
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Structural Theorems
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -68,6 +73,29 @@ theorem energyDefect_eq_four_sq_add_four_sq (ψ : ℝ → ℝ) (β γ : ℝ) :
     Complex.ext (by simp) (by simp)
   rw [hext, Complex.normSq_mk]
   ring
+
+/-- Vanishing of the pointwise energy defect is exactly balance of the cosine
+and sine defect channels.  There is no hidden cancellation: the energy is a sum
+of nonnegative squares. -/
+theorem energyDefect_eq_zero_iff_channels_balanced (ψ : ℝ → ℝ) (β γ : ℝ) :
+    energyDefect ψ β γ = 0 ↔ EnergyChannelsBalanced ψ β γ := by
+  rw [energyDefect_eq_four_sq_add_four_sq]
+  unfold EnergyChannelsBalanced
+  set C := cosineDefectTransform ψ β γ
+  set S := sineDefectTransform ψ β γ
+  constructor
+  · intro hsum
+    have hC_nonneg : 0 ≤ 4 * C ^ 2 := by nlinarith [sq_nonneg C]
+    have hS_nonneg : 0 ≤ 4 * S ^ 2 := by nlinarith [sq_nonneg S]
+    have hparts := (add_eq_zero_iff_of_nonneg hC_nonneg hS_nonneg).mp hsum
+    constructor
+    · have hC_sq : C ^ 2 = 0 := by nlinarith [hparts.1]
+      exact sq_eq_zero_iff.mp hC_sq
+    · have hS_sq : S ^ 2 = 0 := by nlinarith [hparts.2]
+      exact sq_eq_zero_iff.mp hS_sq
+  · intro hbal
+    rw [hbal.1, hbal.2]
+    ring
 
 /-- On the critical line `β = 1/2`, the energy defect vanishes. -/
 theorem energyDefect_zero_on_line (ψ : ℝ → ℝ) (γ : ℝ) :

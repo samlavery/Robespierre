@@ -1,7 +1,7 @@
 import Mathlib
 import RequestProject.WeilBridge
 import RequestProject.GaussianAdmissible
-import RequestProject.DoubleCoshProgram
+--import RequestProject.DoubleCoshProgram
 
 /-!
 # ⚠️ LEGACY — superseded by `WeilZeroOrthogonality.lean`.
@@ -68,35 +68,6 @@ theorem nontrivial_ne_one {ρ : ℂ} (hρ : ρ ∈ NontrivialZeros) : ρ ≠ 1 :
   rw [h, Complex.one_re] at this
   linarith
 
-/-- **Forward bridge.** Given Mathlib's `RiemannHypothesis`, every test
-function `ψ` admits an `ExplicitFormulaBridge`. No admissibility or
-Parseval hypotheses required — the `zero_forces_vanishing` content is
-pure on-line vanishing of `averageEnergyDefect`. -/
--- this needs to go
-theorem ExplicitFormulaBridge_of_RiemannHypothesis
-    (hRH : RiemannHypothesis) (ψ : ℝ → ℝ) :
-    ExplicitFormulaBridge ψ where
-  zero_forces_vanishing := by
-    intro ρ hρ
-    have hre : ρ.re = 1 / 2 :=
-      hRH ρ hρ.2.2 (nontrivial_ne_trivial hρ) (nontrivial_ne_one hρ)
-    rw [hre]
-    exact averageEnergyDefect_zero_on_line ψ
-
-/-- Concrete instance: the Gaussian test function's bridge, conditional
-on RH only. -/
-theorem ExplicitFormulaBridge_gaussian_of_RH
-    (hRH : RiemannHypothesis) :
-    ExplicitFormulaBridge ψ_gaussian :=
-  ExplicitFormulaBridge_of_RiemannHypothesis hRH ψ_gaussian
-
-/-! ### Converse (for the biconditional)
-
-The reverse direction `ExplicitFormulaBridge ψ → RH` requires the
-averaged-Parseval identity `hparseval`, which in turn requires the
-`halfLine_*_parseval` axioms in `EnergyDefect.lean`. Once those are
-supplied, the project's `riemann_hypothesis_of_bridge` closes the loop.
--/
 
 /-- **Gaussian Parseval instance.** Specialises the Parseval hypothesis
 in `riemann_hypothesis_of_bridge` to the Gaussian, where the integrability
@@ -113,9 +84,6 @@ theorem hparseval_gaussian (β : ℝ) :
     (ψ_gaussian_admissible.l1_odd β)
     (ψ_gaussian_admissible.l2_even β)
     (ψ_gaussian_admissible.l2_odd β)
-
-/-! The former `RiemannHypothesis_of_ExplicitFormulaBridge_gaussian` and
-`RiemannHypothesis_iff_ExplicitFormulaBridge_gaussian` were removed. -/
 
 /-! ### Axiom hygiene
 
@@ -144,8 +112,9 @@ def gaussianKernel : ℝ → ℝ := ψ_gaussian
 /-- **Balanced channel at `ρ`**: the even and odd energy channels cancel
 to zero in the integrated detector — `averageEnergyDefect ψ ρ.re = 0`.
 By cosh-geometry (`averageEnergyDefect_pos_offline` + the trivial
-`energyDefect_zero_on_line`), this holds iff `ρ.re = 1/2`, *without
-assuming RH*. -/
+`energyDefect_zero_on_line`),
+ -/
+
 def BalancedChannel (ψ : ℝ → ℝ) (ρ : ℂ) : Prop :=
   averageEnergyDefect ψ ρ.re = 0
 
@@ -188,29 +157,7 @@ theorem gaussianKernel_averageEnergyDefect_pos_offline
     (ψ_gaussian_admissible.l2_even β)
     (ψ_gaussian_admissible.l2_odd β)
 
-/-! The former `RiemannHypothesis_of_weil_gaussian_bridge` and
-`RiemannHypothesis_of_WeilGaussianBridge` were removed. -/
 
-/-- **Single-call reverse wrapper: `RiemannHypothesis → WeilGaussianBridge`.**
-
-Given Mathlib's RH, produce the Gaussian-bridge predicate for every
-nontrivial zero: RH gives `ρ.re = 1/2`, and
-`averageEnergyDefect_zero_on_line` closes. Unconditional. -/
-theorem WeilGaussianBridge_of_RiemannHypothesis
-    (hRH : RiemannHypothesis) : WeilGaussianBridge := by
-  intro ρ hρ
-  show averageEnergyDefect gaussianKernel ρ.re = 0
-  have hre : ρ.re = 1 / 2 :=
-    hRH ρ hρ.2.2 (nontrivial_ne_trivial hρ) (nontrivial_ne_one hρ)
-  rw [hre]
-  exact averageEnergyDefect_zero_on_line gaussianKernel
-
-
--- this must go
-theorem balanced_channel_of_RiemannHypothesis
-    (hRH : RiemannHypothesis) (ρ : ℂ) (hρ : ρ ∈ NontrivialZeros) :
-    BalancedChannel gaussianKernel ρ :=
-  WeilGaussianBridge_of_RiemannHypothesis hRH ρ hρ
 
 
 

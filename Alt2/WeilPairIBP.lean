@@ -2405,21 +2405,6 @@ theorem RH_from_F_chain
 
 #print axioms RH_from_F_chain
 
-/-- **RH-1 via Mathlib RiemannHypothesis.** Combined with the project's
-`rh_zero_mem_nontrivialZeros` bridge to Mathlib's RH definition. -/
-theorem RiemannHypothesis_from_F_chain
-    (f : {ρ : ℂ // ρ ∈ NontrivialZeros} → ℝ)
-    (h_nonneg : ∀ ρ, 0 ≤ f ρ)
-    (h_summable : Summable f)
-    (h_sum_zero : ∑' ρ, f ρ = 0)
-    (h_identify : ∀ ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
-      f ρ = 0 → gaussianPairDefect ρ.val.re = 0) :
-    RiemannHypothesis := by
-  apply RHBridge.no_offline_zeros_implies_rh
-  intro ρ hρ
-  exact RH_from_F_chain f h_nonneg h_summable h_sum_zero h_identify ρ hρ
-
-#print axioms RiemannHypothesis_from_F_chain
 
 end Contour
 end WeilPositivity

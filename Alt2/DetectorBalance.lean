@@ -2,7 +2,6 @@ import Mathlib
 import RequestProject.ZetaZeroDefs
 import RequestProject.MellinPathToXi
 import RequestProject.CoshZetaSymmetry
-import RequestProject.RiemannHypothesisBridge
 import RequestProject.ExplicitFormulaBridgeOfRH
 
 /-!
@@ -46,38 +45,8 @@ theorem averageEnergyDefect_gaussian_zero_forces_half
   linarith
 
 
--- this needs to go
-theorem zero_forces_critical_re (hRH : RiemannHypothesis) :
-    ∀ ρ : ℂ, ρ ∈ NontrivialZeros → ρ.re = 1 / 2 := by
-  intro ρ hρ
-  -- Single-call wrapper in place of the removed axiom.
-  have hB : BalancedChannel gaussianKernel ρ :=
-    balanced_channel_of_RiemannHypothesis hRH ρ hρ
-  have hE : averageEnergyDefect gaussianKernel ρ.re = 0 :=
-    averageEnergyDefect_of_BalancedChannel gaussianKernel ρ hB
-  exact averageEnergyDefect_gaussian_zero_forces_half ρ.re hE
-
-/-- **Target theorem.** Cosh-pair balance at every nontrivial zero at
-every prime, given `hRH : RiemannHypothesis`. Proof reduces by the
-cosh-pair-difference identity to `ρ.re = 1/2`. -/
-theorem H_zero_forces_detector_balance
-    (hRH : RiemannHypothesis)
-    (ρ : ℂ) (hρ : ρ ∈ NontrivialZeros)
-    (p : ℕ) (hp : Nat.Prime p) :
-    coshDetectorLeft ρ.re (Real.log p) =
-      coshDetectorRight ρ.re (Real.log p) := by
-  have hre : ρ.re = 1 / 2 := zero_forces_critical_re hRH ρ hρ
-  have hp_pos : (0 : ℝ) < (p : ℝ) := Nat.cast_pos.mpr hp.pos
-  have hp_ne_one : (p : ℝ) ≠ 1 := by exact_mod_cast hp.one_lt.ne'
-  have hlog : Real.log (p : ℝ) ≠ 0 :=
-    Real.log_ne_zero_of_pos_of_ne_one hp_pos hp_ne_one
-  exact (coshDetectors_agree_iff hlog).mpr hre
 
 
-/-! ### Axiom hygiene -/
-
-#print axioms H_zero_forces_detector_balance
-#print axioms zero_forces_critical_re
 
 end ZD
 

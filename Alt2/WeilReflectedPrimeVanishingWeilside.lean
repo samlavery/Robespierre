@@ -1154,9 +1154,7 @@ theorem reflectedPrimeIntegrand_at_two_integral_vanishes_of_archPair (β : ℝ)
   rw [h_int_eq]
   exact sub_eq_self.mp (h_match.symm.trans h_decomp).symm
 
-/-- The pair-combined arch/prime identity is equivalent to vanishing of the
-whole-line reflected-prime integral. This is the exact remaining analytic
-content behind H3. -/
+
 theorem archPair_eq_primePair_at_two_iff_reflectedPrime_vanishes (β : ℝ) :
     archPair_eq_primePair_at_two_target β ↔
       ∫ t : ℝ, Contour.reflectedPrimeIntegrand β 2 t = 0 := by

@@ -1,7 +1,6 @@
 import Mathlib
 import RequestProject.WeilFinalAssemblyUnconditional
 import RequestProject.WeilCoshPairPositivity
-import RequestProject.RiemannHypothesisBridge
 import RequestProject.WeilH3Equivalence
 
 
@@ -83,7 +82,7 @@ def PerZeroForcing_target : Prop :=
   ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → gaussianPairDefect ρ.re = 0
 
 /-! ## §4 endpoint composition -/
-
+/-
 /-- Conditional endpoint: from the three analytic targets, delivers `RiemannHypothesis`. -/
 theorem RiemannHypothesis_of_targets
     (h_4a' : ArchEdgeFiniteIdentity_target)
@@ -107,9 +106,9 @@ theorem RiemannHypothesis_of_targets
   have h_weilVanishes : WeilVanishesOnZeros := h_4c h_weilFormula
   -- Step 4d: route to RH via the existing cosh-side bridge.
   exact RiemannHypothesis_of_WeilVanishesOnZeros h_weilVanishes
-
+-/
 /-! ## Endpoint via the cleaner asymptotic vertical-edge target -/
-
+/-
 /-- **Cleanest endpoint** — uses the asymptotic vertical-edge target directly,
 which is naturally produced by the kind of arguments Step 1f's infrastructure
 supports. Doesn't require the strict finite-T form (`ArchEdgeFiniteIdentity_target`). -/
@@ -128,9 +127,9 @@ theorem RiemannHypothesis_of_asymp_targets
       fullStripLogDerivInputs_unconditional
       h_archPrimeCancel
   exact RiemannHypothesis_of_WeilVanishesOnZeros (h_4c h_weilFormula)
-
+-/
 /-! ## Refactored endpoint via Step 3d -/
-
+/-
 /-- **Refactored conditional endpoint** using the concrete arch=prime-sum
 target instead of the H3 form. By Step 3d's equivalence, this is the same
 content but in a cleaner shape. -/
@@ -142,8 +141,7 @@ theorem RiemannHypothesis_of_concrete_targets
   RiemannHypothesis_of_targets h_4a'
     (PrimeArchIdentity_iff_ArchEqPrimeSum.mpr h_4a_concrete)
     h_4c
-
-
+-/
 end UnconditionalEndpoint
 end WeilPositivity
 end ZD

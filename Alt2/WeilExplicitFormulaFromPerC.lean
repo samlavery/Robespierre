@@ -9,6 +9,7 @@ import RequestProject.WeilRectangleZerosFull
 import RequestProject.XiOrderSummable
 import RequestProject.WeilHorizontalTailsDischarge
 import RequestProject.ZetaZeroDefs
+import RequestProject.OfflineAmplitudeMethods
 import RequestProject.WeilExplicitFormulaPlaceholder
 
 /-!
@@ -464,7 +465,218 @@ theorem rectangleResidueIdentity_from_perC
 
 #print axioms rectangleResidueIdentity_from_perC
 
-/-! ## §3 Final theorem -/
+/-! ## §3 Forked prime-harmonic extraction interfaces -/
+
+/-- The localized detector harmonic read by the forked PerC prime channel at
+prime scale `log p`.  This is the pointwise prime term before any summation or
+aggregate cancellation. -/
+def detectorPrimeHarmonicObservable (β : ℝ) (p : ℕ) : ℝ :=
+  pair_cosh_gauss_test β (Real.log (↑p))
+
+/-- The native two-cosh detector residue at the same prime scale. -/
+def detectorPrimeHarmonicResidue (β : ℝ) (p : ℕ) : ℝ :=
+  pairAgreementDefect (↑p) β
+
+/-- The detector harmonic is exactly the two-cosh residue multiplied by the
+positive Gaussian localization weight at the same Euler-log prime scale. -/
+theorem detectorPrimeHarmonicObservable_eq_residue_weight
+    (β : ℝ) (p : ℕ) :
+    detectorPrimeHarmonicObservable β p =
+      detectorPrimeHarmonicResidue β p *
+        (ψ_gaussian (Real.log (↑p))) ^ 2 := by
+  rfl
+
+/-- Since the Gaussian localization weight is strictly positive, vanishing of
+the forked PerC prime harmonic is equivalent to vanishing of the native
+two-cosh detector residue. -/
+theorem detectorPrimeHarmonicObservable_eq_zero_iff_residue_zero
+    (β : ℝ) (p : ℕ) :
+    detectorPrimeHarmonicObservable β p = 0 ↔
+      detectorPrimeHarmonicResidue β p = 0 := by
+  unfold detectorPrimeHarmonicObservable detectorPrimeHarmonicResidue
+  unfold pair_cosh_gauss_test
+  have hψ_ne : (ψ_gaussian (Real.log (↑p))) ^ 2 ≠ 0 :=
+    pow_ne_zero 2 (ne_of_gt (ψ_gaussian_pos (Real.log (↑p))))
+  constructor
+  · intro hzero
+    have hsq : pairDetectorSqDiff β (Real.log (↑p)) = 0 := by
+      exact (mul_eq_zero.mp hzero).elim id (fun h => False.elim (hψ_ne h))
+    simpa [pairAgreementDefect, pairDetectorSqDiff] using hsq
+  · intro hzero
+    have hsq : pairDetectorSqDiff β (Real.log (↑p)) = 0 := by
+      simpa [detectorPrimeHarmonicResidue, pairAgreementDefect, pairDetectorSqDiff]
+        using hzero
+    rw [hsq]
+    simp
+
+/-- **Detector-native PerC fork.**
+
+This is the unconditional fork point before the arch-prime/star collapse.  It
+keeps the proven PerC rectangle residue identity in its native Mellin form, and
+adds exactly the detector-side interpretation that is already provable
+pointwise:
+
+* finite-height PerC rectangle/residue identity for `pairTestMellin β`;
+* pole value `pairTestMellin β 1 = gaussianPairDefect β`;
+* at every prime, the localized PerC prime harmonic is exactly the native
+  double-cosh detector residue times the positive Gaussian weight, so the two
+  vanishing statements are equivalent.
+
+It deliberately does **not** assert that the PerC rectangle identity itself
+already supplies pointwise prime-observable vanishing; that is the remaining
+extraction bridge. -/
+def PerCDetectorNativeFork_target (β : ℝ) : Prop :=
+  rectangleResidueIdentity_target β ∧
+    Contour.pairTestMellin β 1 = ((gaussianPairDefect β : ℝ) : ℂ) ∧
+    ∀ p : ℕ, Nat.Prime p →
+      detectorPrimeHarmonicObservable β p =
+          detectorPrimeHarmonicResidue β p *
+            (ψ_gaussian (Real.log (↑p))) ^ 2 ∧
+        (detectorPrimeHarmonicObservable β p = 0 ↔
+          detectorPrimeHarmonicResidue β p = 0)
+
+/-- **Uncancelled PerC/Weil prime-side link.**
+
+This is the line immediately before the usual aggregate cancellation in the
+Weil explicit formula proof.  It keeps the prime sum `S` visible:
+
+`S = S - pairTestMellin β 1 + Sres`.
+
+The theorem deliberately stops here instead of cancelling `S`, so downstream
+work can fork the PerC proof and replace the aggregate prime sum by a localized
+prime-harmonic observable. -/
+theorem weil_prime_side_link_uncancelled_of_star
+    (β : ℝ) (hβ : β ∈ Set.Ioo (0:ℝ) 1)
+    (h_star : weil_explicit_formula_cosh_pair_target β)
+    (h_refl_zero :
+      Contour.ReflectedPrimeVanishing.archPair_eq_primePair_at_two_target β) :
+    (∑' n : ℕ, ((ArithmeticFunction.vonMangoldt n : ℝ) : ℂ) *
+        ((pair_cosh_gauss_test β (n : ℝ) : ℝ) : ℂ)) =
+      (∑' n : ℕ, ((ArithmeticFunction.vonMangoldt n : ℝ) : ℂ) *
+          ((pair_cosh_gauss_test β (n : ℝ) : ℝ) : ℂ)) -
+        Contour.pairTestMellin β 1 +
+        ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
+          (((Classical.choose
+            (Contour.analyticOrderAt_riemannZeta_nontrivialZero_pos_nat
+              ρ.property) : ℕ) : ℂ)) *
+          Contour.pairTestMellin β ρ.val := by
+  have h_refl_zero' :=
+    (Contour.ReflectedPrimeVanishing.archPair_eq_primePair_at_two_iff_reflectedPrime_vanishes
+      β).mp h_refl_zero
+  have h_arch_prime := archIntegrand_plus_reflectedPrime_integral_eq_prime_sum β
+  have h_left := weilIntegrand_left_edge_integral_value β hβ
+  set A : ℂ := ∫ y : ℝ, Contour.archIntegrand β 2 y
+  set W : ℂ := ∫ y : ℝ, Contour.weilIntegrand (Contour.pairTestMellin β)
+      ((((-1 : ℝ) : ℂ)) + (y : ℂ) * I)
+  set S : ℂ := ∑' n : ℕ, ((ArithmeticFunction.vonMangoldt n : ℝ) : ℂ) *
+      ((pair_cosh_gauss_test β (n : ℝ) : ℝ) : ℂ)
+  set Sres : ℂ := ∑' ρ : {ρ : ℂ // ρ ∈ NontrivialZeros},
+      (((Classical.choose
+        (Contour.analyticOrderAt_riemannZeta_nontrivialZero_pos_nat
+          ρ.property) : ℕ) : ℂ)) *
+      Contour.pairTestMellin β ρ.val
+  have hA : A = 2 * (Real.pi : ℂ) * S := by
+    have h := h_arch_prime
+    rw [h_refl_zero', add_zero] at h
+    exact h
+  have hAW : A = W := h_star
+  rw [hA, h_left] at hAW
+  have h2π_ne : (2 * (Real.pi : ℂ)) ≠ 0 :=
+    mul_ne_zero (by norm_num) (by exact_mod_cast Real.pi_ne_zero)
+  exact mul_left_cancel₀ h2π_ne hAW
+
+/-- **Prime-term vanishing gives double-cosh residue vanishing.**
+
+The forked PerC proof should aim to prove pointwise vanishing of the prime
+observable `pair_cosh_gauss_test β (log p)` before summing/cancelling the prime
+side.  Because the Gaussian weight is strictly positive, that pointwise
+vanishing is exactly vanishing of the squared left/right detector difference,
+hence `pairAgreementDefect p β = 0`. -/
+theorem pairAgreementDefect_zero_of_pair_cosh_gauss_test_log_prime_zero
+    {β : ℝ} {p : ℕ} (_hp : Nat.Prime p)
+    (hzero : pair_cosh_gauss_test β (Real.log (↑p)) = 0) :
+    pairAgreementDefect (↑p) β = 0 := by
+  unfold pair_cosh_gauss_test at hzero
+  have hψ_ne : (ψ_gaussian (Real.log (↑p))) ^ 2 ≠ 0 :=
+    pow_ne_zero 2 (ne_of_gt (ψ_gaussian_pos (Real.log (↑p))))
+  have hsq : pairDetectorSqDiff β (Real.log (↑p)) = 0 := by
+    exact (mul_eq_zero.mp hzero).elim id (fun h => False.elim (hψ_ne h))
+  simpa [pairAgreementDefect, pairDetectorSqDiff] using hsq
+
+/-- Every-prime extraction form consumed by the offline detector endpoint:
+pointwise prime-observable vanishing at `log p` for every zero and every prime
+gives the required double-cosh residue vanishing at every zero and every prime. -/
+theorem pairAgreementDefect_zero_every_prime_of_pair_cosh_gauss_test_log_prime_zero
+    (hzero : ∀ ρ : ℂ, ρ ∈ NontrivialZeros →
+      ∀ p : ℕ, Nat.Prime p →
+        pair_cosh_gauss_test ρ.re (Real.log (↑p)) = 0) :
+    ∀ ρ : ℂ, ρ ∈ NontrivialZeros →
+      ∀ p : ℕ, Nat.Prime p →
+        pairAgreementDefect (↑p) ρ.re = 0 := by
+  intro ρ hρ p hp
+  exact pairAgreementDefect_zero_of_pair_cosh_gauss_test_log_prime_zero hp
+    (hzero ρ hρ p hp)
+
+/-- Every-prime extraction in the detector-harmonic naming used by the forked
+PerC code.  If the localized detector harmonic vanishes for every zero and
+every prime, then the native two-cosh residue vanishes for every zero and every
+prime. -/
+theorem pairAgreementDefect_zero_every_prime_of_detectorPrimeHarmonicObservable_zero
+    (hzero : ∀ ρ : ℂ, ρ ∈ NontrivialZeros →
+      ∀ p : ℕ, Nat.Prime p →
+        detectorPrimeHarmonicObservable ρ.re p = 0) :
+    ∀ ρ : ℂ, ρ ∈ NontrivialZeros →
+      ∀ p : ℕ, Nat.Prime p →
+        pairAgreementDefect (↑p) ρ.re = 0 := by
+  intro ρ hρ p hp
+  exact (detectorPrimeHarmonicObservable_eq_zero_iff_residue_zero
+    ρ.re p).mp (hzero ρ hρ p hp)
+
+/-- **Unconditional detector-native PerC fork.**
+
+The PerC side is now exported without `h_star` or reflected-prime
+cancellation hypotheses.  Its unconditional content is the finite rectangle
+residue identity plus the pointwise detector translation.  The analytic bridge
+still to prove is a separate extraction theorem from this fork to localized
+prime-observable vanishing. -/
+theorem PerCDetectorNativeFork_unconditional
+    (β : ℝ) (hβ : β ∈ Set.Ioo (0:ℝ) 1) :
+    PerCDetectorNativeFork_target β := by
+  refine ⟨rectangleResidueIdentity_from_perC β hβ,
+    Contour.pairTestMellin_at_one β, ?_⟩
+  intro p _hp
+  exact ⟨detectorPrimeHarmonicObservable_eq_residue_weight β p,
+    detectorPrimeHarmonicObservable_eq_zero_iff_residue_zero β p⟩
+
+/-- The detector-native PerC fork specialized unconditionally at every actual
+nontrivial zeta zero.  The strip hypothesis needed by PerC is extracted from
+`NontrivialZeros`, not added as an extra assumption. -/
+theorem PerCDetectorNativeFork_unconditional_at_zero
+    {ρ : ℂ} (hρ : ρ ∈ NontrivialZeros) :
+    PerCDetectorNativeFork_target ρ.re := by
+  exact PerCDetectorNativeFork_unconditional ρ.re ⟨hρ.1, hρ.2.1⟩
+
+/-- Every-zero detector-native reading of the unconditional PerC fork.  This
+packages what is genuinely unconditional for every actual zeta zero: if the
+localized PerC prime observable vanishes at a prime, then the corresponding
+double-cosh detector residue vanishes there. -/
+theorem pairAgreementDefect_zero_of_detector_native_perC_prime_vanishing
+    {ρ : ℂ} (hρ : ρ ∈ NontrivialZeros)
+    {p : ℕ} (hp : Nat.Prime p)
+    (hzero : pair_cosh_gauss_test ρ.re (Real.log (↑p)) = 0) :
+    pairAgreementDefect (↑p) ρ.re = 0 := by
+  have hβ : ρ.re ∈ Set.Ioo (0 : ℝ) 1 := ⟨hρ.1, hρ.2.1⟩
+  exact (PerCDetectorNativeFork_unconditional ρ.re hβ).2.2 p hp |>.2.mp hzero
+
+#print axioms weil_prime_side_link_uncancelled_of_star
+#print axioms pairAgreementDefect_zero_of_pair_cosh_gauss_test_log_prime_zero
+#print axioms pairAgreementDefect_zero_every_prime_of_pair_cosh_gauss_test_log_prime_zero
+#print axioms pairAgreementDefect_zero_every_prime_of_detectorPrimeHarmonicObservable_zero
+#print axioms PerCDetectorNativeFork_unconditional
+#print axioms PerCDetectorNativeFork_unconditional_at_zero
+#print axioms pairAgreementDefect_zero_of_detector_native_perC_prime_vanishing
+
+/-! ## §4 Final theorem -/
 
 /-- **`WeilExplicitFormula_pair_cosh_gauss_target β` from the two H3-closure hypotheses.**
 

@@ -1,7 +1,7 @@
 import Mathlib
 import RequestProject.ZetaZeroDefs
 import RequestProject.GaussianDetectorPair
-import RequestProject.RiemannHypothesisBridge
+-- import RequestProject.RiemannHypothesisBridge
 
 /-!
 # Cosh separation + Weil vanishing target (cosh-pair side only)

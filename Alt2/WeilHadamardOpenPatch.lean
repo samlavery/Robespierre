@@ -9,7 +9,7 @@ import RequestProject.XiOverPGrowth
 
 This file isolates the geometric part of the remaining H6 bridge.  The missing
 analytic theorem is a local partial-fraction identity for `ξ'/ξ` on a zero-free
-open patch; once that theorem exists, [XiHadamardFactorization.lean](/Users/samuellavery/codex3/RequestProject/XiHadamardFactorization.lean:300)
+open patch; once that theorem exists, [XiHadamardFactorization.lean]
 already upgrades it to the global constancy of `xiHadamardD`.
 
 The point of this file is to keep the patch itself and its elementary geometry

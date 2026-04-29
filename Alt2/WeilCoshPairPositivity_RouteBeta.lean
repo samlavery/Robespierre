@@ -500,19 +500,7 @@ def bothChannelsBalancedAtZeros : Prop :=
   ∀ ρ : ℂ, ρ ∈ NontrivialZeros →
     evenChannel ρ.re = 0 ∧ oddChannel ρ.re ρ.im = 0
 
-/-- **RH from both-channels-balanced target.** Forward chain:
-`bothChannelsBalancedAtZeros ⟹ RiemannHypothesis`. Proof: at each zero,
-the even-channel balance forces `ρ.re = 1/2` via
-`re_half_of_evenChannel_zero`. Then `RHBridge.no_offline_zeros_implies_rh`
-closes. Only the even channel is needed for the RH derivation — the odd
-channel balance is additional arithmetic content asserted by the target. -/
-theorem RiemannHypothesis_of_bothChannelsBalanced
-    (h : bothChannelsBalancedAtZeros) : RiemannHypothesis := by
-  apply RHBridge.no_offline_zeros_implies_rh
-  intro ρ hρ
-  exact re_half_of_evenChannel_zero ρ.re (h ρ hρ).1
 
-#print axioms RiemannHypothesis_of_bothChannelsBalanced
 
 /-! ### Relation to the Weil vanishing target
 
@@ -527,12 +515,6 @@ theorem WeilVanishesOnZeros_of_bothChannelsBalanced
     (h : bothChannelsBalancedAtZeros) : WeilVanishesOnZeros :=
   fun ρ hρ => (h ρ hρ).1
 
-/-- Backward-compatibility alias under the legacy name. -/
-theorem pair_defect_vanishes_of_bothChannelsBalanced
-    (h : bothChannelsBalancedAtZeros) : pair_defect_vanishes_at_zeros :=
-  WeilVanishesOnZeros_of_bothChannelsBalanced h
-
-#print axioms pair_defect_vanishes_of_bothChannelsBalanced
 
 end WeilPositivity
 

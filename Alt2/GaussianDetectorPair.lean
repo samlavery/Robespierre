@@ -369,7 +369,7 @@ theorem gaussianPairDefect_pos_offline
   intro t ⟨ht1, ht2⟩
   exact ⟨h_supp ht1, ht2⟩
 
-/-- **Forward implication: pair-defect vanishing forces β = 1/2.** -/
+/-- **Forward implication: pair-defect vanishing forces geometric β = 1/2.** -/
 theorem re_half_of_gaussianPairDefect_zero
     (β : ℝ) (h : gaussianPairDefect β = 0) : β = 1/2 := by
   by_contra hne

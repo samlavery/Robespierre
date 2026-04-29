@@ -68,21 +68,6 @@ namespace ZD
 namespace WeilPositivity
 namespace Contour
 
-/-- **Target.** Alias for `pair_defect_vanishes_at_zeros`. -/
-def WeilFinalClosureTarget : Prop := pair_defect_vanishes_at_zeros
-
--- This has to go
-/-- **Trivial conditional closure.** If every nontrivial zero satisfies
-`gaussianPairDefect ρ.re = 0` as a hypothesis, then (trivially)
-`pair_defect_vanishes_at_zeros`. This is the structural wrapper; the actual
-discharge of the hypothesis comes from cycles 42–48's pipeline assembly. -/
-theorem weilFinalClosure_trivial
-    (h : ∀ ρ : ℂ, ρ ∈ NontrivialZeros → gaussianPairDefect ρ.re = 0) :
-    pair_defect_vanishes_at_zeros := h
-
-#print axioms WeilFinalClosureTarget
-#print axioms weilFinalClosure_trivial
-
 end Contour
 end WeilPositivity
 end ZD

@@ -1,18 +1,3 @@
-/-
-This file was edited by Aristotle (https://aristotle.harmonic.fun).
-
-Lean version: leanprover/lean4:v4.24.0
-Mathlib version: f897ebcf72cd16f89ab4577d0c826cd14afaafc7
-This project request had uuid: 583d3369-ddb5-4090-8f45-8d6065a8c96f
-
-To cite Aristotle, tag @Aristotle-Harmonic on GitHub PRs/issues, and add as co-author to commits:
-Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
-
-The version of Mathlib expected in this file appears to be incompatible with Aristotle's.
-Please either switch your project to use the same version, or try again with `import Mathlib` only.
-Details:
-object file '/code/harmonic-lean/.lake/packages/mathlib/.lake/build/lib/lean/Mathlib/Analysis/SpecialFunctions/Trigonometric/DerivHyp.olean' of module Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp does not exist
--/
 
 /-
   GRH.StirlingBound.lean — Gamma Stirling bound from reflection + recurrence
