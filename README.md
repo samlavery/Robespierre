@@ -16,7 +16,7 @@ off-line zero
   ⇒ RiemannHypothesis
 ```
 
-The helix files are also included in the project, but they are not the main proof entrypoint. They prove supporting geometric facts: faithfulness of the log helix, uniqueness of the `σ = 1/2` helix model under natural symmetry/decoding constraints, and the connection between the helix model and critical-line geometry.
+The helix files are supporting geometry files, not the RH proof entrypoint. They prove the π/3 log-helix model, its faithfulness, its multiplication-to-addition law, its prime-factor vector decomposition, and its connection to critical-line symmetry.
 
 ---
 
@@ -436,13 +436,13 @@ These are serious formalization tasks because Mathlib does not expose the exact 
 
 The helix files should be read as geometric support files, not as the main RH proof entrypoint.
 
-They prove that the log helix and the `σ = 1/2` helix model are faithful, rigid, and uniquely compatible with the relevant symmetry / decoding constraints.
+They prove the π/3 logarithmic coordinate system, its faithfulness, and the prime-factor geometry behind the statement “multiplication becomes addition.”
 
 ---
 
 ## `RHHelixFaithfulness.lean`
 
-This file proves basic faithfulness of the log helix.
+This file proves basic faithfulness of the 3D log helix.
 
 ### Main definitions
 
@@ -508,8 +508,6 @@ because:
 log(ab) = log a + log b
 ```
 
-This is the clean formal version of the logarithmic multiplication model.
-
 #### 4. Full faithfulness theorem
 
 ```lean
@@ -541,173 +539,129 @@ So the critical line is the fixed locus of the standard functional-equation refl
 
 ---
 
-## `HelixModel.lean`
+## `HelixMap.lean`
 
-This file proves uniqueness and rigidity of the `σ = 1/2` helix model under natural geometric constraints.
+This file formalizes the π/3 coordinate system and the log-helix map.
 
-### Main structure
-
-```lean
-structure HelixModel where
-  sigma : ℝ
-  sigma_pos : 0 < sigma
-  sigma_lt_one : sigma < 1
-```
-
-The model has a real parameter:
+It is the file that proves the number-theoretic helix map facts:
 
 ```text
-σ ∈ (0,1)
+multiplication becomes addition
+factorization becomes vector decomposition
+prime logarithms form an independent basis
+critical line is the helix symmetry axis
+prime angular positions are distinct / controlled
 ```
 
-and represents prime radii using:
+### Main definitions
+
+```lean
+def helixAngularFreq : ℝ := π / 3
+
+def helixLog (x : ℝ) : ℝ × ℝ :=
+  (Real.log x, helixAngularFreq * Real.log x)
+
+def helixMapC (x : ℝ) : ℂ :=
+  (Real.log x : ℂ) *
+    Complex.exp (Complex.I * (helixAngularFreq : ℂ) * (Real.log x : ℂ))
+```
+
+### What it proves
+
+#### 1. Multiplication becomes addition
+
+```lean
+helix_multiplication_additive
+helix_power_scalar
+```
+
+For positive `a,b`:
 
 ```text
-p^{-σ}
+helixLog (a*b) = helixLog a + helixLog b
 ```
 
-with reflected radii:
+and powers become scalar multiples:
 
 ```text
-p^{-(1-σ)}
+helixLog (a^n) = n • helixLog a
 ```
 
-### Main constraints
+This is the formal log-helix statement that multiplication is addition in the helix coordinate system.
+
+#### 2. Factorization becomes vector decomposition
 
 ```lean
-HelixModel.RadiusSymmetric
-HelixModel.FaithfulDecoding
-HelixModel.KleinCollapse
+log_factorization_sum
+helix_factorization_vector_sum
 ```
 
-They mean:
-
-1. radius symmetry between the helix and reflected helix;
-2. faithful reconstruction of the canonical number line;
-3. Klein-four collapse / symmetry.
-
-### Critical model
-
-```lean
-criticalModel : HelixModel
-```
-
-has:
+For a positive natural number `n`, the helix position of `n` decomposes as the weighted sum of the helix positions of its prime factors:
 
 ```text
-σ = 1/2
+helixLog n =
+  ∑ p ∈ n.factorization.support,
+    n.factorization p • helixLog p
 ```
 
-and satisfies:
+This is the Fundamental Theorem of Arithmetic rewritten as a helix-vector identity.
+
+#### 3. Prime-basis uniqueness
 
 ```lean
-criticalModel_radius_symmetric
-criticalModel_faithful
-criticalModel_klein_collapse
+prime_factorization_unique
+prime_helix_positions_independent
+int_linear_combination_log_primes_eq_zero
 ```
 
-### Uniqueness theorems
-
-```lean
-helix_model_unique_radius
-helix_model_unique_faithful
-helix_model_unique_klein
-helix_model_unique_any_constraint
-helix_constraints_equivalent
-```
-
-These prove:
+These prove that prime helix positions are independent in the relevant sense:
 
 ```text
-radius symmetry      ⇒ σ = 1/2
-faithful decoding    ⇒ σ = 1/2
-Klein collapse       ⇒ σ = 1/2
+if two finite prime-exponent combinations have the same log/helix sum,
+then the prime exponents are equal.
 ```
 
-and that the major constraints are equivalent for the model.
+This is the prime-basis statement.
 
-### Dimension collapse
+#### 4. Prime angle distinctness
 
 ```lean
-dimension_collapse_iff_half
+prime_angles_distinct
 ```
 
-This proves that equality of projected radius squares for the helix and reflected helix occurs exactly at:
+Distinct primes have distinct unwrapped helix angles:
 
 ```text
-σ = 1/2
+(π/3) log p ≠ (π/3) log q
 ```
 
-So the perpendicular / projected helix geometry collapses consistently only at the critical-line parameter.
+for distinct primes `p ≠ q`.
 
-### Decoding uniqueness
+The file also develops real modular equivalence and Niven/Hermite-style irrationality tools for stronger angle-modulo statements.
 
-```lean
-DecodingScheme
-DecodingScheme.Faithful
-decoding_faithful_iff_half
-```
+#### 5. Critical-line symmetry
 
-A decoding scheme is faithful exactly when:
+The file records the helix interpretation of the critical line as the symmetry axis:
 
 ```text
-σ = 1/2
+Re(s) = 1/2
 ```
 
-This is the formal version of:
+as the fixed line of the functional-equation reflection.
+
+### What `HelixMap.lean` contributes
+
+`HelixMap.lean` proves the arithmetic geometry of the π/3 helix:
 
 ```text
-only the critical helix reconstructs the canonical number line faithfully
+log turns multiplication into addition
+prime factorization becomes vector addition
+prime coordinates are unique
+the helix angle is tied to π/3
+the critical line is the symmetry axis
 ```
 
-### Robespierre / θ-coordinate system
-
-The file defines:
-
-```lean
-theta : ℝ := Real.arcsin (1 / 2)
-```
-
-and proves:
-
-```lean
-theta_eq          -- theta = π / 6
-sin_theta         -- sin theta = 1 / 2
-sin_sq_theta      -- sin² theta = 1 / 4
-one_plus_sin_sq_theta
-```
-
-It also defines θ-native prime geometry:
-
-```lean
-phiPrime
-primeLogFreq
-thetaCoeff
-XiThetaFinite
-criticalLineSum
-criticalLineSumDeriv
-```
-
-and proves that the θ-coordinate critical line is the classical critical line:
-
-```lean
-robespierre_critical_line
-criticalLineSum_on_half
-```
-
-### What the helix model contributes
-
-The helix files prove:
-
-```text
-multiplication becomes angle addition through log
-the helix projection is faithful
-radial projection recovers the original number
-σ = 1/2 is the unique radius-symmetric / faithful / Klein-collapsed model
-θ = arcsin(1/2) = π/6 gives the same critical line via sin θ = 1/2
-```
-
-They support the geometric interpretation of the RH proof, but the actual forcing proof is still centered in:
+This supports the project’s geometric interpretation of the prime side, but the RH forcing proof remains centered in:
 
 ```text
 OfflineDetectorProof.lean
@@ -720,8 +674,9 @@ OfflineDetectorProof.lean
 When working on this repo:
 
 1. Start with `OfflineDetectorProof.lean`.
-2. Treat the helix files as geometric support / explanation files, not as the RH proof root.
-3. Preserve the forcing pipeline:
+2. Treat `RHHelixFaithfulness.lean` and `HelixMap.lean` as geometric support / explanation files, not as the RH proof root.
+3. Do not substitute `HelixModel.lean` for `HelixMap.lean` in the README.
+4. Preserve the forcing pipeline:
    - off-line detection,
    - no cancellation,
    - prime-side amplitude bridge,
@@ -730,13 +685,13 @@ When working on this repo:
    - countable uniqueness,
    - per-zero vanishing,
    - RH bridge.
-4. Do not collapse global Weil identity into per-zero vanishing.
-5. Do not replace the forcing argument with informal “detector sees off-line zeros” language.
-6. Keep `#print axioms` clean.
-7. No project axioms. No hidden RH assumptions.
+5. Do not collapse global Weil identity into per-zero vanishing.
+6. Do not replace the forcing argument with informal “detector sees off-line zeros” language.
+7. Keep `#print axioms` clean.
+8. No project axioms. No hidden RH assumptions.
 
 ---
 
 ## One-sentence summary
 
-`OfflineDetectorProof.lean` is the RH proof orchestration file: it packages the unconditional off-line detector/no-cancellation theorem, ties the detector to the Weil prime-side amplitude channel, and sets up the forcing route from global β-family identities to per-zero vanishing; the helix files separately prove the faithfulness and uniqueness of the `π/3` log helix and the `σ = 1/2` helix model.
+`OfflineDetectorProof.lean` is the RH proof orchestration file: it packages the unconditional off-line detector/no-cancellation theorem, ties the detector to the Weil prime-side amplitude channel, and sets up the forcing route from global β-family identities to per-zero vanishing; `RHHelixFaithfulness.lean` and `HelixMap.lean` separately prove the faithful π/3 log-helix geometry, including multiplication-as-addition and prime-factor vector decomposition.
