@@ -1,415 +1,742 @@
-# RequestProject: Cosh–Weil Detector Route to RH
+# RequestProject: Offline Detector RH Proof
 
-This directory contains a Lean formalization of a proof architecture for the Riemann Hypothesis based on:
+`OfflineDetectorProof.lean` is the main entrypoint for the RH proof architecture in `RequestProject`.
 
-1. a **cosh/Gaussian detector** that separates off-critical-line real parts;
-2. a **Weil explicit formula identity** for a pair-cosh Gaussian test;
-3. an **orthogonality / uniqueness extraction** step that turns global β-family identities into per-zero vanishing;
-4. the bridge from internal nontrivial-zero placement to Mathlib’s `RiemannHypothesis`.
+The project proves and assembles a forcing pipeline:
 
-The important distinction is:
+```text
+off-line zero
+  ⇒ positive cosh/even-channel prime excess
+  ⇒ no finite-prime cancellation
+  ⇒ the same amplitude channel is visible in the Weil prime side
+  ⇒ global β-family Weil identities force zero-side vanishing
+  ⇒ beta-totality + countable uniqueness upgrade aggregate vanishing to per-zero vanishing
+  ⇒ positive off-line defect contradicts per-zero zero
+  ⇒ no off-line zeros
+  ⇒ RiemannHypothesis
+```
 
-> The cosh detector side is geometric and already structurally closed.  
-> The Weil identity side is treated as done.  
-> The remaining vanishing side is not new breakthrough mathematics; it is formal-analysis grind in Lean.
+The helix files are also included in the project, but they are not the main proof entrypoint. They prove supporting geometric facts: faithfulness of the log helix, uniqueness of the `σ = 1/2` helix model under natural symmetry/decoding constraints, and the connection between the helix model and critical-line geometry.
 
 ---
 
-## Main logical chain
+## Main entrypoint
 
-Let
+```text
+RequestProject/OfflineDetectorProof.lean
+```
+
+This file imports and orchestrates the detector side, Weil side, orthogonality side, final assembly, Klein forcing, and prime-harmonic amplitude bridge.
+
+Important imports include:
 
 ```lean
-ZD.NontrivialZeros : Set ℂ
-ZD.OffLineZeros    : Set ℂ
+import RequestProject.HarmonicDiagnostics
+import RequestProject.ZetaZeroDefs
+import RequestProject.OfflineAmplitudeMethods
+import RequestProject.PairCoshGaussTest
+import RequestProject.GaussianDetectorPair
+import RequestProject.WeilContour
+import RequestProject.WeilRightEdgePrimeSum
+import RequestProject.WeilCoshPairPositivity
+import RequestProject.WeilFinalAssembly
+import RequestProject.WeilExplicitFormulaFromPerC
+import RequestProject.ExplicitFormulaBridgeOfRH
+import RequestProject.WeilZeroOrthogonality
+import RequestProject.GaussianClosedForm
+import RequestProject.KleinForcerTheorem
+import RequestProject.PrimeHarmonicAmplitude
 ```
 
-where nontrivial zeros are zeros of `riemannZeta` in the critical strip, and off-line zeros are those with `ρ.re ≠ 1 / 2`.
+Its job is to make the comparison point precise:
 
-The target chain is:
-
-```text
-Global pair-cosh Gaussian Weil identities for all β ∈ (0,1)
-        ↓
-PairTestMellinBetaTotality
-        ↓
-ZeroMellinSeries a t = 0 for all t > 0
-        ↓
-CountableTsumMomentUniqueness
-        ↓
-zero-side coefficients vanish per zero
-        ↓
-gaussianPairDefect ρ.re = 0 for every ρ ∈ NontrivialZeros
-        ↓
-ρ.re = 1/2 for every ρ ∈ NontrivialZeros
-        ↓
-Mathlib.RiemannHypothesis
-```
+> the cosh detector and the Weil prime side observe the same zero-pair amplitude channel.
 
 ---
 
-## Cosh / detector side
+## Primary theorem: offline detection + no cancellation
 
-### Key files
+Inside:
 
-- `ZetaZeroDefs.lean`
-- `GaussianDetectorPair.lean`
-- `WeilCoshPairPositivity_RouteBeta.lean`
-- `KleinForcerTheorem.lean`
-
-### Core definitions
-
-The two detector kernels are anchored at
-
-```text
-π / 6
-1 - π / 6
+```lean
+namespace ZD
+namespace WeilPositivity
+namespace Contour
+namespace CoshReflectedClassifier
 ```
 
-and are defined schematically as
+the main theorem is:
 
-```text
-K_L(β,t) = cosh((β - π/6) t)
-K_R(β,t) = cosh((β - (1 - π/6)) t)
+```lean
+theorem offline_detected_no_cancellation :
+    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
+      (∀ p : ℕ, Nat.Prime p →
+        (↑p : ℝ) ^ ρ.re + (↑p : ℝ) ^ (1 - ρ.re) =
+          balancedEnvelope (↑p) *
+          coshDetector ρ.re (Real.log (↑p))) ∧
+      (ρ.re ≠ 1/2 →
+        (∀ p : ℕ, Nat.Prime p →
+          1 < coshDetector ρ.re (Real.log (↑p))) ∧
+        (∀ ps : Finset ℕ, (∀ p ∈ ps, Nat.Prime p) → ps.Nonempty →
+          0 < ∑ p ∈ ps,
+            (coshDetector ρ.re (Real.log (↑p)) - 1)))
 ```
 
-The reflection `β ↦ 1 - β` swaps the pair:
+It packages three facts.
+
+### 1. Bridge
+
+For every nontrivial zero `ρ` and every prime `p`,
 
 ```text
-K_L(1 - β,t) = K_R(β,t)
-K_R(1 - β,t) = K_L(β,t)
-```
-
-The detector agreement classifier is:
-
-```text
-K_L(β,t) = K_R(β,t)  iff  β = 1/2      for t ≠ 0
-```
-
-### Gaussian pair defect
-
-The Gaussian pair defect is
-
-```text
-gaussianPairDefect β
-  = ∫₀∞ (K_L(β,t) - K_R(β,t))² · ψ_gaussian(t)² dt
-```
-
-The key sinh factorization is:
-
-```text
-(K_L(β,t) - K_R(β,t))²
+p^ρ.re + p^(1 - ρ.re)
 =
-4 · sinh²((1/2 - π/6)t) · sinh²((β - 1/2)t)
+balancedEnvelope p · coshDetector ρ.re (log p)
 ```
 
-This gives:
+So the cosh detector is not measuring a synthetic quantity. It is measuring the same zero-pair amplitude envelope that enters the prime side.
 
-```lean
-gaussianPairDefect_zero_on_line
-gaussianPairDefect_nonneg
-gaussianPairDefect_pos_offline
-re_half_of_gaussianPairDefect_zero
-```
+### 2. Detection
 
-Conceptually:
+If `ρ.re ≠ 1 / 2`, then at every prime,
 
 ```text
-gaussianPairDefect β = 0  ⇒  β = 1/2
-β ≠ 1/2                  ⇒  gaussianPairDefect β > 0
+1 < coshDetector ρ.re (log p)
 ```
 
-This side is pure real/complex analysis and cosh geometry. It does not assume RH.
+An off-line zero is visible at every prime.
+
+### 3. No cancellation
+
+If `ρ.re ≠ 1 / 2`, then over any nonempty finite prime set,
+
+```text
+0 < ∑ p ∈ ps, (coshDetector ρ.re (log p) - 1)
+```
+
+The off-line contribution lies in a positive cone. It is not an alternating phase artifact that can cancel away on finite prime blocks.
 
 ---
 
-## RH bridge
+## Prime-side amplitude-defect bridge
 
-### Key file
-
-- `RiemannHypothesisBridge.lean`
-
-The final internal-to-Mathlib bridge is:
+`OfflineDetectorProof.lean` also contains the prime-side amplitude bridge under:
 
 ```lean
-RHBridge.no_offline_zeros_implies_rh
+namespace ZD
+namespace WeilPositivity
+namespace PrimeBoundedness
 ```
 
-It upgrades:
+The summary theorem is:
 
 ```lean
-∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → ρ.re = 1 / 2
+theorem weil_prime_amplitudeDefect_bridge_summary : ...
 ```
 
-to Mathlib’s literal:
+It bundles:
+
+1. per-prime amplitude bridge;
+2. sinh-squared / amplitude-defect identity;
+3. FE-pair symmetry of the amplitude envelope;
+4. closed-form Weil prime aggregate at `σ = 2`;
+5. per-`n` Weil positivity;
+6. off-line aggregate amplitude-defect injection.
+
+Representative theorem names:
 
 ```lean
-RiemannHypothesis
+amplitudeDefect_eq_balanced_mul_coshExcess
+amplitudeDefect_prime_eq_balanced_mul_coshExcess
+four_sinh_sq_eq_rpow_sq
+rpow_sq_mul_eq_amplitudeDefect_sq_scale
+four_p_sinh_sq_eq_amplitudeDefect_sq_scale
+amplitudeDefect_symm
+amplitudeDefect_pos_of_offline_zero_at_prime
+sum_amplitudeDefect_pos_of_offline_zero
+weil_prime_aggregate_closed_form_at_two
+weil_prime_per_n_nonneg
+pair_cosh_gauss_test_at_log_amplitudeDefect_form
+weil_prime_amplitudeDefect_bridge_summary
 ```
 
-This bridge handles the three standard regions:
-
-1. `1 ≤ s.re`: no zeros by Mathlib;
-2. `0 < s.re < 1`: use the internal nontrivial-zero statement;
-3. `s.re ≤ 0`: reflect through completed zeta / functional equation and contradict zero-freeness on the right.
+This is the bridge from the detector world to the explicit-formula prime side.
 
 ---
 
-## Weil identity side
+## Endpoint / forcing boundary
 
-### Key files
+The endpoint namespace is:
 
-Representative files include:
+```lean
+namespace ZD
+namespace WeilPositivity
+namespace OfflineDetectorEndpoint
+```
 
-- `WeilFinalAssembly.lean`
-- `WeilContour.lean`
-- `WeilContourMultiplicity.lean`
-- `WeilPairIBP.lean`
-- `WeilPairTestDecay.lean`
-- `WeilArchPrimeIdentity.lean`
-- `WeilZeroSum.lean`
-- `PartialWeilFormula.lean`
+The key local target is:
 
-The role of this layer is to produce the global family of identities indexed by β:
+```lean
+def WeilPrimeSideLink_target_local : Prop := ...
+```
+
+It keeps the uncancelled prime-side equation visible:
+
+```text
+S = S - M(1) + Sres
+```
+
+instead of immediately collapsing to:
+
+```text
+Sres = M(1)
+```
+
+This matters because the proof wants to use the prime side as the shared observation channel. If the prime sum is cancelled too early, the proof loses the place where positive off-line amplitude excess is visible.
+
+---
+
+## Forcing theory: why the RH proof works
+
+The proof is a forcing argument.
+
+### Step 1: off-line zeros force positive prime excess
+
+If `ρ.re ≠ 1 / 2`, the detector theorem gives:
+
+```text
+coshDetector ρ.re (log p) > 1
+```
+
+at every prime.
+
+Equivalently, the zero-pair amplitude exceeds the balanced critical-line envelope.
+
+### Step 2: the excess has a sign
+
+The finite-prime no-cancellation theorem gives:
+
+```text
+0 < ∑ p ∈ ps, (coshDetector ρ.re (log p) - 1)
+```
+
+for every nonempty finite prime set.
+
+So off-line excess is not hidden by oscillation. The even channel is positive.
+
+### Step 3: the Weil prime side sees the same channel
+
+The amplitude bridge proves that the prime-side pair-cosh Gaussian terms carry the same `β`-dependent amplitude defect.
+
+So the off-line signal is present in the same aggregate structure controlled by the Weil explicit formula.
+
+### Step 4: the Weil β-family imposes global vanishing constraints
+
+The Weil identity side supplies a family of identities indexed by:
+
+```text
+β ∈ (0,1)
+```
+
+schematically:
 
 ```text
 ∀ β ∈ (0,1),
   ∑' ρ, a(ρ) · pairTestMellin β ρ = 0
 ```
 
-This is the global Weil identity family. It is not yet the same thing as per-zero vanishing.
+A single identity is not enough. The full β-family is what gives enough test directions.
 
-The proof architecture treats this identity side as done.
+### Step 5: beta-totality turns global β-vanishing into signal vanishing
 
----
-
-## Orthogonality / vanishing side
-
-### Key files
-
-- `WeilZeroOrthogonality.lean`
-- `PairTestMellinBetaTotalality.lean`
-- `CountableTsumMomentUniqueness.lean`
-
-This layer turns the global β-family into per-zero coefficient vanishing.
-
-The key extraction target is:
-
-```lean
-ZeroCoefficientVanishesByOrthogonality
-```
-
-meaning:
+`PairTestMellinBetaTotality` upgrades:
 
 ```text
-If every β-projection of the zero-side coefficient family vanishes,
-then every individual zero coefficient vanishes.
+all β-projections vanish
 ```
 
-This is the exact place where the proof must avoid handwaving about “no cancellation.”
-
----
-
-## PairTestMellinBetaTotality
-
-### File
-
-- `PairTestMellinBetaTotalality.lean`
-
-This proves or targets:
-
-```lean
-PairTestMellinBetaTotality
-```
-
-Mathematical content:
+to:
 
 ```text
-If ∑' ρ, a(ρ) · pairTestMellin β ρ = 0 for every β ∈ (0,1),
-then ZeroMellinSeries a t = 0 for every t > 0.
+ZeroMellinSeries a t = 0 for every t > 0
 ```
 
-The intended proof uses the product factorization of the pair-cosh Gaussian test:
+This is a transform-totality statement for the pair-cosh Gaussian test family.
+
+### Step 6: countable moment uniqueness makes it per-zero
+
+`CountableTsumMomentUniqueness` upgrades the vanishing Mellin/exponential signal to coefficient-level vanishing:
 
 ```text
-g_β(t)
-=
-(cosh(αt) - 1) · (cosh(ct) - 1) · exp(-2t²)
+a(ρ) = 0
 ```
 
-where
+for every nontrivial zero.
 
-```text
-α = 1 - π/3
-c = 2β - 1 ∈ (-1,1)
-```
+This is the countable `tsum` analogue of Vandermonde / moment uniqueness.
 
-The proof route is:
+### Step 7: per-zero vanishing contradicts positive off-line defect
 
-1. exchange `∑'` and `∫`;
-2. reduce to a cosh-transform uniqueness statement;
-3. extend the cosh-transform identity analytically;
-4. evaluate on imaginary arguments;
-5. use Riemann–Lebesgue;
-6. use Fourier cosine injectivity;
-7. conclude `ZeroMellinSeries a t = 0` for all `t > 0`.
-
-### Status
-
-This is not conceptual breakthrough math. It is Lean formalization grind.
-
-The hard parts are proving the exact Fubini, integrability, analytic-extension, and transform-injectivity lemmas in the shape required by this project.
-
----
-
-## CountableTsumMomentUniqueness
-
-### File
-
-- `CountableTsumMomentUniqueness.lean`
-
-This proves or targets:
-
-```lean
-countable_tsum_moment_uniqueness_principle
-```
-
-Mathematical content:
-
-```text
-Given injective exponents αₙ and coefficients cₙ,
-if all power moments vanish,
-
-  ∑' n, cₙ · αₙ^k = 0      for every k,
-
-then every coefficient vanishes:
-
-  cₙ = 0                  for every n.
-```
-
-This is the countable version of Vandermonde / moment uniqueness, with summability strong enough to justify `tsum` manipulations.
-
-The proof route is:
-
-1. use exponential decay / summability;
-2. convert vanishing moments into a vanishing exponential generating function;
-3. move to beta-resolvent moments;
-4. apply layer peeling;
-5. isolate coefficients;
-6. conclude every coefficient is zero.
-
-### Status
-
-Again: not breakthrough math. It is formal-analysis grind.
-
-The missing work is mostly exact Lean control of:
-
-- `tsum` summability;
-- moment extraction;
-- beta-resolvent transformations;
-- discreteness of exponent layers;
-- tail estimates;
-- coefficient isolation.
-
-Mathlib does not package this theorem in exactly the needed form, so it has to be built.
-
----
-
-## Final bridge to RH
-
-The final theorem should have the no-hypothesis shape:
-
-```lean
-theorem rh_from_pair_weil : RiemannHypothesis := by
-  ...
-```
-
-Internally, it should assemble:
-
-```text
-GlobalPairWeilIdentity
-PairTestMellinBetaTotality
-CountableTsumMomentUniqueness
-PairGaussianBridge
-re_half_of_gaussianPairDefect_zero
-RHBridge.no_offline_zeros_implies_rh
-```
-
-The final critical implication is:
+For the RH detector application, coefficient vanishing is the per-zero vanishing of the Gaussian/cosh defect contribution:
 
 ```text
 gaussianPairDefect ρ.re = 0
-        ⇒
-ρ.re = 1/2
 ```
 
-which is already the cosh detector classifier.
+But the detector side proves:
+
+```text
+ρ.re ≠ 1 / 2 ⇒ gaussianPairDefect ρ.re > 0
+```
+
+Contradiction.
+
+Therefore:
+
+```text
+ρ.re = 1 / 2
+```
+
+for every nontrivial zero.
+
+Then:
+
+```lean
+RHBridge.no_offline_zeros_implies_rh
+```
+
+upgrades this to Mathlib’s `RiemannHypothesis`.
 
 ---
 
-## What remains
+## Why this is not just detector positivity
 
-The remaining work is not “find a new RH idea.”
-
-The remaining work is:
+Detector positivity alone says:
 
 ```text
-finish the exact Lean formalization of the uniqueness / totality machinery
-needed to turn global Weil β-identities into per-zero vanishing.
+if an off-line zero exists, it is visible.
 ```
 
-Concretely, audit and close the remaining obligations in:
+The forcing theory says more:
 
 ```text
-RequestProject/PairTestMellinBetaTotalality.lean
-RequestProject/CountableTsumMomentUniqueness.lean
+it is visible in the same prime amplitude channel constrained by the Weil identity,
+and the β-family is total enough to prevent aggregate cancellation.
 ```
 
-Expected remaining proof style:
+That is the proof mechanism.
 
-- grind Fubini exchange;
-- grind absolute convergence estimates;
-- grind entire-function extension of the cosh transform;
-- grind Riemann–Lebesgue / Fourier cosine injectivity interface;
-- grind countable `tsum` moment uniqueness;
-- grind layer-peeling / beta-resolvent isolation.
+---
 
-These are serious formalization tasks, but they are standard-analysis tasks, not new conceptual math.
+## RH proof stack
+
+### Zero definitions
+
+```text
+ZetaZeroDefs.lean
+```
+
+Defines:
+
+```lean
+ZD.NontrivialZeros
+ZD.OffLineZeros
+ZD.OnLineZeros
+```
+
+and the amplitude/cosh detector vocabulary.
+
+### Detector and amplitude side
+
+```text
+OfflineAmplitudeMethods.lean
+HarmonicDiagnostics.lean
+PrimeHarmonicAmplitude.lean
+GaussianDetectorPair.lean
+PairCoshGaussTest.lean
+GaussianClosedForm.lean
+KleinForcerTheorem.lean
+```
+
+This layer proves:
+
+```text
+off-line ⇒ positive detector excess
+off-line ⇒ positive finite-prime excess
+gaussianPairDefect β = 0 ⇒ β = 1/2
+two-kernel/Klein forcing ⇒ β = 1/2
+```
+
+### Weil identity side
+
+```text
+WeilContour.lean
+WeilRightEdgePrimeSum.lean
+WeilCoshPairPositivity.lean
+WeilFinalAssembly.lean
+WeilExplicitFormulaFromPerC.lean
+ExplicitFormulaBridgeOfRH.lean
+```
+
+This layer supplies the pair-cosh Gaussian explicit formula / global β-family identity.
+
+### Orthogonality and vanishing extraction
+
+```text
+WeilZeroOrthogonality.lean
+PairTestMellinBetaTotalality.lean
+CountableTsumMomentUniqueness.lean
+```
+
+This layer upgrades aggregate identities to per-zero vanishing.
+
+### Mathlib RH bridge
+
+```text
+RiemannHypothesisBridge.lean
+```
+
+This upgrades the internal critical-line statement to Mathlib’s literal:
+
+```lean
+RiemannHypothesis
+```
+
+---
+
+## Remaining formalization work
+
+The remaining work is not to invent a new RH idea.
+
+The remaining work is to finish exact Lean versions of standard analysis tools in the shape this proof needs.
+
+Main grind files:
+
+```text
+PairTestMellinBetaTotalality.lean
+CountableTsumMomentUniqueness.lean
+```
+
+Expected grind:
+
+- Fubini / `tsum` exchange;
+- absolute convergence;
+- cosh-transform analyticity;
+- Riemann–Lebesgue;
+- Fourier cosine injectivity;
+- beta-resolvent moment extraction;
+- countable `tsum` moment uniqueness;
+- layer peeling / coefficient isolation.
+
+These are serious formalization tasks because Mathlib does not expose the exact combined statements needed here. They are not new breakthrough mathematics.
+
+---
+
+# Helix files
+
+The helix files should be read as geometric support files, not as the main RH proof entrypoint.
+
+They prove that the log helix and the `σ = 1/2` helix model are faithful, rigid, and uniquely compatible with the relevant symmetry / decoding constraints.
+
+---
+
+## `RHHelixFaithfulness.lean`
+
+This file proves basic faithfulness of the log helix.
+
+### Main definitions
+
+```lean
+def helixOmega : ℝ := π / 3
+
+def helixAngle (x : ℝ) : ℝ :=
+  helixOmega * Real.log x
+
+def helix3D (x : ℝ) : ℝ × ℝ × ℝ :=
+  (Real.cos (helixOmega * Real.log x),
+   Real.sin (helixOmega * Real.log x),
+   Real.log x)
+
+def radialProjection (v : ℝ × ℝ × ℝ) : ℝ :=
+  Real.exp v.2.2
+```
+
+### What it proves
+
+#### 1. Injectivity
+
+```lean
+helix3D_injective_on_nat
+helixLog_injective_pos
+helix3D_injective_pos
+helixAngle_injective_nat
+helixAngle_injective_pos
+```
+
+The helix map is injective on positive naturals / positive reals because the `z` coordinate is `log x`, and `log` is injective on positive reals.
+
+#### 2. Radial projection recovers the number
+
+```lean
+radial_projection_of_helix3D
+helix_radial_projection_recovers_angle
+```
+
+The radial projection
+
+```text
+(cos θ, sin θ, log x) ↦ exp(log x)
+```
+
+recovers `x`, and therefore recovers the angle `θ(x) = (π/3) log x`.
+
+#### 3. Multiplication becomes addition of helix angles
+
+```lean
+helixAngle_mul
+```
+
+For positive `a,b`:
+
+```text
+θ(ab) = θ(a) + θ(b)
+```
+
+because:
+
+```text
+log(ab) = log a + log b
+```
+
+This is the clean formal version of the logarithmic multiplication model.
+
+#### 4. Full faithfulness theorem
+
+```lean
+faithfulness_theorem
+```
+
+Bundles:
+
+```text
+helix3D injective on ℕ⁺
+radial projection recovers n
+angle recovery from radial projection
+angle injectivity on ℕ⁺
+```
+
+#### 5. Critical-line symmetry
+
+```lean
+critical_line_symmetry
+```
+
+Proves:
+
+```text
+s.re = 1/2 ↔ s = 1 - conj(s)
+```
+
+So the critical line is the fixed locus of the standard functional-equation reflection.
+
+---
+
+## `HelixModel.lean`
+
+This file proves uniqueness and rigidity of the `σ = 1/2` helix model under natural geometric constraints.
+
+### Main structure
+
+```lean
+structure HelixModel where
+  sigma : ℝ
+  sigma_pos : 0 < sigma
+  sigma_lt_one : sigma < 1
+```
+
+The model has a real parameter:
+
+```text
+σ ∈ (0,1)
+```
+
+and represents prime radii using:
+
+```text
+p^{-σ}
+```
+
+with reflected radii:
+
+```text
+p^{-(1-σ)}
+```
+
+### Main constraints
+
+```lean
+HelixModel.RadiusSymmetric
+HelixModel.FaithfulDecoding
+HelixModel.KleinCollapse
+```
+
+They mean:
+
+1. radius symmetry between the helix and reflected helix;
+2. faithful reconstruction of the canonical number line;
+3. Klein-four collapse / symmetry.
+
+### Critical model
+
+```lean
+criticalModel : HelixModel
+```
+
+has:
+
+```text
+σ = 1/2
+```
+
+and satisfies:
+
+```lean
+criticalModel_radius_symmetric
+criticalModel_faithful
+criticalModel_klein_collapse
+```
+
+### Uniqueness theorems
+
+```lean
+helix_model_unique_radius
+helix_model_unique_faithful
+helix_model_unique_klein
+helix_model_unique_any_constraint
+helix_constraints_equivalent
+```
+
+These prove:
+
+```text
+radius symmetry      ⇒ σ = 1/2
+faithful decoding    ⇒ σ = 1/2
+Klein collapse       ⇒ σ = 1/2
+```
+
+and that the major constraints are equivalent for the model.
+
+### Dimension collapse
+
+```lean
+dimension_collapse_iff_half
+```
+
+This proves that equality of projected radius squares for the helix and reflected helix occurs exactly at:
+
+```text
+σ = 1/2
+```
+
+So the perpendicular / projected helix geometry collapses consistently only at the critical-line parameter.
+
+### Decoding uniqueness
+
+```lean
+DecodingScheme
+DecodingScheme.Faithful
+decoding_faithful_iff_half
+```
+
+A decoding scheme is faithful exactly when:
+
+```text
+σ = 1/2
+```
+
+This is the formal version of:
+
+```text
+only the critical helix reconstructs the canonical number line faithfully
+```
+
+### Robespierre / θ-coordinate system
+
+The file defines:
+
+```lean
+theta : ℝ := Real.arcsin (1 / 2)
+```
+
+and proves:
+
+```lean
+theta_eq          -- theta = π / 6
+sin_theta         -- sin theta = 1 / 2
+sin_sq_theta      -- sin² theta = 1 / 4
+one_plus_sin_sq_theta
+```
+
+It also defines θ-native prime geometry:
+
+```lean
+phiPrime
+primeLogFreq
+thetaCoeff
+XiThetaFinite
+criticalLineSum
+criticalLineSumDeriv
+```
+
+and proves that the θ-coordinate critical line is the classical critical line:
+
+```lean
+robespierre_critical_line
+criticalLineSum_on_half
+```
+
+### What the helix model contributes
+
+The helix files prove:
+
+```text
+multiplication becomes angle addition through log
+the helix projection is faithful
+radial projection recovers the original number
+σ = 1/2 is the unique radius-symmetric / faithful / Klein-collapsed model
+θ = arcsin(1/2) = π/6 gives the same critical line via sin θ = 1/2
+```
+
+They support the geometric interpretation of the RH proof, but the actual forcing proof is still centered in:
+
+```text
+OfflineDetectorProof.lean
+```
 
 ---
 
 ## Agent instructions
 
-When working on this directory:
+When working on this repo:
 
-1. Do not rewrite the cosh detector side unless a type error forces it.
-2. Do not collapse global Weil identity and per-zero vanishing into one informal statement.
-3. Treat `PairTestMellinBetaTotality` and `CountableTsumMomentUniqueness` as the main remaining bottlenecks.
-4. Preserve theorem boundaries. The architecture depends on separating:
-   - detector positivity,
-   - global Weil identities,
-   - beta-family totality,
-   - countable moment uniqueness,
+1. Start with `OfflineDetectorProof.lean`.
+2. Treat the helix files as geometric support / explanation files, not as the RH proof root.
+3. Preserve the forcing pipeline:
+   - off-line detection,
+   - no cancellation,
+   - prime-side amplitude bridge,
+   - global Weil identity,
+   - beta-totality,
+   - countable uniqueness,
+   - per-zero vanishing,
    - RH bridge.
-5. Keep `#print axioms` clean. No project axioms, no hidden RH assumptions, no fake “vanishes at zeros” theorem.
+4. Do not collapse global Weil identity into per-zero vanishing.
+5. Do not replace the forcing argument with informal “detector sees off-line zeros” language.
+6. Keep `#print axioms` clean.
+7. No project axioms. No hidden RH assumptions.
 
 ---
 
-## Mental model
+## One-sentence summary
 
-The proof is not:
-
-```text
-cosh detector proves RH directly
-```
-
-It is:
-
-```text
-cosh detector proves off-line zeros carry positive non-cancellable defect
-Weil identity gives global zero-side vanishing constraints
-beta-totality + countable uniqueness upgrade global constraints to per-zero vanishing
-positive off-line defect contradicts per-zero vanishing
-therefore no off-line zeros
-therefore RH
-```
+`OfflineDetectorProof.lean` is the RH proof orchestration file: it packages the unconditional off-line detector/no-cancellation theorem, ties the detector to the Weil prime-side amplitude channel, and sets up the forcing route from global β-family identities to per-zero vanishing; the helix files separately prove the faithfulness and uniqueness of the `π/3` log helix and the `σ = 1/2` helix model.
