@@ -23,11 +23,10 @@ The bridge handles three cases for a zero `s` satisfying the Mathlib exclusions:
 
 ## Capstones
 
-* `no_offline_zeros_implies_rh` — the core bridge.
-* `classifier_balance_implies_RiemannHypothesis` — upgrade of the
-   classifier's capstone: at any fixed `r > 1`, universal residue-zero
-   on `NontrivialZeros` implies Mathlib's `RiemannHypothesis`.
-* `RiemannHypothesis_iff_classifier_balance` — full biconditional.
+* `no_offline_zeros_implies_rh` — the core bridge from
+  `∀ ρ ∈ NontrivialZeros, ρ.re = 1/2` to Mathlib's `RiemannHypothesis`.
+* `RiemannHypothesis_implies_classifier_balance` — the
+  RH → observable direction.
 -/
 
 open Real ZetaDefs DoubleCoshResidue DoubleCoshValidation Complex
@@ -85,55 +84,6 @@ theorem no_offline_zeros_implies_rh
   exact riemannZeta_ne_zero_of_one_le_re
     (by simp only [Complex.sub_re, Complex.one_re]; linarith) hζ1s
 
-/-! ### §2. Classifier-chain capstones -/
-
-/-- **Upgraded classifier capstone**: universal classifier-balance on
-`NontrivialZeros` at any single admissible scale implies Mathlib's
-literal `RiemannHypothesis`. -/
-theorem classifier_balance_implies_RiemannHypothesis {r : ℝ} (hr : 1 < r)
-    (hclass : ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
-      pairAgreementDefect r ρ.re = 0) :
-    RiemannHypothesis :=
-  no_offline_zeros_implies_rh
-    ((rh_iff_classifier_at_scale hr).mp hclass)
-
-/-- **Converse**: `RiemannHypothesis` implies universal classifier-balance
-on `NontrivialZeros` at every scale. -/
-theorem RiemannHypothesis_implies_classifier_balance
-    (hRH : RiemannHypothesis) (r : ℝ) :
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → pairAgreementDefect r ρ.re = 0 := by
-  intro ρ hρ
-  have hne1 : ρ ≠ 1 := by
-    intro h
-    have := hρ.2.1
-    rw [h, Complex.one_re] at this
-    linarith
-  have hnt : ¬ ∃ n : ℕ, ρ = -2 * (↑n + 1) := by
-    rintro ⟨n, hn⟩
-    have hre := congr_arg Complex.re hn
-    have hcalc : ((-2 : ℂ) * ((n : ℂ) + 1)).re = -2 * ((n : ℝ) + 1) := by
-      simp [Complex.mul_re]
-    rw [hcalc] at hre
-    have hpos : (0 : ℝ) < ((n : ℝ) + 1) := by positivity
-    linarith [hρ.1]
-  have hre : ρ.re = 1/2 := hRH ρ hρ.2.2 hnt hne1
-  rw [hre]
-  exact residue_balanced r
-
-/-- **Full biconditional**: Mathlib's `RiemannHypothesis` is equivalent to
-universal classifier-balance at any single admissible scale `r > 1`. -/
-theorem RiemannHypothesis_iff_classifier_balance {r : ℝ} (hr : 1 < r) :
-    RiemannHypothesis ↔
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → pairAgreementDefect r ρ.re = 0 :=
-  ⟨fun h => RiemannHypothesis_implies_classifier_balance h r,
-   classifier_balance_implies_RiemannHypothesis hr⟩
-
-/-! ### §3. Axiom hygiene -/
-
-#print axioms no_offline_zeros_implies_rh
-#print axioms classifier_balance_implies_RiemannHypothesis
-#print axioms RiemannHypothesis_implies_classifier_balance
-#print axioms RiemannHypothesis_iff_classifier_balance
 
 end RHBridge
 

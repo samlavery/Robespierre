@@ -439,8 +439,10 @@ and at least one β ≠ 1/2 appears in the set, then the total defect is > 0.
 theorem total_defect_pos_of_offline {r : ℝ} (hr : 0 < r) (hr1 : r ≠ 1)
     {βs : Finset ℝ} {β₀ : ℝ} (hβ₀_mem : β₀ ∈ βs) (hβ₀ : β₀ ≠ 1/2) :
     0 < βs.sum (fun β => amplitudeDefect r β) := by
-  rw [ Finset.sum_eq_add_sum_diff_singleton hβ₀_mem ];
-  exact add_pos_of_pos_of_nonneg ( offline_amplitude_defect_pos hr hr1 hβ₀ ) ( Finset.sum_nonneg fun x hx => amplitudeDefect_nonneg hr x )
+  rw [← Finset.sum_erase_add βs (fun β => amplitudeDefect r β) hβ₀_mem]
+  exact add_pos_of_nonneg_of_pos
+    (Finset.sum_nonneg fun x _ => amplitudeDefect_nonneg hr x)
+    (offline_amplitude_defect_pos hr hr1 hβ₀)
 
 /-! ## §6. Incompatibility with the Balanced Split
 

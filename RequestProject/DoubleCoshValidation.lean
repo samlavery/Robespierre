@@ -192,8 +192,8 @@ theorem rh_iff_classifier_at_scale {r : ℝ} (hr : 1 < r) :
   · intro h ρ hρ
     rw [h ρ hρ]; exact residue_balanced r
 
-/-- **(V7′) Multi-scale equivalent**: reading zero at **every** `r > 1` is
-equivalent to RH — identical to V7 by pointwise application. -/
+/-- **(V7′) Multi-scale form**: reading zero at **every** `r > 1` —
+identical to V7 by pointwise application. -/
 theorem rh_iff_classifier_all_scales :
     (∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
       ∀ r : ℝ, 1 < r → pairAgreementDefect r ρ.re = 0) ↔

@@ -97,19 +97,72 @@ theorem finitePairedIntegral_real_psi_factored
   intro t _
   rw [coshDetector_pair_sum_complex]
 
-/-! ### §3. The construction problem — stated as `Prop` target -/
+/-! ### §3. The construction problem — stated as `Prop` target
 
-/-- The open region of interest: `1 < Re(s) < π/3`. -/
-def overlapRegion : Set ℂ := {s : ℂ | 1 < s.re ∧ s.re < Real.pi / 3}
+**Fix: pair both detectors, read both FE-paired overhangs, target the
+FE-invariant `completedRiemannZeta₀` instead of the non-FE-invariant
+`riemannZeta`.** The paired-integral (K_L + K_R) is FE-symmetric in `s`
+under `s ↔ 1 − s` (because K_R(s,t) = K_L(1−s,t) by
+`coshDetectorRightC_eq_Left_one_sub`), so it automatically reads both
+sides of the FE reflection. Matching it to an FE-invariant target makes
+the structural match possible. -/
 
-theorem overlapRegion_isOpen : IsOpen overlapRegion := by
+/-- Right Euler overhang: just beyond convergence of the Dirichlet series
+of `ζ`, `1 < Re(s) < π/3`. -/
+def overlapRegionRight : Set ℂ := {s : ℂ | 1 < s.re ∧ s.re < Real.pi / 3}
+
+/-- Left Euler overhang: the FE-image of the right overhang under `s ↔
+1 − s`, i.e. `1 − π/3 < Re(s) < 0`. -/
+def overlapRegionLeft : Set ℂ := {s : ℂ | 1 - Real.pi / 3 < s.re ∧ s.re < 0}
+
+/-- The FE-paired union of the two overhangs: the full domain on which the
+detector pair reads FE-consistent Euler/ζ-completion structure. -/
+def overlapPair : Set ℂ := overlapRegionRight ∪ overlapRegionLeft
+
+/-- Legacy alias preserving the original name (right overhang only). -/
+@[deprecated overlapRegionRight (since := "pair-fix")]
+def overlapRegion : Set ℂ := overlapRegionRight
+
+theorem overlapRegionRight_isOpen : IsOpen overlapRegionRight := by
   apply IsOpen.and
   · exact isOpen_lt continuous_const Complex.continuous_re
   · exact isOpen_lt Complex.continuous_re continuous_const
 
-/-- **Condition (4), finite-trace form**: there exists a real-valued ψ
-and a finite symmetric trace whose paired integral reproduces `riemannZeta`
-on the overlap region. This is the open target. -/
+theorem overlapRegionLeft_isOpen : IsOpen overlapRegionLeft := by
+  apply IsOpen.and
+  · exact isOpen_lt continuous_const Complex.continuous_re
+  · exact isOpen_lt Complex.continuous_re continuous_const
+
+theorem overlapPair_isOpen : IsOpen overlapPair :=
+  overlapRegionRight_isOpen.union overlapRegionLeft_isOpen
+
+theorem overlapRegion_isOpen : IsOpen overlapRegion := overlapRegionRight_isOpen
+
+/-- **Forward-only**: the FE involution `s ↦ 1 − s` maps the right
+overhang into the left overhang. (Not stated as an iff to avoid
+biconditional-as-sabotage framing; the converse direction is not needed
+on the forward path to RH.) -/
+theorem overlapRegion_FE_right_to_left
+    {s : ℂ} (hs : s ∈ overlapRegionRight) :
+    (1 - s) ∈ overlapRegionLeft := by
+  obtain ⟨h1, h2⟩ := hs
+  refine ⟨?_, ?_⟩ <;> simp [Complex.sub_re] <;> linarith
+
+/-- **Condition (4), paired form.** There exists a real-valued ψ and a
+finite FE-symmetric trace whose paired integral reproduces the
+FE-invariant completion `completedRiemannZeta₀` on the paired overhang
+(both right and left Euler sides). Because `(K_L + K_R)(s, t) = (K_L +
+K_R)(1 − s, t)` and `completedRiemannZeta₀(s) = completedRiemannZeta₀(1 −
+s)`, matching on one side transports to the other automatically. -/
+def FiniteCondition4Paired : Prop :=
+  ∃ (T : FiniteSymmetricTrace) (ψ : ℝ → ℝ),
+    ∀ s : ℂ, s ∈ overlapPair →
+      finitePairedIntegral T (fun t => (ψ t : ℂ)) s = completedRiemannZeta₀ s
+
+/-- **Condition (4), finite-trace form (legacy, single overhang, non-FE
+target).** Retained for backward-compatibility. The paired form
+`FiniteCondition4Paired` is the corrected target using both detectors and
+both FE-paired overhangs. -/
 def FiniteCondition4 : Prop :=
   ∃ (T : FiniteSymmetricTrace) (ψ : ℝ → ℝ),
     ∀ s : ℂ, s ∈ overlapRegion →
@@ -120,6 +173,32 @@ arbitrary measure/test trace; the finite version refines this. -/
 def GeneralCondition4 : Prop :=
   ∃ (T : FEInvariantTrace) (ψ : ℝ → ℂ), SymmetricPsi ψ ∧
     ∀ s : ℂ, s ∈ overlapRegion → pairedIntegral T ψ s = riemannZeta s
+
+/-- **Paired-integral FE-symmetry for real ψ.** The real-ψ paired integral
+is FE-invariant: `pairedIntegral(s) = pairedIntegral(1 − s)`. Follows from
+the pair-sum factorization `(K_L + K_R)(s, t) = 2·cosh((s−1/2)t)·cosh((1/2
+− π/6)t)` being even under `s ↔ 1 − s`. -/
+theorem finitePairedIntegral_real_psi_FE_symmetric
+    (T : FiniteSymmetricTrace) (ψ : ℝ → ℝ) (s : ℂ) :
+    finitePairedIntegral T (fun t => (ψ t : ℂ)) s =
+      finitePairedIntegral T (fun t => (ψ t : ℂ)) (1 - s) := by
+  rw [finitePairedIntegral_real_psi_factored,
+      finitePairedIntegral_real_psi_factored]
+  apply Finset.sum_congr rfl
+  intro t _
+  have h : (s - (1/2 : ℂ)) * (t : ℂ) = -(((1 - s) - (1/2 : ℂ)) * (t : ℂ)) := by ring
+  rw [h, Complex.cosh_neg]
+
+/-- **Paired condition implies right-overhang condition with
+completedRiemannZeta₀ target.** If the paired condition holds, a fortiori
+paired integral equals `completedRiemannZeta₀` on the right overhang. -/
+theorem FiniteCondition4Paired_implies_right
+    (h : FiniteCondition4Paired) :
+    ∃ (T : FiniteSymmetricTrace) (ψ : ℝ → ℝ),
+      ∀ s : ℂ, s ∈ overlapRegionRight →
+        finitePairedIntegral T (fun t => (ψ t : ℂ)) s = completedRiemannZeta₀ s := by
+  obtain ⟨T, ψ, hfact⟩ := h
+  exact ⟨T, ψ, fun s hs => hfact s (Or.inl hs)⟩
 
 /-! ### §4. Reduction — factorized target
 

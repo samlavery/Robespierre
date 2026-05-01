@@ -68,7 +68,7 @@ theorem amplitudeDefectEnvelope_pos_offline
     0 < amplitudeDefectEnvelope β t := by
   unfold amplitudeDefectEnvelope
   have hne : (β - 1/2) * t ≠ 0 := mul_ne_zero (sub_ne_zero.mpr hβ) ht
-  linarith [Real.one_lt_cosh hne]
+  linarith [Real.one_lt_cosh.mpr hne]
 
 theorem amplitudeDefectEnvelope_reflect (β t : ℝ) :
     amplitudeDefectEnvelope (1 - β) t = amplitudeDefectEnvelope β t := by
@@ -125,7 +125,7 @@ theorem amplitudeDefectEnvelope_strict_mono_in_abs_delta
         from (Real.cosh_abs _).symm]
     apply Real.cosh_lt_cosh.mpr
     rw [abs_abs, abs_abs, abs_mul, abs_mul]
-    exact (mul_lt_mul_right ht_abs).mpr h
+    exact mul_lt_mul_of_pos_right h ht_abs
   linarith
 
 /-! ### §4. Centered excess and energy defect (for reference / downstream) -/

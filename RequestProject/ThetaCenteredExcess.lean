@@ -158,8 +158,88 @@ theorem theta_centeredExcess_eq_twoC_add_twoiS (β γ : ℝ)
   -- Step 1: Expand using the representation hypothesis
   unfold thetaCenteredExcess
   rw [hrep, hrep]
-  -- Step 2: Combine integrals, apply the cosh identity, extract real/imag
-  sorry
+  -- Step 2: Combine the two integrals into one via integral_sub
+  rw [← MeasureTheory.integral_sub hint1 hint2]
+  -- Step 3: Use integral_re_add_im to decompose the complex integral
+  -- into ↑(∫ re(F)) + ↑(∫ im(F)) * I, then match re/im with C, S.
+  set F := fun t : ℝ =>
+    (2 : ℂ) * Complex.cosh (((β : ℂ) + ↑γ * Complex.I - 1 / 2) * ↑t) * ↑(ψ t) -
+    (2 : ℂ) * Complex.cosh (((1 / 2 : ℂ) + ↑γ * Complex.I - 1 / 2) * ↑t) * ↑(ψ t) with hF_def
+  -- Step 3: Rewrite the integrand pointwise using the cosh identity
+  have hcongr : ∀ t ∈ Set.Ioi (0 : ℝ), F t =
+      ↑(2 * amplitudeDefectEnvelope β t * Real.cos (γ * t) * ψ t) +
+      ↑(2 * oddDefectEnvelope β t * Real.sin (γ * t) * ψ t) * Complex.I := by
+    intro t _
+    simp only [hF_def, amplitudeDefectEnvelope, oddDefectEnvelope]
+    have h1 : ((β : ℂ) + ↑γ * Complex.I - 1 / 2) * ↑t =
+        ↑((β - 1 / 2) * t) + ↑(γ * t) * Complex.I := by push_cast; ring
+    have h2 : ((1 / 2 : ℂ) + ↑γ * Complex.I - 1 / 2) * ↑t = ↑(γ * t) * Complex.I := by
+      push_cast; ring
+    rw [h1, h2]
+    have h3 := cosh_real_add_imag_sub_cosh_imag ((β - 1 / 2) * t) (γ * t)
+    calc (2 : ℂ) * Complex.cosh (↑((β - 1 / 2) * t) + ↑(γ * t) * Complex.I) * ↑(ψ t) -
+          (2 : ℂ) * Complex.cosh (↑(γ * t) * Complex.I) * ↑(ψ t)
+        = (2 : ℂ) * ↑(ψ t) *
+          (Complex.cosh (↑((β - 1 / 2) * t) + ↑(γ * t) * Complex.I) -
+           Complex.cosh (↑(γ * t) * Complex.I)) := by ring
+      _ = (2 : ℂ) * ↑(ψ t) *
+          (↑((Real.cosh ((β - 1 / 2) * t) - 1) * Real.cos (γ * t)) +
+           ↑(Real.sinh ((β - 1 / 2) * t) * Real.sin (γ * t)) * Complex.I) := by rw [h3]
+      _ = ↑(2 * (Real.cosh ((β - 1 / 2) * t) - 1) * Real.cos (γ * t) * ψ t) +
+          ↑(2 * Real.sinh ((β - 1 / 2) * t) * Real.sin (γ * t) * ψ t) * Complex.I := by
+            push_cast; ring
+  rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hcongr]
+  -- Step 4: Split ∫ (↑a + ↑b*I) = ↑(2C) + ↑(2S)*I
+  -- Helper: split set integral of ↑f + ↑g*I
+  have hsplit : ∀ {f g : ℝ → ℝ},
+      IntegrableOn f (Set.Ioi 0) → IntegrableOn g (Set.Ioi 0) →
+      ∫ t in Set.Ioi (0:ℝ), ((f t : ℂ) + (g t : ℂ) * Complex.I) =
+        ↑(∫ t in Set.Ioi (0:ℝ), f t) + ↑(∫ t in Set.Ioi (0:ℝ), g t) * Complex.I := by
+    intro f g hfi hgi
+    rw [MeasureTheory.integral_add,
+        show (∫ (a : ℝ) in Set.Ioi 0, ((g a : ℂ) * Complex.I))
+          = (∫ (a : ℝ) in Set.Ioi 0, ((g a : ℂ))) * Complex.I
+          from MeasureTheory.integral_mul_const Complex.I _]
+    · exact congrArg₂ (· + ·) integral_ofReal (congr_arg₂ (· * ·) integral_ofReal rfl)
+    · exact hfi.ofReal
+    · exact MeasureTheory.Integrable.mul_const
+        (by simpa only [← Complex.ofReal_mul] using hgi.ofReal) _
+  -- Integrability: derive from hint1/hint2 via re/im extraction.
+  -- a(t) = Re(F(t)) and b(t) = Im(F(t)), so IntegrableOn a/b from IntegrableOn F.
+  have hFint : IntegrableOn F (Set.Ioi 0) := hint1.sub hint2
+  -- Use: a(t) = Re(hint1_fun(t)) - Re(hint2_fun(t)), each Re is integrable
+  -- Derive integrability via re/im of the integrable F
+  -- F(t) = 2ψ * (cosh(arg1*t) - cosh(arg2*t)), re = 2*ADE*cos*ψ, im = 2*ODE*sin*ψ
+  have hf_int : IntegrableOn
+      (fun t => 2 * amplitudeDefectEnvelope β t * Real.cos (γ * t) * ψ t)
+      (Set.Ioi 0) := by
+    apply hFint.re.congr
+    filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi] with t ht
+    show (F t).re = _
+    rw [hcongr t ht, Complex.add_re, Complex.ofReal_re, Complex.mul_re,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
+    ring
+  have hg_int : IntegrableOn
+      (fun t => 2 * oddDefectEnvelope β t * Real.sin (γ * t) * ψ t)
+      (Set.Ioi 0) := by
+    apply hFint.im.congr
+    filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi] with t ht
+    show (F t).im = _
+    rw [hcongr t ht, Complex.add_im, Complex.ofReal_im, Complex.mul_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
+    ring
+  rw [hsplit hf_int hg_int]
+  -- Now: ↑(∫ 2*ADE*cos*ψ) + ↑(∫ 2*ODE*sin*ψ)*I = ↑(2*C) + ↑(2*S)*I
+  unfold cosineDefectTransform sineDefectTransform amplitudeDefectEnvelope oddDefectEnvelope
+  congr 1
+  · congr 1
+    simp_rw [show ∀ t, 2 * (Real.cosh ((β - 1 / 2) * t) - 1) * Real.cos (γ * t) * ψ t =
+      2 * ((Real.cosh ((β - 1 / 2) * t) - 1) * Real.cos (γ * t) * ψ t) from fun t => by ring]
+    exact MeasureTheory.integral_const_mul ..
+  · congr 1; congr 1
+    simp_rw [show ∀ t, 2 * Real.sinh ((β - 1 / 2) * t) * Real.sin (γ * t) * ψ t =
+      2 * (Real.sinh ((β - 1 / 2) * t) * Real.sin (γ * t) * ψ t) from fun t => by ring]
+    exact MeasureTheory.integral_const_mul ..
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Quadratic Energy Defect (theta-side)

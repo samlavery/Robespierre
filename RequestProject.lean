@@ -1,13 +1,4 @@
-import RequestProject.CoshDefs
-import RequestProject.ProofB
-import RequestProject.CoshReflectionSynthesis
-import RequestProject.DualReflectionImpossibility
-import RequestProject.CoshHarmonicReprInstance
-import RequestProject.AmplitudeProof
--- import RequestProject.ProofChain
--- import RequestProject.CoshHarmonicsZetaInvariance
-
-
-section TypeSignatures
-
-
+-- This module serves as the root of the `RequestProject` library.
+-- Import modules here that should be built as part of the library.
+import RequestProject.Basic
+import RequestProject.OfflineDetectorProof

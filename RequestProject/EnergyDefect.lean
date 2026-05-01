@@ -1,5 +1,6 @@
 import Mathlib
 import RequestProject.ZetaZeroDefs
+import RequestProject.HalfLineParseval
 
 open Real Complex MeasureTheory BigOperators
 
@@ -43,6 +44,11 @@ def centeredExcess (ψ : ℝ → ℝ) (β γ : ℝ) : ℂ :=
 def energyDefect (ψ : ℝ → ℝ) (β γ : ℝ) : ℝ :=
   Complex.normSq (centeredExcess ψ β γ)
 
+/-- The even/cosine and odd/sine defect channels are balanced at height `γ`
+when both transported defect channels vanish. -/
+def EnergyChannelsBalanced (ψ : ℝ → ℝ) (β γ : ℝ) : Prop :=
+  cosineDefectTransform ψ β γ = 0 ∧ sineDefectTransform ψ β γ = 0
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Structural Theorems
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -67,6 +73,29 @@ theorem energyDefect_eq_four_sq_add_four_sq (ψ : ℝ → ℝ) (β γ : ℝ) :
     Complex.ext (by simp) (by simp)
   rw [hext, Complex.normSq_mk]
   ring
+
+/-- Vanishing of the pointwise energy defect is exactly balance of the cosine
+and sine defect channels.  There is no hidden cancellation: the energy is a sum
+of nonnegative squares. -/
+theorem energyDefect_eq_zero_iff_channels_balanced (ψ : ℝ → ℝ) (β γ : ℝ) :
+    energyDefect ψ β γ = 0 ↔ EnergyChannelsBalanced ψ β γ := by
+  rw [energyDefect_eq_four_sq_add_four_sq]
+  unfold EnergyChannelsBalanced
+  set C := cosineDefectTransform ψ β γ
+  set S := sineDefectTransform ψ β γ
+  constructor
+  · intro hsum
+    have hC_nonneg : 0 ≤ 4 * C ^ 2 := by nlinarith [sq_nonneg C]
+    have hS_nonneg : 0 ≤ 4 * S ^ 2 := by nlinarith [sq_nonneg S]
+    have hparts := (add_eq_zero_iff_of_nonneg hC_nonneg hS_nonneg).mp hsum
+    constructor
+    · have hC_sq : C ^ 2 = 0 := by nlinarith [hparts.1]
+      exact sq_eq_zero_iff.mp hC_sq
+    · have hS_sq : S ^ 2 = 0 := by nlinarith [hparts.2]
+      exact sq_eq_zero_iff.mp hS_sq
+  · intro hbal
+    rw [hbal.1, hbal.2]
+    ring
 
 /-- On the critical line `β = 1/2`, the energy defect vanishes. -/
 theorem energyDefect_zero_on_line (ψ : ℝ → ℝ) (γ : ℝ) :
@@ -146,26 +175,38 @@ theorem averageEnergyDefect_reflect (ψ : ℝ → ℝ) (β : ℝ) :
 --   full-line case but not the half-line cosine/sine specialization)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **Half-line cosine Parseval.**
-`∫₀^∞ (∫₀^∞ f(t) cos(γt) dt)² dγ = (π/2) ∫₀^∞ f(t)² dt`.
-Derivable from full-line Plancherel via even extension: if f̃(t) = f(|t|),
-then F̂̃(ξ) = 2 ∫₀^∞ f(t) cos(2πξt) dt; apply Plancherel, unfold symmetry,
-change variables. The constant π/2 arises from the unnormalized convention. -/
-axiom halfLine_cosine_parseval (f : ℝ → ℝ)
+/-- **Half-line cosine Parseval.** Proved from Mathlib Plancherel via
+`HalfLineParseval.halfLine_cosine_parseval_strong`. Requires `Measurable f`
+and `Integrable f` on `Ioi 0` in addition to the original L² hypothesis —
+these support the Bochner-Fourier path for the even extension. -/
+theorem halfLine_cosine_parseval (f : ℝ → ℝ)
+    (hf_meas : Measurable f)
+    (hf_int : MeasureTheory.Integrable f
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
     (hf : MeasureTheory.Integrable (fun t => f t ^ 2)
       (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))) :
+    MeasureTheory.Integrable
+        (fun γ => (∫ t in Set.Ioi (0 : ℝ), f t * Real.cos (γ * t)) ^ 2)
+        (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))) ∧
     ∫ γ in Set.Ioi (0 : ℝ),
-      (∫ t in Set.Ioi (0 : ℝ), f t * Real.cos (γ * t)) ^ 2 =
-    (Real.pi / 2) * ∫ t in Set.Ioi (0 : ℝ), f t ^ 2
+        (∫ t in Set.Ioi (0 : ℝ), f t * Real.cos (γ * t)) ^ 2 =
+      (Real.pi / 2) * ∫ t in Set.Ioi (0 : ℝ), f t ^ 2 :=
+  HalfLineParseval.halfLine_cosine_parseval_strong hf_meas hf_int hf
 
-/-- **Half-line sine Parseval.** Same identity for the sine transform.
-Derivable via odd extension. -/
-axiom halfLine_sine_parseval (f : ℝ → ℝ)
+/-- **Half-line sine Parseval.** Proved analogously via the odd extension. -/
+theorem halfLine_sine_parseval (f : ℝ → ℝ)
+    (hf_meas : Measurable f)
+    (hf_int : MeasureTheory.Integrable f
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
     (hf : MeasureTheory.Integrable (fun t => f t ^ 2)
       (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))) :
+    MeasureTheory.Integrable
+        (fun γ => (∫ t in Set.Ioi (0 : ℝ), f t * Real.sin (γ * t)) ^ 2)
+        (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))) ∧
     ∫ γ in Set.Ioi (0 : ℝ),
-      (∫ t in Set.Ioi (0 : ℝ), f t * Real.sin (γ * t)) ^ 2 =
-    (Real.pi / 2) * ∫ t in Set.Ioi (0 : ℝ), f t ^ 2
+        (∫ t in Set.Ioi (0 : ℝ), f t * Real.sin (γ * t)) ^ 2 =
+      (Real.pi / 2) * ∫ t in Set.Ioi (0 : ℝ), f t ^ 2 :=
+  HalfLineParseval.halfLine_sine_parseval_strong hf_meas hf_int hf
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Integrand Positivity (fully proved)
@@ -188,9 +229,16 @@ theorem envelope_integrand_pos {δ : ℝ} (hδ : δ ≠ 0) {t : ℝ} (ht : 0 < t
 -- § Averaged Off-Line Detection (the final theorem in this layer)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **Averaged energy = weighted L² norm** (uses half-line Parseval axioms).
+/-- **Averaged energy = weighted L² norm** (uses half-line Parseval theorems).
 `∫₀^∞ ℰ(β,γ) dγ = 2π ∫₀^∞ [(cosh(δt)−1)² + sinh(δt)²] ψ(t)² dt` -/
 theorem averageEnergyDefect_eq_weighted_L2 (ψ : ℝ → ℝ) (β : ℝ)
+    (hψ_meas : Measurable ψ)
+    (hf1 : MeasureTheory.Integrable
+      (fun t => amplitudeDefectEnvelope β t * ψ t)
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
+    (hg1 : MeasureTheory.Integrable
+      (fun t => oddDefectEnvelope β t * ψ t)
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
     (hf : MeasureTheory.Integrable
       (fun t => (amplitudeDefectEnvelope β t * ψ t) ^ 2)
       (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
@@ -201,7 +249,48 @@ theorem averageEnergyDefect_eq_weighted_L2 (ψ : ℝ → ℝ) (β : ℝ)
       2 * Real.pi * ∫ t in Set.Ioi (0 : ℝ),
         ((amplitudeDefectEnvelope β t) ^ 2 + (oddDefectEnvelope β t) ^ 2) *
           (ψ t) ^ 2 := by
-  sorry
+  unfold averageEnergyDefect
+  simp_rw [energyDefect_eq_four_sq_add_four_sq]
+  have hC_eq : ∀ γ, cosineDefectTransform ψ β γ =
+      ∫ t in Set.Ioi (0 : ℝ),
+        (amplitudeDefectEnvelope β t * ψ t) * Real.cos (γ * t) := by
+    intro γ
+    unfold cosineDefectTransform
+    apply MeasureTheory.integral_congr_ae
+    exact Filter.Eventually.of_forall (fun t => by ring)
+  have hS_eq : ∀ γ, sineDefectTransform ψ β γ =
+      ∫ t in Set.Ioi (0 : ℝ),
+        (oddDefectEnvelope β t * ψ t) * Real.sin (γ * t) := by
+    intro γ
+    unfold sineDefectTransform
+    apply MeasureTheory.integral_congr_ae
+    exact Filter.Eventually.of_forall (fun t => by ring)
+  simp_rw [hC_eq, hS_eq]
+  have hAmpCont : Continuous (amplitudeDefectEnvelope β) := by
+    unfold amplitudeDefectEnvelope; fun_prop
+  have hOddCont : Continuous (oddDefectEnvelope β) := by
+    unfold oddDefectEnvelope; fun_prop
+  have hC_meas : Measurable (fun t => amplitudeDefectEnvelope β t * ψ t) :=
+    hAmpCont.measurable.mul hψ_meas
+  have hS_meas : Measurable (fun t => oddDefectEnvelope β t * ψ t) :=
+    hOddCont.measurable.mul hψ_meas
+  obtain ⟨hC_int, hC_val⟩ := halfLine_cosine_parseval
+    (fun t => amplitudeDefectEnvelope β t * ψ t) hC_meas hf1 hf
+  obtain ⟨hS_int, hS_val⟩ := halfLine_sine_parseval
+    (fun t => oddDefectEnvelope β t * ψ t) hS_meas hg1 hg
+  rw [MeasureTheory.integral_add (hC_int.const_mul 4) (hS_int.const_mul 4),
+      MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul,
+      hC_val, hS_val]
+  have hsum : (∫ t in Set.Ioi (0 : ℝ),
+      ((amplitudeDefectEnvelope β t) ^ 2 + (oddDefectEnvelope β t) ^ 2) *
+        (ψ t) ^ 2) =
+      (∫ t in Set.Ioi (0 : ℝ), (amplitudeDefectEnvelope β t * ψ t) ^ 2) +
+      (∫ t in Set.Ioi (0 : ℝ), (oddDefectEnvelope β t * ψ t) ^ 2) := by
+    rw [← MeasureTheory.integral_add hf hg]
+    apply MeasureTheory.integral_congr_ae
+    exact Filter.Eventually.of_forall (fun t => by ring)
+  rw [hsum]
+  ring
 
 /-- **Averaged off-line detection.** If `β ≠ 1/2` and the test function `ψ`
 is nontrivial on `(0,∞)`, then the averaged energy defect is strictly
@@ -213,6 +302,13 @@ registers in the γ-averaged transported detector. -/
 theorem averageEnergyDefect_pos_offline (ψ : ℝ → ℝ) {β : ℝ}
     (hβ : β ≠ 1 / 2)
     (hψ_pos : 0 < ∫ t in Set.Ioi (0 : ℝ), (ψ t) ^ 2)
+    (hψ_meas : Measurable ψ)
+    (hf1 : MeasureTheory.Integrable
+      (fun t => amplitudeDefectEnvelope β t * ψ t)
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
+    (hg1 : MeasureTheory.Integrable
+      (fun t => oddDefectEnvelope β t * ψ t)
+      (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
     (hf : MeasureTheory.Integrable
       (fun t => (amplitudeDefectEnvelope β t * ψ t) ^ 2)
       (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))))
@@ -220,13 +316,45 @@ theorem averageEnergyDefect_pos_offline (ψ : ℝ → ℝ) {β : ℝ}
       (fun t => (oddDefectEnvelope β t * ψ t) ^ 2)
       (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))) :
     0 < averageEnergyDefect ψ β := by
-  rw [averageEnergyDefect_eq_weighted_L2 ψ β hf hg]
+  rw [averageEnergyDefect_eq_weighted_L2 ψ β hψ_meas hf1 hg1 hf hg]
   apply mul_pos (by positivity : (0 : ℝ) < 2 * Real.pi)
-  -- The integrand is ((cosh−1)² + sinh²) · ψ², which is ≥ 0 pointwise
-  -- and > 0 wherever ψ(t) ≠ 0 and t > 0 (by envelope_integrand_pos).
-  -- Combined with hψ_pos (∫ ψ² > 0), a positive-measure set of t has ψ(t) ≠ 0,
-  -- and on that set the full integrand is strictly positive.
-  sorry
+  -- envelope(t) := (ADE β t)² + (ODE β t)² ≥ 0, strictly positive on Ioi 0 for β ≠ 1/2
+  set envelope : ℝ → ℝ :=
+    fun t => amplitudeDefectEnvelope β t ^ 2 + oddDefectEnvelope β t ^ 2 with henv
+  have h_env_nn : ∀ t, 0 ≤ envelope t :=
+    fun _ => add_nonneg (sq_nonneg _) (sq_nonneg _)
+  have h_env_pos : ∀ {t : ℝ}, 0 < t → envelope t ≠ 0 := by
+    intro t ht
+    simp only [henv, amplitudeDefectEnvelope, oddDefectEnvelope]
+    have hδ : (β - 1 / 2) ≠ 0 := sub_ne_zero.mpr hβ
+    have hsinh : Real.sinh ((β - 1 / 2) * t) ≠ 0 :=
+      Real.sinh_ne_zero.mpr (mul_ne_zero hδ (ne_of_gt ht))
+    have hpos : 0 < (Real.sinh ((β - 1 / 2) * t)) ^ 2 := by positivity
+    exact ne_of_gt (by linarith [sq_nonneg (Real.cosh ((β - 1 / 2) * t) - 1)])
+  have h_int : IntegrableOn (fun t => envelope t * ψ t ^ 2) (Set.Ioi (0 : ℝ)) := by
+    have := hf.add hg
+    refine this.congr (Filter.Eventually.of_forall fun t => ?_)
+    simp only [Pi.add_apply, henv]; ring
+  have hψ_nn : ∀ᵐ t ∂(MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ))),
+      0 ≤ (ψ t) ^ 2 := Filter.Eventually.of_forall fun _ => sq_nonneg _
+  have hψ_intOn : IntegrableOn (fun t => (ψ t) ^ 2) (Set.Ioi (0 : ℝ)) := by
+    by_contra h
+    rw [MeasureTheory.integral_undef h] at hψ_pos
+    exact lt_irrefl _ hψ_pos
+  have hψ_supp_pos :
+      0 < (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))
+        (Function.support (fun t => (ψ t) ^ 2)) := by
+    rwa [MeasureTheory.integral_pos_iff_support_of_nonneg_ae hψ_nn hψ_intOn] at hψ_pos
+  rw [MeasureTheory.integral_pos_iff_support_of_nonneg_ae
+        (Filter.Eventually.of_forall fun t => mul_nonneg (h_env_nn t) (sq_nonneg _)) h_int]
+  refine lt_of_lt_of_le hψ_supp_pos ?_
+  rw [MeasureTheory.Measure.restrict_apply' measurableSet_Ioi,
+      MeasureTheory.Measure.restrict_apply' measurableSet_Ioi]
+  apply MeasureTheory.measure_mono
+  rintro t ⟨ht_supp, ht_pos⟩
+  refine ⟨?_, ht_pos⟩
+  simp only [Function.mem_support, ne_eq] at ht_supp ⊢
+  exact mul_ne_zero (h_env_pos ht_pos) ht_supp
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Conditional Closure (pure logic — no sorry)

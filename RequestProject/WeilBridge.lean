@@ -9,14 +9,26 @@ noncomputable section
 
 namespace ZD
 
-/-! ## Weil Explicit Formula Bridge Package
+/-! # ⚠️ LEGACY — superseded by `WeilZeroOrthogonality.lean`.
+
+Kept only for backward import compatibility. The current architecture
+uses:
+
+* `WeilCoshPairPositivity.lean` — cosh separation + `WeilVanishesOnZeros`
+  target.
+* `WeilZeroOrthogonality.lean` — `ZeroCoefficientVanishesByOrthogonality`
+  target (per-zero vanishing from a global identity family).
+
+Do NOT extend this file. New `Prop` targets belong in the architecture
+files above.
+
+## Weil Explicit Formula Bridge Package (legacy)
 
 This file introduces a parameterized bridge between the odd test-function
 Fourier profile and the zero/prime-side functionals of the Weil explicit
 formula. The bridge is axiomatized as a `structure` — it encapsulates the
 exact piece of analytic number theory that Mathlib does not yet package
-(the explicit formula for a custom test function), while keeping all
-upstream and downstream theorems unconditional.
+(the explicit formula for a custom test function).
 
 ### Architecture
 
@@ -48,11 +60,18 @@ converge. The theta-transported classical density satisfies this
 (super-exponential decay, numerically verified). -/
 structure AdmissibleThetaKernel (ψ : ℝ → ℝ) : Prop where
   nontrivial : 0 < ∫ t in Set.Ioi (0 : ℝ), (ψ t) ^ 2
-  l2_even : MeasureTheory.Integrable
-    (fun t => (amplitudeDefectEnvelope (1 / 2) t * ψ t) ^ 2)
+  measurable : Measurable ψ
+  l1_even : ∀ β : ℝ, MeasureTheory.Integrable
+    (fun t => amplitudeDefectEnvelope β t * ψ t)
     (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))
-  l2_odd : MeasureTheory.Integrable
-    (fun t => (oddDefectEnvelope (1 / 2) t * ψ t) ^ 2)
+  l1_odd : ∀ β : ℝ, MeasureTheory.Integrable
+    (fun t => oddDefectEnvelope β t * ψ t)
+    (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))
+  l2_even : ∀ β : ℝ, MeasureTheory.Integrable
+    (fun t => (amplitudeDefectEnvelope β t * ψ t) ^ 2)
+    (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))
+  l2_odd : ∀ β : ℝ, MeasureTheory.Integrable
+    (fun t => (oddDefectEnvelope β t * ψ t) ^ 2)
     (MeasureTheory.volume.restrict (Set.Ioi (0 : ℝ)))
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -87,58 +106,33 @@ structure ExplicitFormulaBridge (ψ : ℝ → ℝ) where
       averageEnergyDefect ψ ρ.re = 0
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- § Downstream: Off-Line Positivity (conditional on Parseval axioms)
+-- § Downstream: Off-Line Positivity (conditional on Parseval)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 /-- Off-line β gives positive averaged energy defect.
 Conditional on the Parseval axioms in EnergyDefect.lean and the
 admissibility of ψ. -/
 theorem averaged_positivity_offline (ψ : ℝ → ℝ)
-    (hψ : AdmissibleThetaKernel ψ) {β : ℝ} (hβ : β ≠ 1 / 2)
-    (hparseval : averageEnergyDefect ψ β =
-      2 * Real.pi * ∫ t in Set.Ioi (0 : ℝ),
-        ((amplitudeDefectEnvelope β t) ^ 2 +
-          (oddDefectEnvelope β t) ^ 2) * (ψ t) ^ 2) :
-    0 < averageEnergyDefect ψ β := by
-  rw [hparseval]
-  apply mul_pos (by positivity : (0 : ℝ) < 2 * Real.pi)
-  -- The integrand is nonneg pointwise and strictly positive where ψ ≠ 0.
-  -- Since hψ.nontrivial gives ∫ ψ² > 0, there's a positive-measure set
-  -- where ψ ≠ 0, and on that set the envelope integrand is > 0 by
-  -- envelope_integrand_pos (sinh² > 0 for δ ≠ 0, t > 0).
-  sorry
+    (hψ : AdmissibleThetaKernel ψ) {β : ℝ} (hβ : β ≠ 1 / 2) :
+    0 < averageEnergyDefect ψ β :=
+  averageEnergyDefect_pos_offline ψ hβ hψ.nontrivial hψ.measurable
+    (hψ.l1_even β) (hψ.l1_odd β) (hψ.l2_even β) (hψ.l2_odd β)
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § The Main Theorem (conditional on bridge + Parseval)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-/-- **All nontrivial zeros lie on the critical line.**
-
-Conditional on:
-1. `bridge` — the Weil explicit-formula bridge for the odd test function
-2. `hparseval` — the averaged Parseval identity (from the two axioms in
-   EnergyDefect.lean, derivable from `Lp.norm_fourier_eq` via even/odd
-   extension)
-
-The proof is a one-line contradiction: the bridge says actual zeros give
-averaged defect = 0, while Parseval + envelope positivity says off-line
-gives averaged defect > 0. -/
-theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
-    (hψ : AdmissibleThetaKernel ψ)
-    (bridge : ExplicitFormulaBridge ψ)
-    (hparseval : ∀ β : ℝ,
-      averageEnergyDefect ψ β =
-        2 * Real.pi * ∫ t in Set.Ioi (0 : ℝ),
-          ((amplitudeDefectEnvelope β t) ^ 2 +
-            (oddDefectEnvelope β t) ^ 2) * (ψ t) ^ 2) :
-    ∀ ρ : ℂ, ρ ∈ NontrivialZeros → ρ.re = 1 / 2 := by
-  intro ρ hρ
-  by_contra hne
-  have hzero : averageEnergyDefect ψ ρ.re = 0 :=
-    bridge.zero_forces_vanishing ρ hρ
-  have hpos : 0 < averageEnergyDefect ψ ρ.re :=
-    averaged_positivity_offline ψ hψ hne (hparseval ρ.re)
-  linarith
+-- theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
+--    (hψ : AdmissibleThetaKernel ψ)
+--    (bridge : ExplicitFormulaBridge ψ) :
+--    ∀ ρ : ℂ, ρ ∈ NontrivialZeros → ρ.re = 1 / 2 := by
+--  intro ρ hρ
+--  by_contra hne
+--  have hzero : averageEnergyDefect ψ ρ.re = 0 :=
+--    bridge.zero_forces_vanishing ρ hρ
+--  have hpos : 0 < averageEnergyDefect ψ ρ.re :=
+--    averaged_positivity_offline ψ hψ hne
+--  linarith
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Status Summary
@@ -159,16 +153,6 @@ theorem all_nontrivial_zeros_on_critical_line (ψ : ℝ → ℝ)
   Derivable from: Weil explicit formula for the odd test function g_ψ = 2t·ψ(t)
   Status: known mathematics, not yet in Mathlib for custom test functions
 
-### What is axiomatized (EnergyDefect.lean)
-- Half-line cosine/sine Parseval identities
-  Derivable from: `Lp.norm_fourier_eq` via even/odd extension
-
-### What has sorry
-- `averaged_positivity_offline` — measure-theoretic positivity (needs
-  Parseval identity + integral-of-positive-function argument)
-- `theta_centeredExcess_eq_twoC_add_twoiS` — integral subtraction +
-  cosh identity inside integral
-- `averageEnergyDefect_eq_weighted_L2` — Parseval conversion step
 -/
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -185,17 +169,85 @@ theorem zeta_zero_re_lt_one {s : ℂ} (hζ : riemannZeta s = 0) (hs1 : s ≠ 1) 
 
 /-- Non-trivial zeros with Re(s) ≤ 0 are exactly the trivial zeros at
 s = −2(n+1). This follows from the functional equation + Gamma-function
-pole analysis. The proof requires FE machinery not yet extracted from
-Mathlib in the needed form. -/
+pole analysis.  -/
 theorem zeta_zero_re_pos_of_nontrivial {s : ℂ}
     (hζ : riemannZeta s = 0)
     (htriv : ¬∃ n : ℕ, s = -2 * (↑n + 1))
     (hs1 : s ≠ 1) :
     0 < s.re := by
-  -- By FE: ζ(s) = FE_factor · ζ(1-s). For Re(s) ≤ 0, Re(1-s) ≥ 1,
-  -- so ζ(1-s) ≠ 0. Therefore FE_factor = 0, which forces s to be
-  -- a trivial zero — contradicting htriv.
-  sorry
+  by_contra h; push_neg at h
+  -- s.re ≤ 0. We split into: s is a non-positive integer, or not.
+  by_cases hint : ∃ k : ℕ, s = -(k : ℂ)
+  · -- s = -k for some k : ℕ. Then ζ(-k) = 0 forces k even, k ≥ 2,
+    -- i.e., k = 2(n+1) — a trivial zero, contradicting htriv.
+    obtain ⟨k, rfl⟩ := hint
+    rcases k with _ | k
+    · -- k = 0: s = 0, ζ(0) = -1/2 ≠ 0
+      simp [riemannZeta_zero] at hζ
+    · -- k ≥ 1: s = -(↑(k+1) : ℂ). Split on parity of k+1.
+      exfalso
+      rcases Nat.even_or_odd (k + 1) with ⟨m, hm⟩ | ⟨m, hm⟩
+      · -- k+1 = 2m (even). Then s = -2m and m ≥ 1 (since k ≥ 1).
+        -- So s = -2*(m-1+1), a trivial zero — contradicts htriv.
+        exfalso; apply htriv; refine ⟨m - 1, ?_⟩
+        have hm1 : 1 ≤ m := by omega
+        show -(↑(k + 1) : ℂ) = -2 * ((↑(m - 1) : ℂ) + 1)
+        have : (↑(m - 1) : ℂ) = (↑m : ℂ) - 1 := by
+          exact_mod_cast show ((m - 1 : ℕ) : ℤ) = (m : ℤ) - 1 from by omega
+        rw [this]; push_cast [hm]; ring
+      · -- k+1 = 2m+1 (odd). Use completedRiemannZeta to show ζ(s) ≠ 0.
+        -- Strategy: Λ(s) = Λ(1-s) ≠ 0 (from Re(1-s) > 1 + nonvanishing),
+        -- and Γ_ℝ(s) ≠ 0 (s/2 is a half-integer, not a pole of Γ),
+        -- so ζ(s) = Λ(s)/Γ_ℝ(s) ≠ 0. Contradicts hζ.
+        set s := (-(↑(k + 1) : ℂ)) with hs_def
+        have hs_ne : s ≠ 0 := by
+          simp only [hs_def, ne_eq, neg_eq_zero]
+          exact Nat.cast_ne_zero.mpr (by omega)
+        -- Step 1: completedRiemannZeta(1-s) ≠ 0
+        have h1s_ne : 1 - s ≠ 0 := by
+          simp only [hs_def, sub_neg_eq_add]
+          intro heq; have := congr_arg Complex.re heq
+          simp at this; linarith [show (0 : ℝ) ≤ k from Nat.cast_nonneg k]
+        have h1s_re : 1 ≤ (1 - s).re := by
+          simp [hs_def, Complex.sub_re, Complex.neg_re, Complex.ofReal_re,
+                Complex.one_re]; linarith [show (0 : ℝ) ≤ k from Nat.cast_nonneg k]
+        have hζ1s := riemannZeta_ne_zero_of_one_le_re h1s_re
+        have hΛ1s : completedRiemannZeta (1 - s) ≠ 0 := by
+          intro hΛ; apply hζ1s
+          rw [riemannZeta_def_of_ne_zero h1s_ne, hΛ, zero_div]
+        -- Step 2: completedRiemannZeta(s) ≠ 0 by FE
+        have hΛs : completedRiemannZeta s ≠ 0 := by
+          rwa [show s = 1 - (1 - s) from by ring, completedRiemannZeta_one_sub]
+        -- Step 3: Γ_ℝ(s) ≠ 0 (s/2 is a negative half-integer, not a pole of Γ)
+        have hΓ : Gammaℝ s ≠ 0 := by
+          rw [Gammaℝ_def]
+          apply mul_ne_zero
+          · exact cpow_ne_zero_iff_of_exponent_ne_zero (by
+              simp [hs_def]; exact_mod_cast show (k + 1 : ℤ) ≠ 0 by omega)
+              |>.mpr (ofReal_ne_zero.mpr pi_ne_zero)
+          · apply Complex.Gamma_ne_zero; intro n
+            simp only [hs_def]
+            intro heq
+            -- heq : -(↑(k+1) : ℂ) / 2 = -(↑n : ℂ)
+            -- So (k+1) = 2n, but k+1 is odd — contradiction
+            -- From heq : -(↑(k+1) : ℂ) / 2 = -(↑n : ℂ)
+            have h2 : (↑(k + 1) : ℂ) / 2 = (↑n : ℂ) := by
+              rwa [neg_div, neg_inj] at heq
+            rw [div_eq_iff (two_ne_zero' ℂ)] at h2
+            norm_cast at h2; omega
+        -- Step 4: ζ(s) = Λ(s)/Γ_ℝ(s) = nonzero/nonzero ≠ 0
+        rw [riemannZeta_def_of_ne_zero hs_ne] at hζ
+        exact (div_ne_zero hΛs hΓ) hζ
+  · -- s is NOT a non-positive integer. The FE applies.
+    push_neg at hint
+    have hnat : ∀ n : ℕ, s ≠ -(n : ℂ) := fun n => hint n
+    have hfe := riemannZeta_one_sub hnat hs1
+    -- FE: ζ(1-s) = factor * ζ(s) = factor * 0 = 0
+    have hζ1 : riemannZeta (1 - s) = 0 := by rw [hfe, hζ, mul_zero]
+    -- But Re(1-s) = 1 - Re(s) ≥ 1
+    have hre : 1 ≤ (1 - s).re := by simp [Complex.sub_re]; linarith
+    -- Contradicts nonvanishing for Re ≥ 1
+    exact riemannZeta_ne_zero_of_one_le_re hre hζ1
 
 /-- Any zero satisfying Mathlib's RH conditions lies in NontrivialZeros. -/
 theorem rh_zero_mem_nontrivialZeros {s : ℂ}
@@ -207,24 +259,5 @@ theorem rh_zero_mem_nontrivialZeros {s : ℂ}
    zeta_zero_re_lt_one hζ hs1,
    hζ⟩
 
-/-- **Mathlib RiemannHypothesis from the bridge package.**
-
-Given the same hypotheses as `all_nontrivial_zeros_on_critical_line`,
-this derives Mathlib's official `RiemannHypothesis` definition. The only
-additional step is showing non-trivial zeros lie in the critical strip,
-which uses `riemannZeta_ne_zero_of_one_le_re` (Re ≥ 1 side) and the
-functional equation (Re ≤ 0 side, sorry). -/
-theorem riemann_hypothesis_of_bridge (ψ : ℝ → ℝ)
-    (hψ : AdmissibleThetaKernel ψ)
-    (bridge : ExplicitFormulaBridge ψ)
-    (hparseval : ∀ β : ℝ,
-      averageEnergyDefect ψ β =
-        2 * Real.pi * ∫ t in Set.Ioi (0 : ℝ),
-          ((amplitudeDefectEnvelope β t) ^ 2 +
-            (oddDefectEnvelope β t) ^ 2) * (ψ t) ^ 2) :
-    RiemannHypothesis := by
-  intro s hζ htriv hs1
-  have hmem : s ∈ NontrivialZeros := rh_zero_mem_nontrivialZeros hζ htriv hs1
-  exact all_nontrivial_zeros_on_critical_line ψ hψ bridge hparseval s hmem
 
 end ZD
