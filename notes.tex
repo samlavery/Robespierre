@@ -1,0 +1,301 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{conjecture}{Bridge Target}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\C}{\mathbb C}
+\newcommand{\R}{\mathbb R}
+\newcommand{\zetaR}{\zeta}
+\newcommand{\NTZ}{\mathcal Z_{\mathrm{nt}}}
+\newcommand{\OLZ}{\mathcal Z_{\mathrm{off}}}
+\newcommand{\CL}{\{s\in\C:\Re(s)=1/2\}}
+\newcommand{\gpdef}{\mathcal D_G}
+\newcommand{\KL}{K_L}
+\newcommand{\KR}{K_R}
+
+\title{A Cosh--Weil Detector Route to the Riemann Hypothesis\\
+\large Draft proof architecture from the Lean formalization}
+\author{Sam Lavery}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note describes the proof architecture currently represented in the Lean repository
+\texttt{RequestProject}.  The argument separates into three layers.  First, a purely
+geometric cosh/Gaussian detector proves that a real parameter \(\beta\ne 1/2\) carries a
+strictly positive pair-defect.  Second, the zeta-zero layer defines nontrivial and off-line
+zeros and translates vanishing of that pair-defect at every nontrivial zero into the
+statement that every nontrivial zero lies on the critical line.  Third, a Weil explicit
+formula layer is intended to prove the analytic vanishing/balance target for the chosen
+pair-cosh Gaussian test.  The present document treats the first and third layers with
+different status labels: the cosh detector facts are formal geometric consequences, while
+the Weil vanishing target is the load-bearing analytic bridge unless the corresponding
+Lean theorem has been independently discharged.
+\end{abstract}
+
+\section{Lean-facing statement of the goal}
+
+Let
+\[
+  \NTZ := \{\rho\in\C : 0<\Re(\rho)<1 \text{ and } \zetaR(\rho)=0\}.
+\]
+The off-line zeros are
+\[
+  \OLZ := \{\rho\in\NTZ : \Re(\rho)\ne 1/2\}.
+\]
+The formal endgame is to prove
+\[
+  \forall \rho\in\NTZ,\quad \Re(\rho)=1/2,
+\]
+and then invoke the bridge to Mathlib's literal \texttt{RiemannHypothesis} predicate.
+
+\begin{theorem}[RH bridge]
+If every \(\rho\in\NTZ\) satisfies \(\Re(\rho)=1/2\), then Mathlib's
+\texttt{RiemannHypothesis} proposition follows.
+\end{theorem}
+
+\begin{remark}
+In Lean this is represented by the bridge theorem
+\texttt{RHBridge.no\_offline\_zeros\_implies\_rh}.  Its role is not to prove the
+analytic zero placement by itself; it upgrades the internal zero-set statement to
+Mathlib's global formulation, including the standard exclusions of trivial zeros and the
+pole at \(s=1\).
+\end{remark}
+
+\section{The detector-pair geometry}
+
+The basic two-kernel construction uses the two reflected anchors
+\[
+  a=\frac{\pi}{6},\qquad 1-a=1-\frac{\pi}{6}.
+\]
+For real \(\beta,t\), define
+\[
+  \KL(\beta,t)=\cosh\bigl((\beta-a)t\bigr),\qquad
+  \KR(\beta,t)=\cosh\bigl((\beta-(1-a))t\bigr).
+\]
+The reflection \(\beta\mapsto 1-\beta\) exchanges the two detectors:
+\[
+  \KL(1-\beta,t)=\KR(\beta,t),\qquad
+  \KR(1-\beta,t)=\KL(\beta,t).
+\]
+
+\begin{lemma}[Detector agreement classifier]
+For \(t\ne 0\),
+\[
+  \KL(\beta,t)=\KR(\beta,t) \quad\Longleftrightarrow\quad \beta=\frac12.
+\]
+\end{lemma}
+
+\begin{proof}[Proof idea]
+The equality \(\cosh x=\cosh y\) forces \(|x|=|y|\).  With
+\(x=(\beta-a)t\) and \(y=(\beta-(1-a))t\), the branch \(x=-y\) gives
+\((2\beta-1)t=0\), hence \(\beta=1/2\).  The branch \(x=y\) would force
+\((1-2a)t=0\), i.e. \((1-\pi/3)t=0\), impossible for \(t\ne0\) because
+\(\pi\ne3\).
+\end{proof}
+
+\section{Gaussian pair defect}
+
+Let \(\psi(t)=e^{-t^2}\).  The pointwise squared detector difference is
+\[
+  \Delta(\beta,t)^2 := \bigl(\KL(\beta,t)-\KR(\beta,t)\bigr)^2.
+\]
+The key factorization is
+\[
+  \Delta(\beta,t)^2
+  =4\sinh^2\!\left(\left(\frac12-\frac\pi6\right)t\right)
+     \sinh^2\!\left(\left(\beta-\frac12\right)t\right).
+\]
+Define the Gaussian pair defect
+\[
+  \gpdef(\beta)
+  :=\int_0^\infty \Delta(\beta,t)^2\psi(t)^2\,dt.
+\]
+
+\begin{lemma}[Vanishing on the line]
+\[
+  \gpdef(1/2)=0.
+\]
+\end{lemma}
+
+\begin{proof}[Proof idea]
+The factor \(\sinh((\beta-1/2)t)\) vanishes identically when \(\beta=1/2\).
+\end{proof}
+
+\begin{lemma}[Nonnegativity]
+For all \(\beta\in\R\),
+\[
+  \gpdef(\beta)\ge0.
+\]
+\end{lemma}
+
+\begin{proof}[Proof idea]
+The integrand is a square multiplied by the nonnegative Gaussian weight.
+\end{proof}
+
+\begin{lemma}[Strict off-line positivity]
+If \(\beta\ne1/2\), then
+\[
+  \gpdef(\beta)>0.
+\]
+\end{lemma}
+
+\begin{proof}[Proof idea]
+For every \(t>0\), both constants
+\(1/2-\pi/6\) and \(\beta-1/2\) are nonzero.  Hence both sinh factors are
+nonzero on \((0,\infty)\), and the Gaussian weight is strictly positive.  The
+integrand is therefore positive on a set of positive measure, giving a strictly
+positive integral.
+\end{proof}
+
+\begin{proposition}[Defect zero forces the critical line]
+For every real \(\beta\),
+\[
+  \gpdef(\beta)=0 \quad\Longrightarrow\quad \beta=1/2.
+\]
+\end{proposition}
+
+\begin{proof}
+The contrapositive is exactly strict off-line positivity.
+\end{proof}
+
+\section{The zeta-zero bridge target}
+
+The detector geometry becomes an RH argument once one proves that the Gaussian pair
+defect vanishes at the real part of every nontrivial zeta zero.
+
+\begin{conjecture}[Pair Gaussian bridge / Weil vanishing target]
+For every nontrivial zeta zero \(\rho\in\NTZ\),
+\[
+  \gpdef(\Re(\rho))=0.
+\]
+\end{conjecture}
+
+\begin{theorem}[Conditional RH from pair Gaussian bridge]
+Assume the pair Gaussian bridge.  Then every nontrivial zero lies on the critical line:
+\[
+  \forall \rho\in\NTZ,\quad \Re(\rho)=1/2.
+\]
+Consequently Mathlib's \texttt{RiemannHypothesis} follows via the RH bridge.
+\end{theorem}
+
+\begin{proof}
+Let \(\rho\in\NTZ\).  The bridge target gives \(\gpdef(\Re\rho)=0\).  The defect
+classifier gives \(\Re\rho=1/2\).  Since \(\rho\) was arbitrary, all nontrivial
+zeros are on the critical line.  The Lean bridge then upgrades this internal statement
+to Mathlib's \texttt{RiemannHypothesis}.
+\end{proof}
+
+\section{Even and odd channel interpretation}
+
+The formalization also packages the pair defect as an even-channel observable:
+\[
+  \mathrm{Even}(\beta):=\gpdef(\beta).
+\]
+It is nonnegative, vanishes at \(1/2\), and is strictly positive off the line.
+The odd channel is a signed phase-sensitive companion of the form
+\[
+  \mathrm{Odd}(\beta,\gamma)
+  =\int_{\R}2\sinh((\beta-1/2)t)\sin(\gamma t)\psi(t)^2\,dt.
+\]
+It has the closed form
+\[
+  \mathrm{Odd}(\beta,\gamma)
+  =\sqrt{2\pi}\exp\left(\frac{(\beta-1/2)^2-\gamma^2}{8}\right)
+    \sin\left(\frac{(\beta-1/2)\gamma}{4}\right).
+\]
+The odd channel is anti-invariant under \(\beta\mapsto1-\beta\), while the even channel
+is invariant.  This supports the Klein-orbit language: the sine/odd contribution cancels
+under the functional-equation orbit, while the even/cosh excess does not cancel unless it
+is zero.
+
+\section{Weil explicit formula layer}
+
+The intended analytic bridge is a Weil explicit formula for the pair-cosh Gaussian test.
+The repository's final assembly scaffold decomposes this into rectangle contour pieces:
+
+a. rectangle Cauchy--Goursat decomposition;
+
+b. residues at nontrivial zeros with multiplicity;
+
+c. horizontal edge decay on good heights;
+
+d. right-edge conversion to an Euler-product/prime sum;
+
+e. left-edge transfer by the functional equation into archimedean and reflected-prime
+terms;
+
+f. trivial-zero residue handling;
+
+g. final assembly and extraction of per-zero positivity/vanishing.
+
+The proof-critical analytic output should be recorded in a single theorem shape:
+\[
+  \forall \rho\in\NTZ,\quad \gpdef(\Re\rho)=0.
+\]
+Everything before this point is detector geometry; everything proving this statement is
+Weil/explicit-formula analysis.
+
+\section{Recommended theorem map}
+
+A clean paper/Lean correspondence should use the following dependency order.
+
+\begin{enumerate}[label=\textbf{T\arabic*.},leftmargin=3em]
+  \item Define \(\NTZ\), \(\OLZ\), and the internal critical-line statement.
+  \item Prove the detector swap \(\KL(1-\beta,t)=\KR(\beta,t)\).
+  \item Prove the detector agreement classifier \(\KL=\KR\iff\beta=1/2\) for \(t\ne0\).
+  \item Prove the squared-difference sinh factorization.
+  \item Define \(\gpdef\) and prove \(\gpdef(1/2)=0\), \(\gpdef\ge0\), and
+        \(\beta\ne1/2\Rightarrow\gpdef(\beta)>0\).
+  \item State and prove the Weil pair Gaussian bridge:
+        \(\forall\rho\in\NTZ,\gpdef(\Re\rho)=0\).
+  \item Combine T5 and T6 to get \(\forall\rho\in\NTZ,\Re\rho=1/2\).
+  \item Invoke the Mathlib bridge to obtain \texttt{RiemannHypothesis}.
+\end{enumerate}
+
+\section{Current audit notes}
+
+The detector side is structurally strong: it is a direct real-variable argument using
+cosh symmetry, sinh factorization, positivity of squares, and Gaussian positivity.
+
+The analytic side should be audited for exactly one point: whether the repository already
+contains a theorem with no hypotheses and no hidden assumptions proving the pair Gaussian
+bridge.  If the available theorem is instead a named 	exttt{Prop} target or a theorem
+conditional on final-assembly hypotheses, the proof is not yet closed; it is a precise
+conditional RH reduction.
+
+The remaining uniqueness/totality obligations do not appear to require new breakthrough
+mathematics.  They are mostly Lean formalization grind: pushing through Fubini exchange,
+absolute convergence estimates, analytic continuation of the cosh-transform family,
+Riemann--Lebesgue decay on imaginary arguments, Fourier-cosine injectivity, and the
+countable 	exttt{tsum} layer-peeling/moment-uniqueness argument.  These are serious
+engineering lemmas because Mathlib does not package them in exactly the needed form, but
+the intended mathematics is standard analysis plus careful summability bookkeeping rather
+than a new RH-specific idea.
+
+\section{Minimal final theorem shape}
+
+The final Lean theorem should have the shape
+\[
+\texttt{theorem rh\_from\_pair\_weil : RiemannHypothesis := by \dots}
+\]
+with no bridge hypotheses in the theorem signature.  Internally, it should instantiate:
+\[
+  \texttt{PairGaussianBridge}
+\]
+from the completed Weil explicit formula, then apply the detector classifier and finally
+\texttt{RHBridge.no\_offline\_zeros\_implies\_rh}.
+
+\end{document}
