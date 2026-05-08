@@ -20,14 +20,14 @@ namespace ZD
 namespace WeilPositivity
 namespace Contour
 
-private lemma sinh_isBigO_id_nhds_zero_real :
+lemma sinh_isBigO_id_nhds_zero_real :
     Asymptotics.IsBigO (nhds (0:ℝ)) Real.sinh (fun x : ℝ => x) := by
   have h : HasDerivAt Real.sinh 1 0 := by
     simpa [Real.cosh_zero] using Real.hasDerivAt_sinh 0
   have hsub := h.isBigO_sub
   simpa [Real.sinh_zero, sub_zero] using hsub
 
-private lemma sinh_mul_isBigO_id_nhds_zero_real (c : ℝ) :
+lemma sinh_mul_isBigO_id_nhds_zero_real (c : ℝ) :
     Asymptotics.IsBigO (nhds (0:ℝ))
       (fun t : ℝ => Real.sinh (c * t)) (fun t : ℝ => t) := by
   have h_tendsto : Tendsto (fun t : ℝ => c * t) (nhds (0:ℝ)) (nhds (0:ℝ)) := by
@@ -40,14 +40,14 @@ private lemma sinh_mul_isBigO_id_nhds_zero_real (c : ℝ) :
     (Asymptotics.isBigO_refl (fun t : ℝ => t) (nhds (0:ℝ))).const_mul_left c
   exact h1.trans h2
 
-private lemma sinh_sq_mul_isBigO_sq_nhds_zero_real (c : ℝ) :
+lemma sinh_sq_mul_isBigO_sq_nhds_zero_real (c : ℝ) :
     Asymptotics.IsBigO (nhds (0:ℝ))
       (fun t : ℝ => Real.sinh (c * t) ^ 2) (fun t : ℝ => t ^ 2) := by
   have h := sinh_mul_isBigO_id_nhds_zero_real c
   have hh := h.mul h
   simpa [pow_two] using hh
 
-private lemma psi_gaussian_sq_isBigO_one_nhds_zero_real :
+lemma psi_gaussian_sq_isBigO_one_nhds_zero_real :
     Asymptotics.IsBigO (nhds (0:ℝ))
       (fun t : ℝ => (ψ_gaussian t) ^ 2) (fun _ : ℝ => (1 : ℝ)) := by
   have h_cont : Continuous (fun t : ℝ => (ψ_gaussian t) ^ 2) := by

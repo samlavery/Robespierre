@@ -87,7 +87,7 @@ lemma digammaSeriesSum_add_one (s : ℂ) (hs : 0 < s.re) :
         constructor <;> refine' ( Summable.hasSum _ ) |> HasSum.tendsto_sum_nat;
         · have := digamma_series_summable ( s + 1 ) ( by norm_num; linarith );
           convert this using 1;
-        · exact?;
+        · exact digamma_series_summable s hs;
       have := h_telescope.sub ( h_split.1.sub h_split.2 ) ; simp_all +decide [ Finset.sum_add_distrib, add_assoc ] ;
       linear_combination this
 
@@ -142,7 +142,7 @@ lemma deriv_digamma_add_one (s : ℂ) (hs : ∀ m : ℕ, s ≠ -↑m)
           exact this ( by rintro ⟨ m, rfl ⟩ ; exact hz m rfl ) |> fun ⟨ ε, ε_pos, hε ⟩ => ⟨ ε, ε_pos, fun w hw m hm => hε hw ⟨ m, hm ⟩ ⟩;
         · exact ⟨ by rintro rfl; exact hs 0 <| by norm_num, hs ⟩;
       convert h_deriv_eq using 1;
-      · exact?;
+      · exact (deriv_comp_add_const Complex.digamma 1 s).symm;
       · convert ( HasDerivAt.deriv ( HasDerivAt.add ( hasDerivAt_deriv_iff.mpr _ ) ( HasDerivAt.div ( hasDerivAt_const _ _ ) ( hasDerivAt_id s ) _ ) ) ) |> Eq.symm using 1 <;> norm_num;
         · ring;
         · refine' DifferentiableAt.div _ _ _;
@@ -176,7 +176,7 @@ lemma deriv_digamma_add_one (s : ℂ) (hs : ∀ m : ℕ, s ≠ -↑m)
             exact h_diff.deriv.differentiableAt;
           · refine' Complex.differentiableAt_Gamma _ _;
             assumption;
-          · exact?;
+          · exact Complex.Gamma_ne_zero (by assumption);
         · exact fun h => hs 0 <| by norm_num [ h ]
 
 /-
@@ -419,7 +419,7 @@ lemma digamma_eq_series (s : ℂ) (hs : 0 < s.re) :
               rw [ Metric.eventually_nhds_iff ];
               refine' ⟨ s.re / 2, half_pos hs, fun y hy hy' => _ ⟩;
               rw [ ← Summable.tsum_sub ];
-              · exact?;
+              · rw [tsum_const_smul''];
               · have := digamma_series_summable ( s + y ) ?_;
                 · convert this using 1;
                 · norm_num at *; linarith [ abs_le.mp ( Complex.abs_re_le_norm y ) ];
@@ -558,7 +558,16 @@ lemma digamma_series_norm_bound (σ : ℝ) (hσ : 0 < σ) :
           refine le_trans ( Finset.sum_le_sum h_head ) ?_;
           -- We'll use the fact that $\sum_{k=1}^{N} \frac{1}{k} \leq 1 + \log N$.
           have h_harmonic : ∀ N : ℕ, 0 < N → ∑ k ∈ Finset.range N, (1 : ℝ) / (k + 1) ≤ 1 + Real.log N := by
-            exact?;
+            intro N hN
+            have h_eq : ∑ k ∈ Finset.range N, (1 : ℝ) / (k + 1) = (harmonic N : ℝ) := by
+              induction N with
+              | zero => omega
+              | succ n ih =>
+                rw [harmonic_succ, Finset.sum_range_succ]; push_cast
+                by_cases hn : n = 0
+                · simp [hn, harmonic_zero]
+                · rw [← ih (by omega)]; ring
+            rw [h_eq]; exact harmonic_le_one_add_log N
           convert mul_le_mul_of_nonneg_left ( h_harmonic ⌈|t|⌉₊ ( Nat.ceil_pos.mpr ( by positivity ) ) ) ( show 0 ≤ ( |σ - 1| + |t| ) / |t| by positivity ) using 1 ; norm_num [ div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
         -- For $k \geq N$, we have $\|1 / ((k + Nat.ceil |t| : ℂ) + 1) - 1 / (σ + t * Complex.I + (k + Nat.ceil |t| : ℂ))\| \leq (|σ - 1| + |t|) / ((k + Nat.ceil |t| + 1) * (k + Nat.ceil |t| + σ))$.
         have h_tail : ∑' k : ℕ, ‖(1 / ((k + Nat.ceil |t| : ℂ) + 1) - 1 / (σ + t * Complex.I + (k + Nat.ceil |t| : ℂ)))‖ ≤ (|σ - 1| + |t|) * (2 / |t|) := by

@@ -144,7 +144,7 @@ theorem uniform_pairMellin_quartic_target_pos (β : ℝ) :
 
 /-- **Conjugation of `pairTestMellin` along the real test function.** Since
 `pair_cosh_gauss_test β` is real-valued, `pairTestMellin β s̄ = conj(pairTestMellin β s)`. -/
-private theorem pairTestMellin_conj (β : ℝ) (s : ℂ) :
+theorem pairTestMellin_conj (β : ℝ) (s : ℂ) :
     Contour.pairTestMellin β (star s) = star (Contour.pairTestMellin β s) := by
   unfold Contour.pairTestMellin mellin
   rw [show star (∫ t : ℝ in Set.Ioi 0,

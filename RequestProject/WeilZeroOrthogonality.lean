@@ -3,6 +3,7 @@ import RequestProject.ZetaZeroDefs
 import RequestProject.ZeroCountJensen
 import RequestProject.WeilContour
 import RequestProject.ZeroSumExhaustion
+import RequestProject.CountableTsumMomentUniqueness
 /-!
 # Orthogonality extraction target
 
@@ -60,6 +61,8 @@ we use a `Summable` predicate at each `β` rather than introduce a fake
 project-specific summability predicate. -/
 def ZeroCoefficientVanishesByOrthogonality : Prop :=
   ∀ (a : ℂ → ℂ),
+    Summable (fun ρ : {ρ : ℂ // ρ ∈ ZD.NontrivialZeros} => ‖a ρ.val‖)
+    →
     (∀ β : ℝ, 0 < β → β < 1 →
       Summable (fun ρ : {ρ : ℂ // ρ ∈ ZD.NontrivialZeros} =>
         a ρ.val * Contour.pairTestMellin β ρ.val))
@@ -122,14 +125,14 @@ the `pairTestMellin β` family. -/
 theorem ZeroCoefficientVanishesByOrthogonality_of_point_isolating
     (hiso : PairTestMellinPointIsolating) :
     ZeroCoefficientVanishesByOrthogonality := by
-  intro a _hsummable hvanish ρ hρ
+  intro a _h_summable_norm _hsummable hvanish ρ hρ
   obtain ⟨β, hβ0, hβ1, hnz, hisolate_kernel⟩ := hiso ρ hρ
   exact coefficient_zero_of_isolating_pairTestMellin a hρ
     (hvanish β hβ0 hβ1)
     (fun ρ' hne => by rw [hisolate_kernel ρ' hne, mul_zero])
     hnz
 
-/-! ### β-totality and Mellin-series uniqueness
+/-! ### β-totality and zero-Mellin series
 
 The point-isolating interface above is intentionally too strong.  The intended
 analytic route is totality of the β-family after unfolding the β-independent
@@ -138,10 +141,9 @@ calibration:
 1. The β-projection family vanishes for every `β ∈ (0,1)`.
 2. The sinh/cosh totality argument turns this into vanishing of the associated
    Mellin/exponential zero series at every positive scale `t`.
-3. Uniqueness of that Mellin/exponential series forces each coefficient to
-   vanish.
-
-The next definitions isolate steps 2 and 3 as precise theorem targets. -/
+3. The downstream coefficient-extraction route uses moment uniqueness on a
+   ℕ-enumeration of the zeros (see `countable_tsum_zero_moment_uniqueness`
+   below) and requires exponential summability of `a` along that enumeration. -/
 
 /-- The zero-side Mellin/exponential series attached to coefficients `a`.
 At positive `t`, this is the multiplicative version of
@@ -152,12 +154,20 @@ def ZeroMellinSeries (a : ℂ → ℂ) (t : ℝ) : ℂ :=
 
 /-- β-totality target for the `pairTestMellin β` family.
 
-If every β-projection of the zero-side coefficient family vanishes, then the
-underlying Mellin/exponential zero series vanishes pointwise on `(0,∞)`.
-This is where the β-independent calibration and the sinh/cosh transform
-uniqueness should be proved. -/
+If every β-projection of the zero-side coefficient family vanishes, and the
+zero coefficients are absolutely summable, then the underlying Mellin/exponential
+zero series vanishes pointwise on `(0,∞)`.
+
+The absolute summability hypothesis `Summable (ρ ↦ ‖a ρ‖)` is **necessary**:
+the sum-integral exchange (Fubini) requires joint absolute integrability
+`∑' ρ, ∫⁻ ‖a ρ · t^(ρ-1) · g_β t‖ < ∞`, which equals `∑' ρ, ‖a ρ‖ · M_β(Re ρ)`.
+Per-β summability of the complex products `a ρ · pairTestMellin β ρ` does **not**
+imply this: oscillation cancellation makes `|pairTestMellin β ρ| ≤ M_β(Re ρ)`
+strictly, with the gap arbitrarily large by Riemann-Lebesgue. -/
 def PairTestMellinBetaTotality : Prop :=
   ∀ (a : ℂ → ℂ),
+    Summable (fun ρ : {ρ : ℂ // ρ ∈ ZD.NontrivialZeros} => ‖a ρ.val‖)
+    →
     (∀ β : ℝ, 0 < β → β < 1 →
       Summable (fun ρ : {ρ : ℂ // ρ ∈ ZD.NontrivialZeros} =>
         a ρ.val * Contour.pairTestMellin β ρ.val))
@@ -167,16 +177,6 @@ def PairTestMellinBetaTotality : Prop :=
         a ρ.val * Contour.pairTestMellin β ρ.val = 0)
     →
     ∀ t : ℝ, 0 < t → ZeroMellinSeries a t = 0
-
-/-- Mellin/exponential series uniqueness target.
-
-If the zero-side exponential series vanishes at every positive scale, then all
-zero coefficients vanish.  This is the discrete uniqueness/completeness theorem
-for the nontrivial-zero exponents. -/
-def ZeroMellinSeriesUniqueness : Prop :=
-  ∀ (a : ℂ → ℂ),
-    (∀ t : ℝ, 0 < t → ZeroMellinSeries a t = 0) →
-    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → a ρ = 0
 
 /-- Finite Mellin/exponential moment uniqueness.
 
@@ -196,9 +196,9 @@ theorem finite_mellin_moment_uniqueness
 
 /-- Finite zero-Mellin moment uniqueness in the natural exponents `ρ - 1`.
 
-This is the finite-support version of `ZeroMellinSeriesUniqueness`: once the
-moment identities for the shifted zero exponents are available, Vandermonde
-forces all coefficients to vanish. -/
+Finite-support version of zero-Mellin uniqueness: once the moment identities
+for the shifted zero exponents are available, Vandermonde forces all
+coefficients to vanish. -/
 theorem finite_zero_mellin_moment_uniqueness
     {n : ℕ} {ρ c : Fin n → ℂ}
     (hρ : Function.Injective ρ)
@@ -226,16 +226,6 @@ theorem finite_zero_mellin_harmonic_linearIndependent
   exact finite_zero_mellin_moment_uniqueness hρ (fun k => by
     have hk := congr_fun hc k
     simpa [Fintype.linearCombination, Pi.smul_apply] using hk) i
-
-/-- β-totality plus Mellin-series uniqueness proves the orthogonality
-extraction target.  This is the modular uniqueness theorem for the intended
-route; no RH statement is assumed. -/
-theorem ZeroCoefficientVanishesByOrthogonality_of_beta_totality_and_mellin_uniqueness
-    (hβ_total : PairTestMellinBetaTotality)
-    (huniq : ZeroMellinSeriesUniqueness) :
-    ZeroCoefficientVanishesByOrthogonality := by
-  intro a hsummable hvanish
-  exact huniq a (hβ_total a hsummable hvanish)
 
 /-! ### Countable lifting of finite Vandermonde uniqueness
 
@@ -545,53 +535,69 @@ theorem ZeroCoefficientVanishes_of_finite_leading_layer_exhaustion
     coefficients_zero_of_finite_leading_layer_exhaustion (c := c) hlayer
   exact hzero ⟨ρ, hρ⟩
 
-/-- **Countable tsum moment uniqueness principle.**
+/-- **Countable tsum moment uniqueness principle (proved unconditionally).**
 
-For an ℕ-indexed family with injective exponents, if all power-moment
-tsums vanish and the series are summable at each power, then all
-coefficients vanish.
+For an ℕ-indexed family `α : ℕ → ℂ` with injective values, bounded real
+parts, locally finite norms, and exponentially summable coefficients `c`,
+if all power moments `∑' n, c n · α n^k` vanish for every `k`, then every
+`c i = 0`.
 
-This is the exact analytic theorem supplied by the generalized exponential /
-Dirichlet-series uniqueness argument for the zero spectrum.  It is not the
-ordinary `LSeries` coefficient-injectivity theorem from Mathlib: the exponents
-here are arbitrary complex numbers `α n` (eventually `ρₙ - 1`), not integer
-logarithms.  The surrounding theorems use it only as this named input, so no
-RH-strength statement is hidden in a `sorry`. -/
-def CountableTsumMomentUniquenessPrinciple : Prop :=
-  ∀ {α c : ℕ → ℂ},
-    Function.Injective α →
-    (∀ k : ℕ, Summable (fun n => c n * (α n) ^ k)) →
-    (∀ k : ℕ, ∑' n, c n * (α n) ^ k = 0) →
-    ∀ i : ℕ, c i = 0
-
-/-- **Full countable moment uniqueness via generalized exponential uniqueness.** -/
-theorem countable_tsum_moment_uniqueness
-    (hextract : CountableTsumMomentUniquenessPrinciple)
+The proof uses the resolvent / Laplace-transform argument supplied in
+`RequestProject.CountableTsumMomentUniqueness`.  Hypothesis class is
+strictly stronger than the previous `Prop` placeholder (which required only
+per-power summability) — the placeholder's hypothesis class is too weak to
+force coefficient vanishing without further structural input on `α`. -/
+theorem countable_tsum_moment_uniqueness_principle
     {α c : ℕ → ℂ}
-    (hα : Function.Injective α)
-    (hsum : ∀ k : ℕ, Summable (fun n => c n * (α n) ^ k))
-    (hmom : ∀ k : ℕ, ∑' n, c n * (α n) ^ k = 0) :
+    (hα_inj : Function.Injective α)
+    (hα_bdd_re : ∃ σ₀ : ℝ, ∀ n, (α n).re ≤ σ₀)
+    (hα_loc_finite : ∀ R : ℝ, Set.Finite {n : ℕ | ‖α n‖ ≤ R})
+    (hc_exp_summable : ∀ r : ℝ, 0 < r → Summable (fun n => ‖c n‖ * Real.exp (r * ‖α n‖)))
+    (hmom : ∀ k : ℕ, ∑' n, c n * α n ^ k = 0) :
     ∀ i : ℕ, c i = 0 := by
-  exact hextract hα hsum hmom
+  apply _root_.countable_tsum_moment_uniqueness_principle α c
+    hα_inj hα_bdd_re hα_loc_finite hc_exp_summable
+  intro k
+  have hsum_k : Summable (fun n => c n * α n ^ k) :=
+    _root_.summable_mul_pow_of_exp_summable α c hc_exp_summable k
+  have hk : HasSum (fun n => c n * α n ^ k) (∑' n, c n * α n ^ k) := hsum_k.hasSum
+  rw [hmom k] at hk
+  exact hk
 
-/-
-**Countable shifted-exponent tsum uniqueness.**
+/-- **Full countable moment uniqueness via generalized exponential uniqueness.**
 
-Shifted version using `ρ(n) - 1` as the exponent family, matching the
+Direct application of `countable_tsum_moment_uniqueness_principle`.
+Replaces the previous `hextract`-parameterized version that consumed an
+unproved `Prop` placeholder. -/
+theorem countable_tsum_moment_uniqueness
+    {α c : ℕ → ℂ}
+    (hα_inj : Function.Injective α)
+    (hα_bdd_re : ∃ σ₀ : ℝ, ∀ n, (α n).re ≤ σ₀)
+    (hα_loc_finite : ∀ R : ℝ, Set.Finite {n : ℕ | ‖α n‖ ≤ R})
+    (hc_exp_summable : ∀ r : ℝ, 0 < r → Summable (fun n => ‖c n‖ * Real.exp (r * ‖α n‖)))
+    (hmom : ∀ k : ℕ, ∑' n, c n * α n ^ k = 0) :
+    ∀ i : ℕ, c i = 0 :=
+  countable_tsum_moment_uniqueness_principle hα_inj hα_bdd_re hα_loc_finite
+    hc_exp_summable hmom
+
+/-- **Countable shifted-exponent tsum uniqueness.**
+
+Shifted version using `ρ n - 1` as the exponent family, matching the
 Mellin-series convention.  Combined with an enumeration of the nontrivial
-zeros, this yields `ZeroMellinSeriesUniqueness`.
--/
+zeros, this yields the coefficient-extraction step in the
+β-totality → moment-uniqueness chain. -/
 theorem countable_tsum_zero_moment_uniqueness
-    (hextract : CountableTsumMomentUniquenessPrinciple)
     {ρ c : ℕ → ℂ}
-    (hρ : Function.Injective ρ)
-    (hsum : ∀ k : ℕ, Summable (fun n => c n * (ρ n - 1) ^ k))
+    (hρ_inj : Function.Injective ρ)
+    (hρ_bdd_re : ∃ σ₀ : ℝ, ∀ n, ((ρ n - 1) : ℂ).re ≤ σ₀)
+    (hρ_loc_finite : ∀ R : ℝ, Set.Finite {n : ℕ | ‖ρ n - 1‖ ≤ R})
+    (hc_exp_summable : ∀ r : ℝ, 0 < r → Summable (fun n => ‖c n‖ * Real.exp (r * ‖ρ n - 1‖)))
     (hmom : ∀ k : ℕ, ∑' n, c n * (ρ n - 1) ^ k = 0) :
-    ∀ i : ℕ, c i = 0 := by
-  have := countable_tsum_moment_uniqueness hextract
-    ( show Function.Injective fun n => ρ n - 1 from fun i j h => hρ <| by linear_combination' h )
-    hsum hmom
-  aesop
+    ∀ i : ℕ, c i = 0 :=
+  countable_tsum_moment_uniqueness
+    (show Function.Injective (fun n => ρ n - 1) from
+      fun i j h => hρ_inj (by linear_combination' h))
+    hρ_bdd_re hρ_loc_finite hc_exp_summable hmom
 
 /-! ### β-family moment generation
 
@@ -646,20 +652,24 @@ All zero-coefficients vanish.  This combines `countable_tsum_zero_moment_uniquen
 with `power_moments_from_beta_family`.
 -/
 theorem ZeroCoefficientVanishes_of_enumeration_and_moments
-    (hextract : CountableTsumMomentUniquenessPrinciple)
     (a : ℂ → ℂ)
     (enum : ℕ → {ρ : ℂ // ρ ∈ ZD.NontrivialZeros})
-    (_henum_inj : Function.Injective enum)
     (henum_surj : Function.Surjective enum)
     (hρ_inj : Function.Injective (fun n => (enum n).val))
-    (hsum : ∀ k : ℕ, Summable (fun n => a (enum n).val * ((enum n).val - 1) ^ k))
+    (hρ_bdd_re : ∃ σ₀ : ℝ, ∀ n, (((enum n).val - 1) : ℂ).re ≤ σ₀)
+    (hρ_loc_finite : ∀ R : ℝ, Set.Finite {n : ℕ | ‖(enum n).val - 1‖ ≤ R})
+    (hc_exp_summable : ∀ r : ℝ, 0 < r →
+      Summable (fun n => ‖a (enum n).val‖ * Real.exp (r * ‖(enum n).val - 1‖)))
     (hmom : ∀ k : ℕ, ∑' n, a (enum n).val * ((enum n).val - 1) ^ k = 0) :
     ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros → a ρ = 0 := by
   intro ρ hρ
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, ρ = (enum n).val := by
-    exact Exists.elim ( henum_surj ⟨ ρ, hρ ⟩ ) fun n hn => ⟨ n, hn ▸ rfl ⟩;
-  have := @countable_tsum_zero_moment_uniqueness hextract
-    ( fun n => ( enum n : ℂ ) ) ( fun n => a ( enum n : ℂ ) ) ?_ ?_ ?_ n <;> aesop
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, ρ = (enum n).val :=
+    Exists.elim (henum_surj ⟨ρ, hρ⟩) fun n hn => ⟨n, hn ▸ rfl⟩
+  have hzero : ∀ i : ℕ, a (enum i).val = 0 :=
+    countable_tsum_zero_moment_uniqueness
+      (ρ := fun n => (enum n).val) (c := fun n => a (enum n).val)
+      hρ_inj hρ_bdd_re hρ_loc_finite hc_exp_summable hmom
+  rw [hn]; exact hzero n
 
 /-! ### Prime-classifier limitation
 
@@ -689,7 +699,6 @@ theorem primeHarmonicDetector_eq_of_same_real_part
 #print axioms finite_mellin_moment_uniqueness
 #print axioms finite_zero_mellin_moment_uniqueness
 #print axioms finite_zero_mellin_harmonic_linearIndependent
-#print axioms ZeroCoefficientVanishesByOrthogonality_of_beta_totality_and_mellin_uniqueness
 #print axioms primeHarmonicDetector_eq_of_same_real_part
 
 -- New lifting theorems
@@ -707,7 +716,7 @@ theorem primeHarmonicDetector_eq_of_same_real_part
 #print axioms exists_finite_closedBall_window_containing_nontrivialZero
 #print axioms exists_fin_indexed_closedBall_window_containing_nontrivialZero
 #print axioms ZeroCoefficientVanishes_of_finite_leading_layer_exhaustion
-#print axioms CountableTsumMomentUniquenessPrinciple
+#print axioms countable_tsum_moment_uniqueness_principle
 #print axioms countable_tsum_moment_uniqueness
 #print axioms countable_tsum_zero_moment_uniqueness
 #print axioms power_moments_from_beta_family

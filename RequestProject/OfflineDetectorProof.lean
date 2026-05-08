@@ -11,6 +11,7 @@ import RequestProject.WeilFinalAssembly
 import RequestProject.WeilExplicitFormulaFromPerC
 import RequestProject.ExplicitFormulaBridgeOfRH
 import RequestProject.WeilZeroOrthogonality
+import RequestProject.ZeroCoefficientVanishesUnconditional
 import RequestProject.GaussianClosedForm
 import RequestProject.KleinForcerTheorem
 import RequestProject.PrimeHarmonicAmplitude
@@ -1285,6 +1286,12 @@ theorem WeilEnergyChannelBalance_iff_no_offline_zeros :
   ⟨no_offline_zeros_of_energy_channel_balance,
     WeilEnergyChannelBalance_of_no_offline_zeros⟩
 
+/-- Per-zero ℓ¹ summability of the Gaussian defect coefficient.  Required by
+the strengthened `ZeroCoefficientVanishesByOrthogonality` Prop. -/
+def CauchyWeilGaussianDefectSummableNorm_target_local : Prop :=
+  Summable (fun ρ : {ρ : ℂ // ρ ∈ ZD.NontrivialZeros} =>
+    ‖GaussianDefectCoefficient_local ρ.val‖)
+
 /-- Summability side of the real Cauchy/Weil extraction: the Gaussian defect
 coefficient may be paired with the `pairTestMellin β` zero kernel and summed
 over the nontrivial zeros for every admissible `β`. -/
@@ -1305,12 +1312,15 @@ def CauchyWeilGaussianDefectVanishing_target_local : Prop :=
       GaussianDefectCoefficient_local ρ.val *
         Contour.pairTestMellin β ρ.val = 0
 
-/-- The exact Cauchy/Weil package needed for extraction.  The first component
-is convergence of the defect-weighted zero side; the second is the β-family
-vanishing identity supplied by the rectangle/residue computation. -/
+/-- The exact Cauchy/Weil package needed for extraction.  The components are:
+(1) per-zero ℓ¹ summability of the Gaussian defect coefficient,
+(2) per-β summability of the defect-weighted zero side, and
+(3) the β-family vanishing identity supplied by the rectangle/residue
+computation. -/
 def CauchyWeilGaussianDefectExtraction_target_local : Prop :=
-  CauchyWeilGaussianDefectSummable_target_local ∧
-    CauchyWeilGaussianDefectVanishing_target_local
+  CauchyWeilGaussianDefectSummableNorm_target_local ∧
+    CauchyWeilGaussianDefectSummable_target_local ∧
+      CauchyWeilGaussianDefectVanishing_target_local
 
 /-- The real extraction theorem in the form needed here: if the
 `pairTestMellin β` family is an orthogonality basis for zero coefficients, and
@@ -1327,13 +1337,14 @@ The conclusion is then pure extraction, not an RH assumption. -/
 theorem WeilCauchyZeroDefectEnergy_of_zero_orthogonality
     (h_orth :
       ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality)
+    (h_summable_norm : CauchyWeilGaussianDefectSummableNorm_target_local)
     (h_summable : CauchyWeilGaussianDefectSummable_target_local)
     (h_vanish : CauchyWeilGaussianDefectVanishing_target_local) :
     WeilCauchyZeroDefectEnergy_target_local := by
   intro ρ hρ
   have hcoef :
       GaussianDefectCoefficient_local ρ = 0 :=
-    h_orth GaussianDefectCoefficient_local h_summable h_vanish ρ hρ
+    h_orth GaussianDefectCoefficient_local h_summable_norm h_summable h_vanish ρ hρ
   simpa [GaussianDefectCoefficient_local] using
     (Complex.ofReal_eq_zero.mp hcoef)
 
@@ -1345,7 +1356,7 @@ theorem WeilCauchyZeroDefectEnergy_of_cauchy_weil_extraction
     (h_cw : CauchyWeilGaussianDefectExtraction_target_local) :
     WeilCauchyZeroDefectEnergy_target_local :=
   WeilCauchyZeroDefectEnergy_of_zero_orthogonality
-    h_orth h_cw.1 h_cw.2
+    h_orth h_cw.1 h_cw.2.1 h_cw.2.2
 
 /-- The existing narrow Weil-Gaussian bridge is exactly the Cauchy/Weil
 zero-defect-energy extraction target in this file. -/
@@ -1443,6 +1454,57 @@ theorem rh_final_of_cauchy_weil_extraction
   rh_final_of_detectorPrimeHarmonicObservable_zero
     (detectorPrimeHarmonicObservable_zero_every_prime_of_cauchy_weil_extraction
       h_orth h_cw)
+
+/-! ### Unconditional versions
+
+The four theorems above take `h_orth : ZeroCoefficientVanishesByOrthogonality`
+as a hypothesis. Now that
+`ZD.WeilPositivity.ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality_holds`
+is proved unconditionally (in `ZeroCoefficientVanishesUnconditional.lean` via
+the Mellin-resolvent route + finite/infinite case split), the `h_orth`
+hypothesis can be discharged at the call site, producing unconditional
+versions of each. -/
+
+/-- Unconditional version of
+`WeilCauchyZeroDefectEnergy_of_zero_orthogonality`. -/
+theorem WeilCauchyZeroDefectEnergy_of_zero_orthogonality_unconditional
+    (h_summable_norm : CauchyWeilGaussianDefectSummableNorm_target_local)
+    (h_summable : CauchyWeilGaussianDefectSummable_target_local)
+    (h_vanish : CauchyWeilGaussianDefectVanishing_target_local) :
+    WeilCauchyZeroDefectEnergy_target_local :=
+  WeilCauchyZeroDefectEnergy_of_zero_orthogonality
+    ZD.WeilPositivity.ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality_holds
+    h_summable_norm h_summable h_vanish
+
+/-- Unconditional version of
+`WeilCauchyZeroDefectEnergy_of_cauchy_weil_extraction`. -/
+theorem WeilCauchyZeroDefectEnergy_of_cauchy_weil_extraction_unconditional
+    (h_cw : CauchyWeilGaussianDefectExtraction_target_local) :
+    WeilCauchyZeroDefectEnergy_target_local :=
+  WeilCauchyZeroDefectEnergy_of_cauchy_weil_extraction
+    ZD.WeilPositivity.ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality_holds
+    h_cw
+
+/-- Unconditional version of
+`detectorPrimeHarmonicObservable_zero_every_prime_of_cauchy_weil_extraction`. -/
+theorem detectorPrimeHarmonicObservable_zero_every_prime_of_cauchy_weil_extraction_unconditional
+    (h_cw : CauchyWeilGaussianDefectExtraction_target_local) :
+    ∀ ρ : ℂ, ρ ∈ ZD.NontrivialZeros →
+      ∀ p : ℕ, Nat.Prime p →
+        ZD.WeilPositivity.FinalAssembly.detectorPrimeHarmonicObservable
+          ρ.re p = 0 :=
+  detectorPrimeHarmonicObservable_zero_every_prime_of_cauchy_weil_extraction
+    ZD.WeilPositivity.ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality_holds
+    h_cw
+
+/-- Unconditional version of `rh_final_of_cauchy_weil_extraction`: RH from the
+real Cauchy/Weil extraction package, with no zero-orthogonality hypothesis. -/
+theorem rh_final_of_cauchy_weil_extraction_unconditional
+    (h_cw : CauchyWeilGaussianDefectExtraction_target_local) :
+    RiemannHypothesis :=
+  rh_final_of_cauchy_weil_extraction
+    ZD.WeilPositivity.ZeroOrthogonality.ZeroCoefficientVanishesByOrthogonality_holds
+    h_cw
 
 /-- The Cauchy zero-defect-energy target supplies the corrected prime-channel
 balance extraction, independently of the already-collapsed prime-side link. -/
@@ -1808,3 +1870,5 @@ end WeilPositivity
 end ZD
 
 end
+
+#print axioms ZD.WeilPositivity.OfflineDetectorEndpoint.rh_final_of_cauchy_weil_extraction_unconditional

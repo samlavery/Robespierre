@@ -314,7 +314,23 @@ theorem riemannZeta_conj (s : ℂ) (hs : s ≠ 1) :
       have h_id : AnalyticOnNhd ℂ (fun s => starRingEnd ℂ (riemannZeta (starRingEnd ℂ s))) (Set.univ \ {1}) ∧ AnalyticOnNhd ℂ riemannZeta (Set.univ \ {1}) := by
         apply And.intro;
         · apply_rules [ DifferentiableOn.analyticOnNhd ];
-          · exact?;
+          · intro s hs
+            have h₁ : DifferentiableAt ℂ riemannZeta (starRingEnd ℂ s) := by
+              apply differentiableAt_riemannZeta
+              intro h
+              apply hs.2
+              have : starRingEnd ℂ (starRingEnd ℂ s) = starRingEnd ℂ 1 := by
+                rw [h]
+              simpa using this
+            have h_diff_conj : HasDerivAt (fun s => starRingEnd ℂ (riemannZeta (starRingEnd ℂ s)))
+                (starRingEnd ℂ (deriv riemannZeta (starRingEnd ℂ s))) s := by
+              rw [hasDerivAt_iff_tendsto_slope_zero]
+              have := h₁.hasDerivAt.tendsto_slope_zero
+              convert Complex.continuous_conj.continuousAt.tendsto.comp
+                (this.comp (show Filter.Tendsto (fun t : ℂ => starRingEnd ℂ t)
+                  (nhdsWithin 0 {0}ᶜ) (nhdsWithin 0 {0}ᶜ) from ?_)) using 2 <;> norm_num
+              rw [Metric.tendsto_nhdsWithin_nhdsWithin]; aesop
+            exact h_diff_conj.differentiableAt.differentiableWithinAt;
           · exact isOpen_univ.sdiff isClosed_singleton;
         · apply_rules [ DifferentiableOn.analyticOnNhd ];
           · exact h_analytic.differentiableOn;
